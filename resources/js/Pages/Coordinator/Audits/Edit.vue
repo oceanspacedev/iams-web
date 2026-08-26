@@ -30,17 +30,17 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.put(route('admin.audits.update', props.audit.id));
+    form.put(route('coordinator.audits.update', props.audit.id));
 };
 </script>
 
 <template>
     <AppLayout :title="`Edit Audit - ${audit.audit_number}`">
-        <Head :title="`Edit Audit - ${audit.audit_number}`" />
+        <Head :title="`Edit Audit - ${audit.audit_number} — Koordinator`" />
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('admin.audits.index')" class="hover:text-blue-600">Audits</Link>
+                <Link :href="route('coordinator.audits.index')" class="hover:text-blue-600">Audits</Link>
                 <span>/</span>
                 <span class="text-gray-900 font-medium">{{ audit.audit_number }}</span>
             </div>
@@ -164,7 +164,7 @@ const submit = () => {
 
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route('admin.audits.index')"
+                        :href="route('coordinator.audits.index')"
                         class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal

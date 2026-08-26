@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import WorkflowTracker from '@/Components/WorkflowTracker.vue';
 
 const props = defineProps({
     finding: {
@@ -278,6 +279,9 @@ const submitSeverityReview = () => {
                         <div class="mt-1"><StatusBadge :status="finding.status" /></div>
                     </div>
                 </div>
+
+                <!-- Workflow Step Tracker (Live Animated) -->
+                <WorkflowTracker :status="finding.status" />
             </div>
         </div>
     </AppLayout>

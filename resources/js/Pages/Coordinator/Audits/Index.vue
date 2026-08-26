@@ -1,8 +1,9 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     audits: {
@@ -16,89 +17,211 @@ const statusFilter = ref('');
 
 const filteredAudits = computed(() => {
     return props.audits.filter((a) => {
+        const query = searchQuery.value.toLowerCase().trim();
         const matchesSearch =
-            a.audit_number.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            a.store.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            a.auditor.toLowerCase().includes(searchQuery.value.toLowerCase());
+            !query ||
+            (a.audit_number && a.audit_number.toLowerCase().includes(query)) ||
+            (a.store && a.store.toLowerCase().includes(query)) ||
+            (a.auditor && a.auditor.toLowerCase().includes(query));
 
         const matchesStatus = !statusFilter.value || a.status === statusFilter.value;
 
         return matchesSearch && matchesStatus;
     });
 });
+
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
+    }
+    confirmModal.value.show = false;
+};
+
+const deleteAudit = (audit) => {
+    openConfirm({
+        title: 'Hapus Penugasan Audit',
+        message: `Apakah Anda yakin ingin menghapus audit ${audit.audit_number}? Seluruh data temuan terkait akan terhapus.`,
+        confirmText: 'Ya, Hapus Audit',
+        type: 'danger',
+        action: () => router.delete(route('coordinator.audits.destroy', audit.id)),
+    });
+};
 </script>
 
 <template>
-    <AppLayout title="Monitoring Seluruh Audit">
-        <Head title="Monitoring Audits — Koordinator" />
+    <AppLayout title="Monitoring & Penjadwalan Audit">
+        <Head title="Monitoring & Penjadwalan Audits — Koordinator" />
 
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Monitoring Seluruh Audit Lapangan</h1>
-            <p class="text-xs text-gray-500 mt-1">Pemantauan progres pelaksanaan audit di seluruh cabang retail dan auditor yang bertugas</p>
+        <!-- Header -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Monitoring & Penjadwalan Audit Lapangan</h1>
+                <p class="text-xs text-gray-500 mt-1">Kelola penugasan audit toko, penetapan auditor yang bertugas, dan pemantauan progres</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    Total: {{ filteredAudits.length }} Audit
+                </span>
+                <Link
+                    :href="route('coordinator.audits.create')"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                >
+                    + Jadwalkan Audit Baru
+                </Link>
+            </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-4 rounded border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div class="w-full sm:w-80">
-                <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Cari no. audit, toko, atau auditor..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                />
-            </div>
-            <div class="w-full sm:w-auto">
-                <select
-                    v-model="statusFilter"
-                    class="text-xs rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
-                >
-                    <option value="">Semua Status Audit</option>
-                    <option value="PLANNED">Planned</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CLOSED">Closed</option>
-                </select>
+        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs mb-6">
+            <div class="flex flex-col sm:flex-row items-center gap-3">
+                <div class="relative flex-1 w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Cari no. audit, toko, atau auditor..."
+                        class="w-full pl-9 pr-4 py-2 text-xs rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-gray-50/50 focus:bg-white transition-colors"
+                    />
+                </div>
+
+                <div class="w-full sm:w-56 shrink-0">
+                    <select
+                        v-model="statusFilter"
+                        class="w-full py-2 px-3 text-xs rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                    >
+                        <option value="">Semua Status Audit</option>
+                        <option value="PLANNED">Planned</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
             </div>
         </div>
 
         <!-- Table -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3.5">Nomor Audit</th>
-                            <th class="px-5 py-3.5">Toko Sasaran</th>
-                            <th class="px-5 py-3.5">Auditor</th>
-                            <th class="px-5 py-3.5">Tanggal Audit</th>
-                            <th class="px-5 py-3.5">Total Temuan</th>
-                            <th class="px-5 py-3.5">Status</th>
-                            <th class="px-5 py-3.5 text-right">Aksi</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap w-44">Nomor Audit</th>
+                            <th class="px-4 py-3.5 min-w-[200px]">Toko Sasaran</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap w-40">Auditor</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap w-32">Tanggal Audit</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap text-center w-28">Total Temuan</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap text-center w-28">Status</th>
+                            <th class="px-4 py-3.5 whitespace-nowrap text-right w-44">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200 bg-white">
                         <tr v-if="filteredAudits.length === 0">
-                            <td colspan="7" class="px-5 py-8 text-center text-gray-500">Tidak ada audit ditemukan.</td>
+                            <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <svg class="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                    </svg>
+                                    <span class="text-xs font-medium">Tidak ada audit ditemukan.</span>
+                                </div>
+                            </td>
                         </tr>
-                        <tr v-for="a in filteredAudits" :key="a.id" class="hover:bg-gray-50/70">
-                            <td class="px-5 py-3.5 font-mono font-medium text-indigo-600">{{ a.audit_number }}</td>
-                            <td class="px-5 py-3.5 font-semibold text-gray-900">{{ a.store }} ({{ a.store_code }})</td>
-                            <td class="px-5 py-3.5 text-gray-800">{{ a.auditor }}</td>
-                            <td class="px-5 py-3.5 text-gray-600">{{ a.audit_date }}</td>
-                            <td class="px-5 py-3.5 font-medium text-gray-900">{{ a.findings_count }} temuan</td>
-                            <td class="px-5 py-3.5"><StatusBadge :status="a.status" /></td>
-                            <td class="px-5 py-3.5 text-right">
+                        <tr
+                            v-for="a in filteredAudits"
+                            :key="a.id"
+                            class="hover:bg-slate-50/80 transition-colors"
+                        >
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap">
                                 <Link
                                     :href="route('coordinator.audits.show', a.id)"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                                    class="font-mono font-semibold text-blue-600 hover:underline"
                                 >
-                                    Buka Detail
+                                    {{ a.audit_number }}
                                 </Link>
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle">
+                                <div class="font-medium text-gray-900">{{ a.store }}</div>
+                                <div class="text-[11px] text-gray-500 font-mono">{{ a.store_code }}</div>
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap font-medium text-gray-800">
+                                {{ a.auditor }}
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap text-gray-600 font-mono">
+                                {{ a.audit_date }}
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap text-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                                    {{ a.findings_count }} temuan
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap text-center">
+                                <StatusBadge :status="a.status" />
+                            </td>
+
+                            <td class="px-4 py-3.5 align-middle whitespace-nowrap text-right space-x-1.5">
+                                <Link
+                                    :href="route('coordinator.audits.show', a.id)"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-xs transition-colors"
+                                >
+                                    Detail
+                                </Link>
+                                <Link
+                                    :href="route('coordinator.audits.edit', a.id)"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-xs transition-colors"
+                                >
+                                    Edit
+                                </Link>
+                                <button
+                                    @click="deleteAudit(a)"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md border border-red-200 text-red-600 bg-white hover:bg-red-50 shadow-xs transition-colors"
+                                >
+                                    Hapus
+                                </button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Confirm Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

@@ -2,6 +2,7 @@
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     sops: {
@@ -17,15 +18,14 @@ const fileInputRef = ref(null);
 const form = useForm({
     code: '',
     title: '',
-    description: '',
+    category: '',
+    effective_date: '',
     document: null,
-    is_active: true,
 });
 
 const openCreateModal = () => {
     editingSop.value = null;
     form.reset();
-    form.is_active = true;
     if (fileInputRef.value) fileInputRef.value.value = '';
     isModalOpen.value = true;
 };
@@ -34,9 +34,9 @@ const openEditModal = (sop) => {
     editingSop.value = sop;
     form.code = sop.code;
     form.title = sop.title;
-    form.description = sop.description || '';
+    form.category = sop.category;
+    form.effective_date = sop.effective_date_raw || '';
     form.document = null;
-    form.is_active = sop.is_active;
     if (fileInputRef.value) fileInputRef.value.value = '';
     isModalOpen.value = true;
 };
@@ -64,10 +64,41 @@ const submit = () => {
     }
 };
 
-const deleteSop = (sop) => {
-    if (confirm(`Hapus SOP/SE ${sop.code} - ${sop.title}?`)) {
-        router.delete(route('admin.sops.destroy', sop.id));
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const deleteSop = (sop) => {
+    openConfirm({
+        title: 'Hapus Master SOP / SE',
+        message: `Apakah Anda yakin ingin menghapus dokumen "${sop.code} - ${sop.title}"?`,
+        confirmText: 'Ya, Hapus Dokumen',
+        type: 'danger',
+        action: () => router.delete(route('admin.sops.destroy', sop.id)),
+    });
 };
 </script>
 
@@ -238,5 +269,16 @@ const deleteSop = (sop) => {
                 </form>
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AuditCategoryController as AdminAuditCategoryCont
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FindingController as AdminFindingController;
+use App\Http\Controllers\Admin\NotificationRuleController as AdminNotificationRuleController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SopController as AdminSopController;
 use App\Http\Controllers\Admin\StoreController as AdminStoreController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Auditee\AuditController as AuditeeAuditController;
 use App\Http\Controllers\Auditee\DashboardController as AuditeeDashboardController;
 use App\Http\Controllers\Auditee\EvidenceController;
 use App\Http\Controllers\Auditee\FindingController as AuditeeFindingController;
+use App\Http\Controllers\Coordinator\ActionPlanController as CoordinatorActionPlanController;
 use App\Http\Controllers\Coordinator\AuditController as CoordinatorAuditController;
 use App\Http\Controllers\Coordinator\DashboardController as CoordinatorDashboardController;
 use App\Http\Controllers\Coordinator\FindingController as CoordinatorFindingController;
@@ -79,6 +81,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/sops/{sop}', [AdminSopController::class, 'update'])->name('sops.update');
     Route::delete('/sops/{sop}', [AdminSopController::class, 'destroy'])->name('sops.destroy');
 
+    // Notification Rules
+    Route::get('/notification-rules', [AdminNotificationRuleController::class, 'index'])->name('notification-rules.index');
+    Route::post('/notification-rules', [AdminNotificationRuleController::class, 'store'])->name('notification-rules.store');
+    Route::put('/notification-rules/{notificationRule}', [AdminNotificationRuleController::class, 'update'])->name('notification-rules.update');
+    Route::patch('/notification-rules/{notificationRule}/toggle-active', [AdminNotificationRuleController::class, 'toggleActive'])->name('notification-rules.toggle-active');
+    Route::delete('/notification-rules/{notificationRule}', [AdminNotificationRuleController::class, 'destroy'])->name('notification-rules.destroy');
+
     // Audits
     Route::get('/audits', [AdminAuditController::class, 'index'])->name('audits.index');
     Route::get('/audits/create', [AdminAuditController::class, 'create'])->name('audits.create');
@@ -88,6 +97,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/audits/{audit}', [AdminAuditController::class, 'update'])->name('audits.update');
     Route::delete('/audits/{audit}', [AdminAuditController::class, 'destroy'])->name('audits.destroy');
     Route::post('/audits/{audit}/findings', [AdminAuditController::class, 'storeFinding'])->name('audits.findings.store');
+    Route::post('/audits/notifications/{notification}/send-now', [AdminAuditController::class, 'sendNotificationNow'])->name('audits.notifications.send-now');
 
     // Findings
     Route::get('/findings', [AdminFindingController::class, 'index'])->name('findings.index');
@@ -98,6 +108,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Action Plans
     Route::get('/action-plans', [AdminActionPlanController::class, 'index'])->name('action-plans.index');
     Route::patch('/action-plans/{actionPlan}', [AdminActionPlanController::class, 'update'])->name('action-plans.update');
+    Route::post('/action-plans/{actionPlan}/send-reminder', [AdminActionPlanController::class, 'sendReminder'])->name('action-plans.send-reminder');
+    Route::post('/action-plans/broadcast-reminders', [AdminActionPlanController::class, 'broadcastReminders'])->name('action-plans.broadcast-reminders');
 
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
@@ -118,9 +130,21 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::get('/findings/{finding}', [CoordinatorFindingController::class, 'show'])->name('findings.show');
     Route::patch('/findings/{finding}/review-severity', [CoordinatorFindingController::class, 'reviewSeverity'])->name('findings.review-severity');
 
-    // Audits Monitoring
+    // Audits Monitoring & Management
     Route::get('/audits', [CoordinatorAuditController::class, 'index'])->name('audits.index');
+    Route::get('/audits/create', [CoordinatorAuditController::class, 'create'])->name('audits.create');
+    Route::post('/audits', [CoordinatorAuditController::class, 'store'])->name('audits.store');
     Route::get('/audits/{audit}', [CoordinatorAuditController::class, 'show'])->name('audits.show');
+    Route::get('/audits/{audit}/edit', [CoordinatorAuditController::class, 'edit'])->name('audits.edit');
+    Route::put('/audits/{audit}', [CoordinatorAuditController::class, 'update'])->name('audits.update');
+    Route::delete('/audits/{audit}', [CoordinatorAuditController::class, 'destroy'])->name('audits.destroy');
+    Route::post('/audits/notifications/{notification}/send-now', [CoordinatorAuditController::class, 'sendNotificationNow'])->name('audits.notifications.send-now');
+
+    // Action Plans
+    Route::get('/action-plans', [CoordinatorActionPlanController::class, 'index'])->name('action-plans.index');
+    Route::patch('/action-plans/{actionPlan}', [CoordinatorActionPlanController::class, 'update'])->name('action-plans.update');
+    Route::post('/action-plans/{actionPlan}/send-reminder', [CoordinatorActionPlanController::class, 'sendReminder'])->name('action-plans.send-reminder');
+    Route::post('/action-plans/broadcast-reminders', [CoordinatorActionPlanController::class, 'broadcastReminders'])->name('action-plans.broadcast-reminders');
 
     // Reports
     Route::get('/reports', [CoordinatorReportController::class, 'index'])->name('reports.index');

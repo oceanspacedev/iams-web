@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     pending_evidences: {
@@ -31,10 +32,41 @@ const submitReject = () => {
     });
 };
 
-const approveEvidence = (evidenceId) => {
-    if (confirm('Setujui bukti perbaikan ini?')) {
-        router.patch(route('auditor.evidences.approve', evidenceId));
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const approveEvidence = (evidenceId) => {
+    openConfirm({
+        title: 'Setujui Bukti Perbaikan (Evidence)',
+        message: 'Apakah Anda yakin bukti fisik foto perbaikan toko ini sudah sesuai dengan standar dan siap disetujui?',
+        confirmText: 'Ya, Setujui Bukti',
+        type: 'success',
+        action: () => router.patch(route('auditor.evidences.approve', evidenceId)),
+    });
 };
 </script>
 
@@ -159,5 +191,16 @@ const approveEvidence = (evidenceId) => {
                 </form>
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

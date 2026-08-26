@@ -288,75 +288,110 @@ const logout = () => {
                             </svg>
                             <span v-if="!isCollapsed" class="truncate">SOP / SE</span>
                         </Link>
+
+                        <Link
+                            :href="route('admin.notification-rules.index')"
+                            :title="isCollapsed ? 'Jadwal Notifikasi' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('admin.notification-rules.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Jadwal Notifikasi</span>
+                        </Link>
                     </div>
                 </template>
 
                 <!-- ================= COORDINATOR NAV ================= -->
                 <template v-if="isCoordinator">
-                    <div v-if="!isCollapsed" class="px-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                        Koordinator Menu
+                    <div class="space-y-1">
+                        <Link
+                            :href="route('coordinator.dashboard')"
+                            :title="isCollapsed ? 'Dashboard' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Dashboard</span>
+                        </Link>
                     </div>
-                    <div v-else class="border-t border-gray-800 my-2"></div>
 
-                    <Link
-                        :href="route('coordinator.dashboard')"
-                        :title="isCollapsed ? 'Dashboard Koordinator' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('coordinator.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Dashboard</span>
-                    </Link>
+                    <!-- Audit Management -->
+                    <div class="space-y-1 pt-1">
+                        <div v-if="!isCollapsed" class="px-3 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                            Audit Management
+                        </div>
+                        <div v-else class="border-t border-gray-800 my-2"></div>
 
-                    <Link
-                        :href="route('coordinator.findings.index')"
-                        :title="isCollapsed ? 'Review Severity' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('coordinator.findings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Review Severity</span>
-                    </Link>
+                        <Link
+                            :href="route('coordinator.audits.index')"
+                            :title="isCollapsed ? 'Audits' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.audits.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Audits</span>
+                        </Link>
 
-                    <Link
-                        :href="route('coordinator.audits.index')"
-                        :title="isCollapsed ? 'Monitoring Audits' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('coordinator.audits.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Monitoring Audits</span>
-                    </Link>
+                        <Link
+                            :href="route('coordinator.findings.index')"
+                            :title="isCollapsed ? 'Findings' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.findings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Findings</span>
+                        </Link>
 
-                    <Link
-                        :href="route('coordinator.reports.index')"
-                        :title="isCollapsed ? 'Laporan & Rekap' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('coordinator.reports.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Laporan & Rekap</span>
-                    </Link>
+                        <Link
+                            :href="route('coordinator.action-plans.index')"
+                            :title="isCollapsed ? 'Action Plans' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.action-plans.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Action Plans</span>
+                        </Link>
+
+                        <Link
+                            :href="route('coordinator.reports.index')"
+                            :title="isCollapsed ? 'Reports' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.reports.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Reports</span>
+                        </Link>
+                    </div>
                 </template>
 
                 <!-- ================= AUDITOR NAV ================= -->
@@ -496,14 +531,17 @@ const logout = () => {
                         <Link :href="route('admin.stores.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Stores</Link>
                         <Link :href="route('admin.audit-categories.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audit Categories</Link>
                         <Link :href="route('admin.sops.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">SOP / SE</Link>
+                        <Link :href="route('admin.notification-rules.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Jadwal Notifikasi</Link>
                     </template>
 
                     <!-- Coordinator Mobile -->
                     <template v-if="isCoordinator">
                         <Link :href="route('coordinator.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</Link>
-                        <Link :href="route('coordinator.findings.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Review Severity</Link>
-                        <Link :href="route('coordinator.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Monitoring Audits</Link>
-                        <Link :href="route('coordinator.reports.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Laporan & Rekap</Link>
+                        <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Audit Management</div>
+                        <Link :href="route('coordinator.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audits</Link>
+                        <Link :href="route('coordinator.findings.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Findings</Link>
+                        <Link :href="route('coordinator.action-plans.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Action Plans</Link>
+                        <Link :href="route('coordinator.reports.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Reports</Link>
                     </template>
 
                     <!-- Auditor Mobile -->

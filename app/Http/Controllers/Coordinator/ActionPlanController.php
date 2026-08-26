@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActionPlan;
@@ -33,7 +33,7 @@ class ActionPlanController extends Controller
                 'finding_status' => $ap->finding->status,
             ]);
 
-        return Inertia::render('Admin/ActionPlans/Index', [
+        return Inertia::render('Coordinator/ActionPlans/Index', [
             'action_plans' => $actionPlans,
         ]);
     }
@@ -67,7 +67,7 @@ class ActionPlanController extends Controller
     }
 
     /**
-     * Trigger batch reminder cron command manually from admin.
+     * Trigger batch reminder cron command manually from coordinator.
      */
     public function broadcastReminders(): RedirectResponse
     {

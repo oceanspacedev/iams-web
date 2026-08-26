@@ -4,6 +4,8 @@ import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import WorkflowTracker from '@/Components/WorkflowTracker.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     finding: {
@@ -21,10 +23,41 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
-const deleteFinding = () => {
-    if (confirm('Hapus temuan audit ini?')) {
-        router.delete(route('admin.findings.destroy', props.finding.id));
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const deleteFinding = () => {
+    openConfirm({
+        title: 'Hapus Temuan Audit (Finding)',
+        message: 'Apakah Anda yakin ingin menghapus data temuan audit ini secara permanen?',
+        confirmText: 'Ya, Hapus Temuan',
+        type: 'danger',
+        action: () => router.delete(route('admin.findings.destroy', props.finding.id)),
+    });
 };
 
 // Form Review Severity (Koordinator)
@@ -292,7 +325,21 @@ const submitSeverityReview = () => {
                         <div class="mt-1"><StatusBadge :status="finding.status" /></div>
                     </div>
                 </div>
+
+                <!-- Workflow Step Tracker (Live Animated) -->
+                <WorkflowTracker :status="finding.status" />
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

@@ -4,6 +4,8 @@ import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import WorkflowTracker from '@/Components/WorkflowTracker.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     finding: {
@@ -43,16 +45,51 @@ const submitReject = () => {
     });
 };
 
-const approveEvidence = (evidenceId) => {
-    if (confirm('Setujui evidence perbaikan ini?')) {
-        router.patch(route('auditor.evidences.approve', evidenceId));
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const approveEvidence = (evidenceId) => {
+    openConfirm({
+        title: 'Setujui Bukti Perbaikan (Evidence)',
+        message: 'Apakah Anda yakin bukti fisik foto perbaikan toko ini sudah sesuai dengan standar dan siap disetujui?',
+        confirmText: 'Ya, Setujui Bukti',
+        type: 'success',
+        action: () => router.patch(route('auditor.evidences.approve', evidenceId)),
+    });
 };
 
 const closeFinding = () => {
-    if (confirm('Yakin ingin menutup finding ini? Finding yang sudah ditutup dinyatakan selesai.')) {
-        router.patch(route('auditor.findings.close', props.finding.id));
-    }
+    openConfirm({
+        title: 'Tutup Temuan Audit (Close Finding)',
+        message: 'Temuan yang sudah ditutup dinyatakan tuntas 100% dan seluruh tindak lanjut selesai. Lanjutkan penutupan?',
+        confirmText: 'Ya, Tutup Temuan',
+        type: 'success',
+        action: () => router.patch(route('auditor.findings.close', props.finding.id)),
+    });
 };
 </script>
 
@@ -306,29 +343,8 @@ const closeFinding = () => {
                     </div>
                 </div>
 
-                <!-- Workflow Step Tracker -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 mb-4">
-                        Workflow Status
-                    </h3>
-
-                    <div class="space-y-3">
-                        <div
-                            v-for="step in ['OPEN', 'IN_PROGRESS', 'WAITING_VERIFICATION', 'VERIFIED', 'CLOSED']"
-                            :key="step"
-                            class="flex items-center gap-2.5"
-                            :class="finding.status === step ? 'font-semibold text-blue-700' : 'text-gray-400'"
-                        >
-                            <div
-                                class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-                                :class="finding.status === step ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 border border-gray-200'"
-                            >
-                                ✓
-                            </div>
-                            <span>{{ step.replace('_', ' ') }}</span>
-                        </div>
-                    </div>
-                </div>
+                <!-- Workflow Step Tracker (Live Animated) -->
+                <WorkflowTracker :status="finding.status" />
             </div>
         </div>
 
@@ -375,5 +391,16 @@ const closeFinding = () => {
                 </form>
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,9 +14,12 @@ class Audit extends Model
 
     protected $fillable = [
         'audit_number',
+        'title',
         'store_id',
+        'location',
         'auditor_id',
         'audit_date',
+        'audit_time',
         'status',
         'notes',
     ];
@@ -39,6 +43,11 @@ class Audit extends Model
     public function findings(): HasMany
     {
         return $this->hasMany(Finding::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(AuditNotification::class);
     }
 
     // Scopes
@@ -66,5 +75,33 @@ class Audit extends Model
         $count  = static::whereYear('created_at', $year)->whereMonth('created_at', $month)->count() + 1;
 
         return sprintf('%s/%s/%s/%04d', $prefix, $year, $month, $count);
+    }
+
+    /**
+     * Automatically calculate and synchronize notification schedules based on NotificationRules.
+     */
+    public function syncNotificationSchedules(): void
+    {
+        $rules = NotificationRule::all();
+
+        foreach ($rules as $rule) {
+            $sendTime = $rule->send_time ?: '08:00';
+            $dateStr = $this->audit_date->format('Y-m-d');
+            $scheduledAt = Carbon::parse("{$dateStr} {$sendTime}")->subDays($rule->days_before);
+
+            $notification = $this->notifications()->firstOrNew([
+                'notification_rule_id' => $rule->id,
+            ]);
+
+            // Don't modify already sent notifications
+            if ($notification->status === 'SENT') {
+                continue;
+            }
+
+            $notification->scheduled_at = $scheduledAt;
+            $notification->channel      = $rule->channel ?: 'whatsapp';
+            $notification->status       = $rule->is_active ? 'PENDING' : 'INACTIVE';
+            $notification->save();
+        }
     }
 }

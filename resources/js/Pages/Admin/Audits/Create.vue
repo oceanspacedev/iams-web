@@ -21,9 +21,12 @@ const today = new Date().toISOString().split('T')[0];
 
 const form = useForm({
     audit_number: props.suggested_number,
+    title: '',
     store_id: '',
     auditor_id: '',
     audit_date: today,
+    audit_time: '09:00',
+    location: '',
     status: 'PLANNED',
     notes: '',
 });
@@ -35,7 +38,7 @@ const submit = () => {
 
 <template>
     <AppLayout title="Jadwalkan Audit Baru">
-        <Head title="Jadwalkan Audit Baru" />
+        <Head title="Jadwalkan Audit Baru — Admin" />
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -44,7 +47,7 @@ const submit = () => {
                 <span class="text-gray-900 font-medium">Jadwalkan Audit</span>
             </div>
             <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Jadwalkan Penugasan Audit Baru</h1>
-            <p class="text-xs text-gray-500 mt-1">Pilih unit toko retail, tentukan auditor yang bertugas, dan tanggal audit</p>
+            <p class="text-xs text-gray-500 mt-1">Pilih unit toko retail, tentukan auditor yang bertugas, tanggal & waktu audit. Jadwal notifikasi otomatis akan dihitung sistem.</p>
         </div>
 
         <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
@@ -62,7 +65,20 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Tanggal Audit <span class="text-red-500">*</span></label>
+                        <label class="block font-medium text-gray-700 mb-1">Judul / Jenis Audit</label>
+                        <input
+                            v-model="form.title"
+                            type="text"
+                            placeholder="Contoh: Audit Stock Opname Bulanan"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                        <div v-if="form.errors.title" class="text-red-600 text-[11px] mt-1">{{ form.errors.title }}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Tanggal Pelaksanaan <span class="text-red-500">*</span></label>
                         <input
                             v-model="form.audit_date"
                             type="date"
@@ -70,6 +86,17 @@ const submit = () => {
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                         <div v-if="form.errors.audit_date" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_date }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Waktu / Jam Mulai</label>
+                        <input
+                            v-model="form.audit_time"
+                            type="text"
+                            placeholder="09:00"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                        />
+                        <div v-if="form.errors.audit_time" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_time }}</div>
                     </div>
                 </div>
 
@@ -105,17 +132,29 @@ const submit = () => {
                     </div>
                 </div>
 
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Status Audit</label>
-                    <select
-                        v-model="form.status"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    >
-                        <option value="PLANNED">Planned (Terencana)</option>
-                        <option value="IN_PROGRESS">In Progress (Sedang Berjalan)</option>
-                        <option value="COMPLETED">Completed (Selesai)</option>
-                        <option value="CLOSED">Closed (Ditutup)</option>
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Lokasi Khusus (Opsional)</label>
+                        <input
+                            v-model="form.location"
+                            type="text"
+                            placeholder="Biarkan kosong untuk default alamat toko"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Status Audit</label>
+                        <select
+                            v-model="form.status"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="PLANNED">Planned (Terencana)</option>
+                            <option value="IN_PROGRESS">In Progress (Sedang Berjalan)</option>
+                            <option value="COMPLETED">Completed (Selesai)</option>
+                            <option value="CLOSED">Closed (Ditutup)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div>

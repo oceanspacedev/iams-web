@@ -13,39 +13,60 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
+        $totalAudits = Audit::count();
+        $activeAudits = Audit::whereIn('status', ['PLANNED', 'IN_PROGRESS'])->count();
         $totalFindings = Finding::count();
-        $pendingReviews = Finding::where('is_severity_locked', false)->count();
-        $reviewedLocked = Finding::where('is_severity_locked', true)->count();
-        $totalAudits   = Audit::count();
-        $totalLoss     = Finding::sum('loss_amount');
+        $openFindings = Finding::where('status', Finding::STATUS_OPEN)->count();
+        $inProgressFindings = Finding::where('status', Finding::STATUS_IN_PROGRESS)->count();
+        $waitingVerification = Finding::where('status', Finding::STATUS_WAITING_VERIFICATION)->count();
+        $closedFindings = Finding::where('status', Finding::STATUS_CLOSED)->count();
+        $overdueFindings = Finding::overdue()->count();
+        $totalLossAmount = Finding::sum('loss_amount') ?? 0;
 
-        // Recent findings waiting for review
-        $pendingFindingsList = Finding::where('is_severity_locked', false)
-            ->with(['audit.store', 'audit.auditor', 'category'])
+        $recentAudits = Audit::with(['store', 'auditor'])
+            ->withCount('findings')
+            ->orderBy('audit_date', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(fn ($audit) => [
+                'id'             => $audit->id,
+                'audit_number'   => $audit->audit_number,
+                'store'          => $audit->store->name,
+                'auditor'        => $audit->auditor->name,
+                'audit_date'     => $audit->audit_date->format('d M Y'),
+                'status'         => $audit->status,
+                'findings_count' => $audit->findings_count,
+            ]);
+
+        $recentFindings = Finding::with(['audit.store', 'category'])
             ->orderBy('created_at', 'desc')
-            ->limit(6)
+            ->limit(5)
             ->get()
             ->map(fn ($f) => [
                 'id'           => $f->id,
                 'audit_number' => $f->audit->audit_number,
                 'store'        => $f->audit->store->name,
-                'auditor'      => $f->audit->auditor->name,
                 'category'     => $f->category->name,
-                'finding'      => $f->finding,
-                'severity'     => $f->severity,
+                'finding'      => \Str::limit($f->finding, 50),
                 'loss_amount'  => $f->loss_amount,
-                'created_at'   => $f->created_at->format('d M Y H:i'),
+                'severity'     => $f->severity,
+                'status'       => $f->status,
             ]);
 
         return Inertia::render('Coordinator/Dashboard', [
             'stats' => [
-                'total_findings'  => $totalFindings,
-                'pending_reviews' => $pendingReviews,
-                'reviewed_locked' => $reviewedLocked,
-                'total_audits'    => $totalAudits,
-                'total_loss'      => $totalLoss,
+                'total_audits'         => $totalAudits,
+                'active_audits'        => $activeAudits,
+                'total_findings'       => $totalFindings,
+                'open_findings'        => $openFindings,
+                'in_progress_findings' => $inProgressFindings,
+                'waiting_verification' => $waitingVerification,
+                'closed_findings'      => $closedFindings,
+                'overdue_findings'     => $overdueFindings,
+                'total_loss_amount'    => $totalLossAmount,
             ],
-            'pending_findings' => $pendingFindingsList,
+            'recent_audits'   => $recentAudits,
+            'recent_findings' => $recentFindings,
         ]);
     }
 }

@@ -49,10 +49,10 @@ class EvidencePolicy
 
     public function delete(User $user, Evidence $evidence): bool
     {
-        // Auditee can delete only their own pending evidence
+        // Auditee can delete their own pending or rejected evidence
         if ($user->isAuditee()) {
             return $evidence->uploaded_by === $user->id
-                && $evidence->verification_status === 'PENDING';
+                && in_array($evidence->verification_status, ['PENDING', 'REJECTED']);
         }
 
         return $user->isAdmin();

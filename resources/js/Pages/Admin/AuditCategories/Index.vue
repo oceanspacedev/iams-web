@@ -2,6 +2,7 @@
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     categories: {
@@ -15,22 +16,21 @@ const editingCategory = ref(null);
 
 const form = useForm({
     name: '',
+    code: '',
     description: '',
-    is_active: true,
 });
 
 const openCreateModal = () => {
     editingCategory.value = null;
     form.reset();
-    form.is_active = true;
     isModalOpen.value = true;
 };
 
-const openEditModal = (cat) => {
-    editingCategory.value = cat;
-    form.name = cat.name;
-    form.description = cat.description || '';
-    form.is_active = cat.is_active;
+const openEditModal = (category) => {
+    editingCategory.value = category;
+    form.name = category.name;
+    form.code = category.code;
+    form.description = category.description || '';
     isModalOpen.value = true;
 };
 
@@ -52,10 +52,41 @@ const submit = () => {
     }
 };
 
-const deleteCategory = (cat) => {
-    if (confirm(`Hapus kategori ${cat.name}?`)) {
-        router.delete(route('admin.audit-categories.destroy', cat.id));
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const deleteCategory = (cat) => {
+    openConfirm({
+        title: 'Hapus Kategori Audit',
+        message: `Apakah Anda yakin ingin menghapus kategori "${cat.name}"?`,
+        confirmText: 'Ya, Hapus Kategori',
+        type: 'danger',
+        action: () => router.delete(route('admin.audit-categories.destroy', cat.id)),
+    });
 };
 </script>
 
@@ -186,5 +217,16 @@ const deleteCategory = (cat) => {
                 </form>
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

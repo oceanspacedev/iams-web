@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ActionPlan;
 use App\Models\Audit;
 use App\Models\Evidence;
 use App\Models\Finding;
@@ -252,5 +253,110 @@ class WhatsAppService
 
             self::send($auditor->phone, $msg);
         }
+    }
+
+    /**
+     * Send Reminder to Store Auditees about Action Plan Deadlines / Follow-ups.
+     */
+    public static function notifyActionPlanReminder(ActionPlan $actionPlan, string $type = 'UPCOMING'): int
+    {
+        $actionPlan->loadMissing(['finding.audit.store.auditees', 'finding.category']);
+
+        $store = $actionPlan->finding->audit->store ?? null;
+        if (!$store || !$store->auditees) return 0;
+
+        $sentCount = 0;
+        $deadlineStr = $actionPlan->deadline ? $actionPlan->deadline->format('d M Y') : 'Belum ditentukan';
+
+        foreach ($store->auditees as $auditee) {
+            if (empty($auditee->phone)) continue;
+
+            if ($type === 'OVERDUE') {
+                $msg = "🚨 *PERINGATAN: ACTION PLAN MELEWATI DEADLINE (OVERDUE)*\n\n"
+                    . "Halo *{$auditee->name}* ({$store->name}),\n"
+                    . "Action Plan untuk temuan audit berikut *TELAH MELEWATI BATAS WAKTU*:\n\n"
+                    . "• *No. Audit:* {$actionPlan->finding->audit->audit_number}\n"
+                    . "• *Kategori:* {$actionPlan->finding->category->name}\n"
+                    . "• *Temuan:* " . \Illuminate\Support\Str::limit($actionPlan->finding->finding, 70) . "\n"
+                    . "• *Batas Deadline:* *{$deadlineStr} (TERLAMBAT)*\n"
+                    . "• *PIC Bertugas:* " . ($actionPlan->pic ?: '-') . "\n\n"
+                    . "Mohon segera selesaikan tindakan perbaikan dan unggah bukti di portal Toko.\n"
+                    . "_AuditFlow Enterprise System_";
+            } elseif ($type === 'UNFILLED') {
+                $msg = "⏰ *PENGINGAT: PENGISIAN ACTION PLAN TOKO*\n\n"
+                    . "Halo *{$auditee->name}* ({$store->name}),\n"
+                    . "Terdapat temuan audit yang *BELUM DIBUATKAN ACTION PLAN*:\n\n"
+                    . "• *No. Audit:* {$actionPlan->finding->audit->audit_number}\n"
+                    . "• *Kategori:* {$actionPlan->finding->category->name}\n"
+                    . "• *Temuan:* " . \Illuminate\Support\Str::limit($actionPlan->finding->finding, 70) . "\n\n"
+                    . "Harap segera login ke portal Toko untuk menentukan rencana perbaikan, PIC, dan target deadline.\n"
+                    . "_AuditFlow Enterprise System_";
+            } else {
+                // UPCOMING
+                $msg = "⏰ *PENGINGAT DEADLINE ACTION PLAN*\n\n"
+                    . "Halo *{$auditee->name}* ({$store->name}),\n"
+                    . "Mengingatkan batas waktu pelaksanaan Action Plan perbaikan audit:\n\n"
+                    . "• *No. Audit:* {$actionPlan->finding->audit->audit_number}\n"
+                    . "• *Kategori:* {$actionPlan->finding->category->name}\n"
+                    . "• *Rencana:* " . ($actionPlan->action_plan ? \Illuminate\Support\Str::limit($actionPlan->action_plan, 70) : '-') . "\n"
+                    . "• *Target Deadline:* *{$deadlineStr}*\n"
+                    . "• *PIC:* " . ($actionPlan->pic ?: '-') . "\n\n"
+                    . "Pastikan perbaikan sudah selesai dan bukti telah diunggah sebelum deadline berakhir.\n"
+                    . "_AuditFlow Enterprise System_";
+            }
+
+            if (self::send($auditee->phone, $msg)) {
+                $sentCount++;
+            }
+        }
+
+        return $sentCount;
+    }
+
+    /**
+     * Send Reminder to Auditor & Store (H-1 before Audit date).
+     */
+    public static function notifyAuditH1Reminder(Audit $audit): int
+    {
+        $audit->loadMissing(['store.auditees', 'auditor']);
+        $sentCount = 0;
+
+        // 1. To Auditor
+        if ($audit->auditor && !empty($audit->auditor->phone)) {
+            $msg = "🔔 *PENGINGAT AUDIT BESOK HARI (H-1)*\n\n"
+                . "Halo *{$audit->auditor->name}*,\n"
+                . "Mengingatkan jadwal audit lapangan yang akan dilaksanakan *BESOK*:\n\n"
+                . "• *No. Audit:* {$audit->audit_number}\n"
+                . "• *Toko:* {$audit->store->name} ({$audit->store->code})\n"
+                . "• *Tanggal:* {$audit->audit_date->format('d M Y')}\n\n"
+                . "Harap siapkan perlengkapan audit dan berkas checklist.\n"
+                . "_AuditFlow Enterprise System_";
+
+            if (self::send($audit->auditor->phone, $msg)) {
+                $sentCount++;
+            }
+        }
+
+        // 2. To Store Auditees
+        if ($audit->store && $audit->store->auditees) {
+            foreach ($audit->store->auditees as $auditee) {
+                if (!empty($auditee->phone)) {
+                    $msg = "🔔 *PENGINGAT AUDIT TOKO BESOK HARI (H-1)*\n\n"
+                        . "Halo *{$auditee->name}* ({$audit->store->name}),\n"
+                        . "Pemeriksaan audit toko Anda akan dilaksanakan *BESOK*:\n\n"
+                        . "• *No. Audit:* {$audit->audit_number}\n"
+                        . "• *Auditor:* {$audit->auditor->name}\n"
+                        . "• *Tanggal:* {$audit->audit_date->format('d M Y')}\n\n"
+                        . "Harap pastikan kesiapan personil toko dan dokumen terkait.\n"
+                        . "_AuditFlow Enterprise System_";
+
+                    if (self::send($auditee->phone, $msg)) {
+                        $sentCount++;
+                    }
+                }
+            }
+        }
+
+        return $sentCount;
     }
 }

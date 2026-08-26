@@ -65,7 +65,7 @@ const sendSingleReminder = (ap) => {
         message: `Kirim notifikasi pengingat ke toko ${ap.store} untuk audit ${ap.audit_number}?`,
         confirmText: 'Kirim Pengingat',
         type: 'primary',
-        action: () => router.post(route('admin.action-plans.send-reminder', ap.id), {}, { preserveScroll: true }),
+        action: () => router.post(route('coordinator.action-plans.send-reminder', ap.id), {}, { preserveScroll: true }),
     });
 };
 
@@ -75,14 +75,14 @@ const broadcastAllReminders = () => {
         message: 'Sistem akan memproses seluruh Action Plan yang mendekati batas waktu dan mengirimkan pengingat ke toko terkait.',
         confirmText: 'Jalankan Pengingat',
         type: 'primary',
-        action: () => router.post(route('admin.action-plans.broadcast-reminders'), {}, { preserveScroll: true }),
+        action: () => router.post(route('coordinator.action-plans.broadcast-reminders'), {}, { preserveScroll: true }),
     });
 };
 </script>
 
 <template>
     <AppLayout title="Action Plans">
-        <Head title="Action Plans" />
+        <Head title="Action Plans — Koordinator" />
 
         <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -201,7 +201,7 @@ const broadcastAllReminders = () => {
                                     Ingatkan WA
                                 </button>
                                 <Link
-                                    :href="route('admin.findings.show', ap.finding_id)"
+                                    :href="route('coordinator.findings.show', ap.finding_id)"
                                     class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                                 >
                                     Detail

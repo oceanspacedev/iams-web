@@ -113,6 +113,6 @@ class Finding extends Model
 
     public function canUploadEvidence(): bool
     {
-        return in_array($this->status, [self::STATUS_IN_PROGRESS, self::STATUS_OPEN]);
+        return !in_array($this->status, [self::STATUS_VERIFIED, self::STATUS_CLOSED]);
     }
 }

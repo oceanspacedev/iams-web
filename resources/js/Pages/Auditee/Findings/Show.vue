@@ -4,6 +4,8 @@ import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import WorkflowTracker from '@/Components/WorkflowTracker.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
     finding: {
@@ -29,13 +31,22 @@ const actionPlanForm = useForm({
     deadline: props.finding.action_plan?.deadline || '',
 });
 
+const isUpdating = ref(!!props.finding.action_plan);
+
 const submitActionPlan = () => {
-    actionPlanForm.post(route('auditee.action-plans.store', props.finding.id), {
-        preserveScroll: true,
-    });
+    if (isUpdating.value) {
+        actionPlanForm.patch(route('auditee.action-plans.update', props.finding.id), {
+            preserveScroll: true,
+        });
+    } else {
+        actionPlanForm.post(route('auditee.action-plans.store', props.finding.id), {
+            preserveScroll: true,
+            onSuccess: () => (isUpdating.value = true),
+        });
+    }
 };
 
-// Evidence Upload Form
+// Evidence Form
 const evidenceForm = useForm({
     file: null,
     description: '',
@@ -44,12 +55,17 @@ const evidenceForm = useForm({
 const fileInputRef = ref(null);
 
 const handleFileChange = (e) => {
-    evidenceForm.file = e.target.files[0];
+    evidenceForm.file = e.target.files[0] || null;
+};
+
+const handleFileUpload = (e) => {
+    evidenceForm.file = e.target.files[0] || null;
 };
 
 const submitEvidence = () => {
     evidenceForm.post(route('auditee.evidences.store', props.finding.id), {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             evidenceForm.reset();
             if (fileInputRef.value) fileInputRef.value.value = '';
@@ -57,12 +73,41 @@ const submitEvidence = () => {
     });
 };
 
-const deleteEvidence = (evidenceId) => {
-    if (confirm('Hapus bukti perbaikan ini?')) {
-        router.delete(route('auditee.evidences.destroy', evidenceId), {
-            preserveScroll: true,
-        });
+const confirmModal = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'primary',
+    action: null,
+});
+
+const openConfirm = (config) => {
+    confirmModal.value = {
+        show: true,
+        title: config.title || 'Konfirmasi Tindakan',
+        message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
+        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        type: config.type || 'primary',
+        action: config.action,
+    };
+};
+
+const handleConfirm = () => {
+    if (confirmModal.value.action) {
+        confirmModal.value.action();
     }
+    confirmModal.value.show = false;
+};
+
+const deleteEvidence = (evidenceId) => {
+    openConfirm({
+        title: 'Hapus Bukti Perbaikan (Evidence)',
+        message: 'Apakah Anda yakin ingin menghapus file foto bukti perbaikan ini?',
+        confirmText: 'Ya, Hapus Bukti',
+        type: 'danger',
+        action: () => router.delete(route('auditee.evidences.destroy', evidenceId), { preserveScroll: true }),
+    });
 };
 </script>
 
@@ -215,19 +260,36 @@ const deleteEvidence = (evidenceId) => {
                     </h2>
 
                     <!-- Upload Form (if open/in progress) -->
-                    <div v-if="finding.can_upload_evidence" class="bg-gray-50/70 p-4 rounded border border-gray-200 space-y-3">
-                        <div class="font-semibold text-gray-900">Unggah Bukti Baru (Foto / Dokumen)</div>
+                    <div v-if="finding.can_upload_evidence" class="bg-gray-50/70 p-4 rounded-lg border border-gray-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="font-semibold text-gray-900">Unggah Bukti Perbaikan (Foto / Dokumen)</div>
+                            <span class="text-[11px] text-gray-500">Maks. 10 MB (JPG, PNG, PDF, XLSX, DOCX)</span>
+                        </div>
+
+                        <!-- Rejected Notice Banner if any evidence rejected -->
+                        <div
+                            v-if="finding.evidences.some(e => e.verification_status === 'REJECTED')"
+                            class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 text-amber-900"
+                        >
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div class="text-xs">
+                                <strong class="font-bold">Bukti Sebelumnya Ditolak Auditor:</strong> Silakan tinjau catatan penolakan pada daftar bukti di bawah, lalu unggah file bukti perbaikan baru yang telah disesuaikan.
+                            </div>
+                        </div>
+
                         <form @submit.prevent="submitEvidence" class="space-y-3">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block font-medium text-gray-700 mb-1">File Bukti <span class="text-red-500">*</span></label>
+                                    <label class="block font-medium text-gray-700 mb-1">Pilih File Bukti <span class="text-red-500">*</span></label>
                                     <input
                                         ref="fileInputRef"
                                         type="file"
                                         required
                                         accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx"
                                         @change="handleFileChange"
-                                        class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-xs file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50"
+                                        class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-xs file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50 cursor-pointer"
                                     />
                                     <div v-if="evidenceForm.errors.file" class="text-red-600 text-[11px] mt-1">{{ evidenceForm.errors.file }}</div>
                                 </div>
@@ -237,7 +299,7 @@ const deleteEvidence = (evidenceId) => {
                                     <input
                                         v-model="evidenceForm.description"
                                         type="text"
-                                        placeholder="Contoh: Foto fisik stok ulang, Berita Acara..."
+                                        placeholder="Contoh: Foto fisik stok ulang revisi, Berita Acara..."
                                         class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                                     />
                                     <div v-if="evidenceForm.errors.description" class="text-red-600 text-[11px] mt-1">{{ evidenceForm.errors.description }}</div>
@@ -248,9 +310,13 @@ const deleteEvidence = (evidenceId) => {
                                 <button
                                     type="submit"
                                     :disabled="evidenceForm.processing"
-                                    class="px-4 py-1.5 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-xs"
+                                    class="px-4 py-1.5 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-xs inline-flex items-center gap-1.5"
                                 >
-                                    {{ evidenceForm.processing ? 'Mengunggah...' : 'Unggah Bukti' }}
+                                    <svg v-if="evidenceForm.processing" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>{{ evidenceForm.processing ? 'Mengunggah...' : 'Unggah Bukti Baru' }}</span>
                                 </button>
                             </div>
                         </form>
@@ -336,33 +402,20 @@ const deleteEvidence = (evidenceId) => {
                     </div>
                 </div>
 
-                <!-- Workflow Step Tracker -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 mb-4">
-                        Workflow Status
-                    </h3>
-
-                    <div class="space-y-3">
-                        <div
-                            v-for="step in ['OPEN', 'IN_PROGRESS', 'WAITING_VERIFICATION', 'VERIFIED', 'CLOSED']"
-                            :key="step"
-                            class="flex items-center gap-2.5"
-                            :class="finding.status === step ? 'font-semibold text-blue-700' : 'text-gray-400'"
-                        >
-                            <div
-                                class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-                                :class="finding.status === step ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 border border-gray-200'"
-                            >
-                                ✓
-                            </div>
-                            <span>{{ step.replace('_', ' ') }}</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
-                        * Catatan: Penutupan finding (CLOSED) hanya dapat dilakukan oleh Auditor setelah verifikasi disetujui.
-                    </div>
-                </div>
+                <!-- Workflow Step Tracker (Live Animated) -->
+                <WorkflowTracker :status="finding.status" />
             </div>
         </div>
+
+        <!-- Modern Action Confirmation Modal -->
+        <ConfirmModal
+            :show="confirmModal.show"
+            :title="confirmModal.title"
+            :message="confirmModal.message"
+            :confirm-text="confirmModal.confirmText"
+            :type="confirmModal.type"
+            @confirm="handleConfirm"
+            @close="confirmModal.show = false"
+        />
     </AppLayout>
 </template>

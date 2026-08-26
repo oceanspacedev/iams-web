@@ -49,13 +49,12 @@ class EvidenceVerificationController extends Controller
             'rejection_reason'    => null,
         ]);
 
-        // If all evidences are approved, move finding to VERIFIED
+        // A finding moves to VERIFIED if there are NO PENDING evidences and at least one APPROVED evidence
         $finding = $evidence->finding;
-        $allApproved = $finding->evidences()
-            ->where('verification_status', '!=', 'APPROVED')
-            ->doesntExist();
+        $hasPending = $finding->evidences()->where('verification_status', 'PENDING')->exists();
+        $hasApproved = $finding->evidences()->where('verification_status', 'APPROVED')->exists();
 
-        if ($allApproved && $finding->evidences()->exists()) {
+        if (!$hasPending && $hasApproved) {
             $finding->update(['status' => Finding::STATUS_VERIFIED]);
         }
 
@@ -79,8 +78,15 @@ class EvidenceVerificationController extends Controller
             'rejection_reason'    => $request->rejection_reason,
         ]);
 
-        // Move finding back to IN_PROGRESS
-        $evidence->finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
+        $finding = $evidence->finding;
+        $hasPending = $finding->evidences()->where('verification_status', 'PENDING')->exists();
+
+        // If there are no other pending evidences, move finding status back to IN_PROGRESS
+        if (!$hasPending) {
+            $finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
+        } else {
+            $finding->update(['status' => Finding::STATUS_WAITING_VERIFICATION]);
+        }
 
         \App\Services\WhatsAppService::notifyEvidenceVerified($evidence);
 

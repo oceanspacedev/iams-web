@@ -3,10 +3,6 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
-    audit: {
-        type: Object,
-        required: true,
-    },
     stores: {
         type: Array,
         default: () => [],
@@ -15,37 +11,43 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    suggested_number: {
+        type: String,
+        default: '',
+    },
 });
 
+const today = new Date().toISOString().split('T')[0];
+
 const form = useForm({
-    audit_number: props.audit.audit_number,
-    title: props.audit.title || '',
-    store_id: props.audit.store_id,
-    auditor_id: props.audit.auditor_id,
-    audit_date: props.audit.audit_date,
-    audit_time: props.audit.audit_time || '09:00',
-    location: props.audit.location || '',
-    status: props.audit.status,
-    notes: props.audit.notes || '',
+    audit_number: props.suggested_number,
+    title: '',
+    store_id: '',
+    auditor_id: '',
+    audit_date: today,
+    audit_time: '09:00',
+    location: '',
+    status: 'PLANNED',
+    notes: '',
 });
 
 const submit = () => {
-    form.put(route('admin.audits.update', props.audit.id));
+    form.post(route('coordinator.audits.store'));
 };
 </script>
 
 <template>
-    <AppLayout :title="`Edit Audit - ${audit.audit_number}`">
-        <Head :title="`Edit Audit - ${audit.audit_number}`" />
+    <AppLayout title="Jadwalkan Audit Baru">
+        <Head title="Jadwalkan Audit Baru — Koordinator" />
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('admin.audits.index')" class="hover:text-blue-600">Audits</Link>
+                <Link :href="route('coordinator.audits.index')" class="hover:text-blue-600">Audits</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">{{ audit.audit_number }}</span>
+                <span class="text-gray-900 font-medium">Jadwalkan Audit</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Pelaksanaan Audit</h1>
-            <p class="text-xs text-gray-500 mt-1">Perbarui detail pelaksanaan audit. Jadwal notifikasi akan disinkronkan secara otomatis.</p>
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Jadwalkan Penugasan Audit Baru</h1>
+            <p class="text-xs text-gray-500 mt-1">Pilih unit toko retail, tentukan auditor yang bertugas, tanggal & waktu audit. Jadwal notifikasi otomatis akan dihitung sistem.</p>
         </div>
 
         <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
@@ -106,6 +108,7 @@ const submit = () => {
                             required
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         >
+                            <option value="" disabled>Pilih Unit Toko</option>
                             <option v-for="s in stores" :key="s.id" :value="s.id">
                                 {{ s.name }} ({{ s.code }})
                             </option>
@@ -120,6 +123,7 @@ const submit = () => {
                             required
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         >
+                            <option value="" disabled>Pilih Auditor</option>
                             <option v-for="a in auditors" :key="a.id" :value="a.id">
                                 {{ a.name }}
                             </option>
@@ -158,13 +162,14 @@ const submit = () => {
                     <textarea
                         v-model="form.notes"
                         rows="3"
+                        placeholder="Catatan khusus, instruksi, atau ruang lingkup audit..."
                         class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     ></textarea>
                 </div>
 
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route('admin.audits.index')"
+                        :href="route('coordinator.audits.index')"
                         class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal
@@ -174,7 +179,7 @@ const submit = () => {
                         :disabled="form.processing"
                         class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
                     >
-                        {{ form.processing ? 'Menyimpan...' : 'Perbarui Audit' }}
+                        {{ form.processing ? 'Menyimpan...' : 'Jadwalkan Audit' }}
                     </button>
                 </div>
             </form>

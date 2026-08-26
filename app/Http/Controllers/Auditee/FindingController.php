@@ -48,7 +48,7 @@ class FindingController extends Controller
                     'verified_by'         => $e->verifier?->name,
                     'uploaded_at'         => $e->created_at->format('d M Y H:i'),
                     'file_url'            => $e->file_url,
-                    'can_delete'          => $e->uploaded_by === $request->user()->id && $e->verification_status === 'PENDING',
+                    'can_delete'          => $e->uploaded_by === $request->user()->id && in_array($e->verification_status, ['PENDING', 'REJECTED']),
                 ]),
                 'can_upload_evidence' => $finding->canUploadEvidence(),
                 'can_edit_action_plan' => in_array($finding->status, [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS]),
