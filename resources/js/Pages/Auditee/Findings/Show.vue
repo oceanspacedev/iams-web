@@ -23,25 +23,66 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
-// Action Plan Form
+const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    }).format(date);
+};
+
+const getInitialDeadline = () => {
+    if (!props.finding.action_plan?.deadline) return '';
+    return typeof props.finding.action_plan.deadline === 'string'
+        ? props.finding.action_plan.deadline.substring(0, 10)
+        : '';
+};
+
+// Action Plan State & Form
+const isEditing = ref(!props.finding.action_plan);
+
 const actionPlanForm = useForm({
     action_plan: props.finding.action_plan?.action_plan || '',
     response: props.finding.action_plan?.response || '',
     pic: props.finding.action_plan?.pic || '',
-    deadline: props.finding.action_plan?.deadline || '',
+    deadline: getInitialDeadline(),
 });
 
-const isUpdating = ref(!!props.finding.action_plan);
+const startEditing = () => {
+    actionPlanForm.action_plan = props.finding.action_plan?.action_plan || '';
+    actionPlanForm.response = props.finding.action_plan?.response || '';
+    actionPlanForm.pic = props.finding.action_plan?.pic || '';
+    actionPlanForm.deadline = getInitialDeadline();
+    actionPlanForm.clearErrors();
+    isEditing.value = true;
+};
+
+const cancelEditing = () => {
+    actionPlanForm.action_plan = props.finding.action_plan?.action_plan || '';
+    actionPlanForm.response = props.finding.action_plan?.response || '';
+    actionPlanForm.pic = props.finding.action_plan?.pic || '';
+    actionPlanForm.deadline = getInitialDeadline();
+    actionPlanForm.clearErrors();
+    isEditing.value = false;
+};
 
 const submitActionPlan = () => {
-    if (isUpdating.value) {
+    if (props.finding.action_plan) {
         actionPlanForm.patch(route('auditee.action-plans.update', props.finding.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                isEditing.value = false;
+            },
         });
     } else {
         actionPlanForm.post(route('auditee.action-plans.store', props.finding.id), {
             preserveScroll: true,
-            onSuccess: () => (isUpdating.value = true),
+            onSuccess: () => {
+                isEditing.value = false;
+            },
         });
     }
 };
@@ -176,10 +217,46 @@ const deleteEvidence = (evidenceId) => {
                 <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-4">
                     <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 flex items-center justify-between">
                         <span>2. Rencana Tindak Lanjut (Action Plan)</span>
-                        <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
+                        <div class="flex items-center gap-2">
+                            <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
+                            <button
+                                v-if="finding.action_plan && !isEditing && finding.can_edit_action_plan"
+                                type="button"
+                                @click="startEditing"
+                                class="px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
+                            >
+                                Edit
+                            </button>
+                        </div>
                     </h2>
 
-                    <form @submit.prevent="submitActionPlan" class="space-y-4">
+                    <!-- View Mode (Read-Only setelah disimpan) -->
+                    <div v-if="finding.action_plan && !isEditing" class="space-y-4">
+                        <div>
+                            <div class="text-gray-500 font-medium mb-1">Rencana Perbaikan (Action Plan):</div>
+                            <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium whitespace-pre-line">{{ finding.action_plan.action_plan }}</p>
+                        </div>
+
+                        <div>
+                            <div class="text-gray-500 font-medium mb-1">Tanggapan / Response Toko:</div>
+                            <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium whitespace-pre-line">{{ finding.action_plan.response }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 bg-gray-50/70 p-3 rounded border border-gray-100">
+                            <div>
+                                <span class="text-gray-500 font-medium">PIC Perbaikan:</span>
+                                <div class="font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.pic }}</div>
+                            </div>
+
+                            <div>
+                                <span class="text-gray-500 font-medium">Target Deadline:</span>
+                                <div class="font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit / Input Form Mode -->
+                    <form v-else @submit.prevent="submitActionPlan" class="space-y-4">
                         <div>
                             <label class="block font-medium text-gray-700 mb-1.5">
                                 Rencana Perbaikan (Action Plan) <span class="text-red-500">*</span>
@@ -241,11 +318,19 @@ const deleteEvidence = (evidenceId) => {
                             </div>
                         </div>
 
-                        <div v-if="finding.can_edit_action_plan" class="pt-2 flex justify-end">
+                        <div v-if="finding.can_edit_action_plan" class="pt-2 flex items-center justify-end gap-2">
+                            <button
+                                v-if="finding.action_plan"
+                                type="button"
+                                @click="cancelEditing"
+                                class="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                Batal
+                            </button>
                             <button
                                 type="submit"
                                 :disabled="actionPlanForm.processing"
-                                class="px-4 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
+                                class="px-4 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
                             >
                                 {{ actionPlanForm.processing ? 'Menyimpan...' : 'Simpan Action Plan' }}
                             </button>

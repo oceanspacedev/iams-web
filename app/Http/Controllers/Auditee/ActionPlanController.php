@@ -17,7 +17,7 @@ class ActionPlanController extends Controller
             'action_plan' => 'required|string',
             'response'    => 'required|string',
             'pic'         => 'required|string|max:255',
-            'deadline'    => 'required|date|after_or_equal:today',
+            'deadline'    => 'required|date',
         ]);
 
         $finding->actionPlan()->updateOrCreate(

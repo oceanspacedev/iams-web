@@ -31,9 +31,9 @@ class DashboardController extends Controller
             ->map(fn ($audit) => [
                 'id'             => $audit->id,
                 'audit_number'   => $audit->audit_number,
-                'store'          => $audit->store->name,
-                'auditor'        => $audit->auditor->name,
-                'audit_date'     => $audit->audit_date->format('d M Y'),
+                'store'          => $audit->store?->name ?? '—',
+                'auditor'        => $audit->auditor?->name ?? '—',
+                'audit_date'     => $audit->audit_date?->format('d M Y') ?? '—',
                 'status'         => $audit->status,
                 'findings_count' => $audit->findings_count,
             ]);
@@ -44,9 +44,9 @@ class DashboardController extends Controller
             ->get()
             ->map(fn ($f) => [
                 'id'           => $f->id,
-                'audit_number' => $f->audit->audit_number,
-                'store'        => $f->audit->store->name,
-                'category'     => $f->category->name,
+                'audit_number' => $f->audit?->audit_number ?? '—',
+                'store'        => $f->audit?->store?->name ?? '—',
+                'category'     => $f->category?->name ?? '—',
                 'finding'      => \Str::limit($f->finding, 50),
                 'loss_amount'  => $f->loss_amount,
                 'severity'     => $f->severity,
