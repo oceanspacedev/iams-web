@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -41,8 +41,11 @@ const getInitialDeadline = () => {
         : '';
 };
 
+// Check if action plan has already been filled with content
+const hasActionPlan = computed(() => Boolean(props.finding.action_plan && props.finding.action_plan.action_plan));
+
 // Action Plan State & Form
-const isEditing = ref(!props.finding.action_plan);
+const isEditing = ref(!hasActionPlan.value);
 
 const actionPlanForm = useForm({
     action_plan: props.finding.action_plan?.action_plan || '',
@@ -66,7 +69,9 @@ const cancelEditing = () => {
     actionPlanForm.pic = props.finding.action_plan?.pic || '';
     actionPlanForm.deadline = getInitialDeadline();
     actionPlanForm.clearErrors();
-    isEditing.value = false;
+    if (hasActionPlan.value) {
+        isEditing.value = false;
+    }
 };
 
 const submitActionPlan = () => {
@@ -220,18 +225,18 @@ const deleteEvidence = (evidenceId) => {
                         <div class="flex items-center gap-2">
                             <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
                             <button
-                                v-if="finding.action_plan && !isEditing && finding.can_edit_action_plan"
+                                v-if="hasActionPlan && !isEditing && finding.can_edit_action_plan"
                                 type="button"
                                 @click="startEditing"
                                 class="px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
                             >
-                                Edit
+                                Edit Action Plan
                             </button>
                         </div>
                     </h2>
 
                     <!-- View Mode (Read-Only setelah disimpan) -->
-                    <div v-if="finding.action_plan && !isEditing" class="space-y-4">
+                    <div v-if="hasActionPlan && !isEditing" class="space-y-4">
                         <div>
                             <div class="text-gray-500 font-medium mb-1">Rencana Perbaikan (Action Plan):</div>
                             <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium whitespace-pre-line">{{ finding.action_plan.action_plan }}</p>
@@ -256,7 +261,7 @@ const deleteEvidence = (evidenceId) => {
                     </div>
 
                     <!-- Edit / Input Form Mode -->
-                    <form v-else @submit.prevent="submitActionPlan" class="space-y-4">
+                    <form v-else-if="finding.can_edit_action_plan" @submit.prevent="submitActionPlan" class="space-y-4">
                         <div>
                             <label class="block font-medium text-gray-700 mb-1.5">
                                 Rencana Perbaikan (Action Plan) <span class="text-red-500">*</span>
@@ -318,9 +323,9 @@ const deleteEvidence = (evidenceId) => {
                             </div>
                         </div>
 
-                        <div v-if="finding.can_edit_action_plan" class="pt-2 flex items-center justify-end gap-2">
+                        <div class="pt-2 flex items-center justify-end gap-2">
                             <button
-                                v-if="finding.action_plan"
+                                v-if="hasActionPlan"
                                 type="button"
                                 @click="cancelEditing"
                                 class="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
@@ -332,10 +337,15 @@ const deleteEvidence = (evidenceId) => {
                                 :disabled="actionPlanForm.processing"
                                 class="px-4 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
                             >
-                                {{ actionPlanForm.processing ? 'Menyimpan...' : 'Simpan Action Plan' }}
+                                {{ actionPlanForm.processing ? 'Menyimpan...' : (hasActionPlan ? 'Simpan Perubahan' : 'Simpan Action Plan') }}
                             </button>
                         </div>
                     </form>
+
+                    <!-- Empty state jika tidak bisa edit dan belum pernah diisi -->
+                    <div v-else class="p-4 bg-gray-50 rounded border border-dashed border-gray-200 text-center text-gray-500 text-xs">
+                        Belum ada rencana tindak lanjut yang diisi.
+                    </div>
                 </div>
 
                 <!-- 3. Upload & Bukti Perbaikan (Evidences) -->
