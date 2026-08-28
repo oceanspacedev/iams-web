@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('AuditFlow')
+            ->brandName('Sistem Audit (IAMS)')
             ->colors([
                 'primary' => Color::hex('#2563EB'), // Blue-600 — corporate accent
             ])

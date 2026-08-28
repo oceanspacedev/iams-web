@@ -3,11 +3,12 @@ import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import FlashMessage from '@/Components/FlashMessage.vue';
 import ShimmerLoader from '@/Components/ShimmerLoader.vue';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 const props = defineProps({
     title: {
         type: String,
-        default: 'AuditFlow',
+        default: 'Sistem Audit (IAMS)',
     },
 });
 
@@ -97,15 +98,16 @@ const logout = () => {
             :class="isCollapsed ? 'w-[68px]' : 'w-64'"
         >
             <!-- Brand & Toggle Header -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-[#0B0F17] shrink-0">
-                <div v-if="!isCollapsed" class="overflow-hidden whitespace-nowrap pl-2">
-                    <div class="text-base font-bold text-white tracking-tight">AuditFlow</div>
-                    <div class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Retail System</div>
+            <div class="h-16 flex items-center justify-between px-3.5 border-b border-gray-800 bg-[#0B0F17] shrink-0">
+                <div v-if="!isCollapsed" class="flex items-center gap-2.5 overflow-hidden whitespace-nowrap pl-1">
+                    <ApplicationLogo size="w-7 h-7" />
+                    <div>
+                        <div class="text-sm font-bold text-white tracking-tight leading-tight">IAMS</div>
+                        <div class="text-[9px] text-gray-400 font-medium uppercase tracking-wider">Sistem Audit</div>
+                    </div>
                 </div>
                 <div v-else class="mx-auto">
-                    <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                        AF
-                    </div>
+                    <ApplicationLogo size="w-7 h-7" />
                 </div>
 
                 <button
@@ -500,10 +502,13 @@ const logout = () => {
 
             <!-- Mobile Drawer Menu -->
             <aside class="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#111827] text-gray-300 border-r border-gray-800 shadow-2xl z-10">
-                <div class="h-16 flex items-center justify-between px-5 border-b border-gray-800 bg-[#0B0F17]">
-                    <div>
-                        <div class="text-base font-bold text-white tracking-tight">AuditFlow</div>
-                        <div class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Retail System</div>
+                <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-[#0B0F17]">
+                    <div class="flex items-center gap-2.5">
+                        <ApplicationLogo size="w-7 h-7" />
+                        <div>
+                            <div class="text-sm font-bold text-white tracking-tight leading-tight">IAMS</div>
+                            <div class="text-[9px] text-gray-400 font-medium uppercase tracking-wider">Sistem Audit</div>
+                        </div>
                     </div>
                     <button
                         @click="mobileMenuOpen = false"

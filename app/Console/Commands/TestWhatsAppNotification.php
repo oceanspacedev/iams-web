@@ -16,11 +16,12 @@ class TestWhatsAppNotification extends Command
 
         $this->info("Mengirim pesan tes WhatsApp ke: {$phone}...");
 
-        $text = "🔔 *AuditFlow Enterprise Notification Test*\n\n"
-            . "Halo! Ini adalah pesan uji coba integrasi WhatsApp Gateway WagHub pada sistem Audit Management Retail.\n\n"
-            . "Waktu: " . now()->format('d M Y H:i:s') . "\n"
-            . "Status: *Terhubung Aktif*\n\n"
-            . "_AuditFlow System_";
+        $text = "🔔 *Sistem Audit (IAMS) Notification Test*\n\n"
+            . "Halo *{$name}*,\n"
+            . "Ini adalah pesan uji coba integrasi WhatsApp Gateway WagHub untuk sistem audit.\n\n"
+            . "• *Waktu Kirim:* " . now()->format('d M Y H:i:s') . "\n"
+            . "• *Status:* Berhasil Terhubung ✅\n\n"
+            . "_Sistem Audit (IAMS)_";
 
         $success = WhatsAppService::send($phone, $text, 'notification');
 

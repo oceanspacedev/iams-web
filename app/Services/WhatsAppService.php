@@ -89,7 +89,7 @@ class WhatsAppService
                 . "• *Tanggal:* {$audit->audit_date->format('d M Y')}\n"
                 . "• *Catatan:* " . ($audit->notes ?: '-') . "\n\n"
                 . "Silakan login ke portal Auditor untuk melihat detail penugasan.\n"
-                . "_AuditFlow Enterprise System_";
+                . "_Sistem Audit (IAMS)_";
 
             self::send($audit->auditor->phone, $msg);
         }
@@ -105,7 +105,7 @@ class WhatsAppService
                         . "• *Auditor Bertugas:* {$audit->auditor->name}\n"
                         . "• *Tanggal Pelaksanaan:* {$audit->audit_date->format('d M Y')}\n\n"
                         . "Harap persiapkan seluruh dokumen dan operasional toko.\n"
-                        . "_AuditFlow Enterprise System_";
+                        . "_Sistem Audit (IAMS)_";
 
                     self::send($auditee->phone, $msg);
                 }
@@ -137,7 +137,7 @@ class WhatsAppService
                     . "• *Temuan:* {$finding->finding}\n"
                     . "• *Rekomendasi:* {$finding->recommendation}\n\n"
                     . "Mohon segera mengisi *Action Plan & Target Deadline* di portal Toko.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
 
                 self::send($auditee->phone, $msg);
             }
@@ -163,7 +163,7 @@ class WhatsAppService
                 . "• *Keterangan Bukti:* {$evidence->description}\n"
                 . "• *Diunggah Oleh:* " . ($evidence->uploader->name ?? 'Toko') . "\n\n"
                 . "Silakan buka menu *Verification Queue* di portal Auditor untuk memverifikasi.\n"
-                . "_AuditFlow Enterprise System_";
+                . "_Sistem Audit (IAMS)_";
 
             self::send($auditor->phone, $msg);
         }
@@ -191,7 +191,7 @@ class WhatsAppService
                     . "• *Status:* *{$statusText}*\n"
                     . "• *Temuan:* " . \Illuminate\Support\Str::limit($evidence->finding->finding, 70) . "\n"
                     . ($isApproved ? "" : "• *Alasan Penolakan:* " . ($evidence->rejection_reason ?: 'Harap perbaiki dan unggah ulang bukti yang valid.') . "\n")
-                    . "\n_AuditFlow Enterprise System_";
+                    . "\n_Sistem Audit (IAMS)_";
 
                 self::send($auditee->phone, $msg);
             }
@@ -217,7 +217,7 @@ class WhatsAppService
                     . "• *Kategori:* {$finding->category->name}\n"
                     . "• *Temuan:* {$finding->finding}\n\n"
                     . "Terima kasih atas kerja sama dan tindak lanjut perbaikan toko Anda.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
 
                 self::send($auditee->phone, $msg);
             }
@@ -249,7 +249,7 @@ class WhatsAppService
                 . "• *Severity Final:* *[{$finding->severity}]* ({$statusText})\n"
                 . ($finding->severity_notes ? "• *Catatan Koordinator:* {$finding->severity_notes}\n" : "")
                 . "• *Status Kunci:* 🔒 *Terkunci (Auditor tidak dapat mengubah lagi)*\n\n"
-                . "_AuditFlow Enterprise System_";
+                . "_Sistem Audit (IAMS)_";
 
             self::send($auditor->phone, $msg);
         }
@@ -281,7 +281,7 @@ class WhatsAppService
                     . "• *Batas Deadline:* *{$deadlineStr} (TERLAMBAT)*\n"
                     . "• *PIC Bertugas:* " . ($actionPlan->pic ?: '-') . "\n\n"
                     . "Mohon segera selesaikan tindakan perbaikan dan unggah bukti di portal Toko.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
             } elseif ($type === 'UNFILLED') {
                 $msg = "⏰ *PENGINGAT: PENGISIAN ACTION PLAN TOKO*\n\n"
                     . "Halo *{$auditee->name}* ({$store->name}),\n"
@@ -290,7 +290,7 @@ class WhatsAppService
                     . "• *Kategori:* {$actionPlan->finding->category->name}\n"
                     . "• *Temuan:* " . \Illuminate\Support\Str::limit($actionPlan->finding->finding, 70) . "\n\n"
                     . "Harap segera login ke portal Toko untuk menentukan rencana perbaikan, PIC, dan target deadline.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
             } else {
                 // UPCOMING
                 $msg = "⏰ *PENGINGAT DEADLINE ACTION PLAN*\n\n"
@@ -302,7 +302,7 @@ class WhatsAppService
                     . "• *Target Deadline:* *{$deadlineStr}*\n"
                     . "• *PIC:* " . ($actionPlan->pic ?: '-') . "\n\n"
                     . "Pastikan perbaikan sudah selesai dan bukti telah diunggah sebelum deadline berakhir.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
             }
 
             if (self::send($auditee->phone, $msg)) {
@@ -330,7 +330,7 @@ class WhatsAppService
                 . "• *Toko:* {$audit->store->name} ({$audit->store->code})\n"
                 . "• *Tanggal:* {$audit->audit_date->format('d M Y')}\n\n"
                 . "Harap siapkan perlengkapan audit dan berkas checklist.\n"
-                . "_AuditFlow Enterprise System_";
+                . "_Sistem Audit (IAMS)_";
 
             if (self::send($audit->auditor->phone, $msg)) {
                 $sentCount++;
@@ -348,7 +348,7 @@ class WhatsAppService
                         . "• *Auditor:* {$audit->auditor->name}\n"
                         . "• *Tanggal:* {$audit->audit_date->format('d M Y')}\n\n"
                         . "Harap pastikan kesiapan personil toko dan dokumen terkait.\n"
-                        . "_AuditFlow Enterprise System_";
+                        . "_Sistem Audit (IAMS)_";
 
                     if (self::send($auditee->phone, $msg)) {
                         $sentCount++;

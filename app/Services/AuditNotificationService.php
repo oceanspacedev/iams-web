@@ -84,7 +84,7 @@ class AuditNotificationService
                     . "• *Auditor Bertugas:* {$auditorName}\n"
                     . ($audit->notes ? "• *Catatan:* {$audit->notes}\n" : "")
                     . "\nMohon mempersiapkan seluruh kebutuhan, personil, dan dokumen audit.\n"
-                    . "_AuditFlow Enterprise System_";
+                    . "_Sistem Audit (IAMS)_";
 
                 $sent = WhatsAppService::send($target['phone'], $msg);
                 if ($sent) {
