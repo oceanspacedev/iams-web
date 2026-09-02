@@ -12,14 +12,22 @@ class AuditController extends Controller
 {
     public function index(Request $request): Response
     {
-        $audits = Audit::forAuditor($request->user()->id)
-            ->with(['store'])
+        $query = Audit::forAuditor($request->user()->id)
+            ->with(['store', 'category'])
             ->withCount('findings')
-            ->orderBy('audit_date', 'desc')
-            ->get()
+            ->orderBy('audit_date', 'desc');
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->query('category_id'));
+        }
+
+        $audits = $query->get()
             ->map(fn ($audit) => [
                 'id'             => $audit->id,
                 'audit_number'   => $audit->audit_number,
+                'title'          => $audit->title,
+                'category'       => $audit->category?->name ?? '—',
+                'category_id'    => $audit->category_id,
                 'store'          => $audit->store->name,
                 'store_area'     => $audit->store->area,
                 'audit_date'     => $audit->audit_date->format('d M Y'),
@@ -29,7 +37,11 @@ class AuditController extends Controller
             ]);
 
         return Inertia::render('Auditor/Audits/Index', [
-            'audits' => $audits,
+            'audits'     => $audits,
+            'categories' => \App\Models\AuditCategory::active()->orderBy('name')->get(['id', 'name']),
+            'filters'    => [
+                'category_id' => $request->query('category_id', ''),
+            ],
         ]);
     }
 
@@ -38,8 +50,11 @@ class AuditController extends Controller
         $this->authorize('view', $audit);
 
         $audit->load([
+            'category',
             'store',
             'auditor',
+            'auditors',
+            'documents.uploader',
             'findings.category',
             'findings.sop',
             'findings.actionPlan',
@@ -50,11 +65,26 @@ class AuditController extends Controller
             'audit' => [
                 'id'           => $audit->id,
                 'audit_number' => $audit->audit_number,
-                'store'        => $audit->store->only(['name', 'code', 'area', 'regional']),
+                'title'        => $audit->title,
+                'category'     => $audit->category?->name,
+                'category_id'  => $audit->category_id,
+                'store'        => $audit->store->only(['name', 'code', 'business_entity', 'type', 'area', 'regional']),
                 'auditor'      => $audit->auditor->only(['id', 'name', 'email']),
+                'auditors'     => $audit->auditors->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]),
                 'audit_date'   => $audit->audit_date->format('d M Y'),
                 'status'       => $audit->status,
                 'notes'        => $audit->notes,
+                'documents'    => $audit->documents->map(fn ($d) => [
+                    'id'            => $d->id,
+                    'document_type' => $d->document_type,
+                    'title'         => $d->title,
+                    'file_name'     => $d->file_name,
+                    'file_size'     => $d->file_size,
+                    'file_url'      => $d->file_url,
+                    'notes'         => $d->notes,
+                    'uploaded_by'   => $d->uploader->name,
+                    'created_at'    => $d->created_at->format('d M Y H:i'),
+                ]),
                 'findings'     => $audit->findings->map(fn ($f) => [
                     'id'            => $f->id,
                     'category'      => $f->category->name,

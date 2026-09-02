@@ -194,19 +194,35 @@ const fillCredentials = (email) => {
                             <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center mb-2.5">
                                 Akun Demo (Password: password)
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 <button
                                     type="button"
                                     @click="fillCredentials('admin@auditflow.com')"
-                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition"
+                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition cursor-pointer"
                                 >
                                     <div class="font-semibold text-slate-900">Admin</div>
                                     <div class="text-[10px] text-slate-500 truncate">admin@auditflow.com</div>
                                 </button>
                                 <button
                                     type="button"
+                                    @click="fillCredentials('chief@auditflow.com')"
+                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition cursor-pointer"
+                                >
+                                    <div class="font-semibold text-slate-900">Chief Auditor</div>
+                                    <div class="text-[10px] text-slate-500 truncate">chief@auditflow.com</div>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="fillCredentials('asmen@auditflow.com')"
+                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition cursor-pointer"
+                                >
+                                    <div class="font-semibold text-slate-900">Asmen</div>
+                                    <div class="text-[10px] text-slate-500 truncate">asmen@auditflow.com</div>
+                                </button>
+                                <button
+                                    type="button"
                                     @click="fillCredentials('kordinator@auditflow.com')"
-                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition"
+                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition cursor-pointer"
                                 >
                                     <div class="font-semibold text-slate-900">Koordinator</div>
                                     <div class="text-[10px] text-slate-500 truncate">kordinator@auditflow.com</div>
@@ -214,18 +230,10 @@ const fillCredentials = (email) => {
                                 <button
                                     type="button"
                                     @click="fillCredentials('auditor@auditflow.com')"
-                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition"
+                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition cursor-pointer"
                                 >
                                     <div class="font-semibold text-slate-900">Auditor</div>
                                     <div class="text-[10px] text-slate-500 truncate">auditor@auditflow.com</div>
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="fillCredentials('auditee@auditflow.com')"
-                                    class="px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-left transition"
-                                >
-                                    <div class="font-semibold text-slate-900">Auditee (Toko)</div>
-                                    <div class="text-[10px] text-slate-500 truncate">auditee@auditflow.com</div>
                                 </button>
                             </div>
                         </div>

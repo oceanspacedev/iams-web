@@ -1,11 +1,16 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
+import Pagination from '@/Components/Pagination.vue';
 
 const props = defineProps({
     audits: {
+        type: Array,
+        default: () => [],
+    },
+    categories: {
         type: Array,
         default: () => [],
     },
@@ -13,18 +18,33 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const statusFilter = ref('');
+const categoryFilter = ref('');
+const currentPage = ref(1);
 
 const filteredAudits = computed(() => {
     return props.audits.filter((audit) => {
+        const query = searchQuery.value.toLowerCase().trim();
         const matchesSearch =
-            audit.audit_number.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            audit.store.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            (audit.store_area && audit.store_area.toLowerCase().includes(searchQuery.value.toLowerCase()));
+            !query ||
+            (audit.audit_number && audit.audit_number.toLowerCase().includes(query)) ||
+            (audit.store && audit.store.toLowerCase().includes(query)) ||
+            (audit.store_area && audit.store_area.toLowerCase().includes(query)) ||
+            (audit.category && audit.category.toLowerCase().includes(query));
 
         const matchesStatus = !statusFilter.value || audit.status === statusFilter.value;
+        const matchesCategory = !categoryFilter.value || audit.category_id == categoryFilter.value || audit.category === categoryFilter.value;
 
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus && matchesCategory;
     });
+});
+
+watch([searchQuery, statusFilter, categoryFilter], () => {
+    currentPage.value = 1;
+});
+
+const paginatedAudits = computed(() => {
+    const start = (currentPage.value - 1) * 10;
+    return filteredAudits.value.slice(start, start + 10);
 });
 </script>
 
@@ -38,22 +58,36 @@ const filteredAudits = computed(() => {
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Daftar Penugasan Audit</h1>
                 <p class="text-xs text-gray-500 mt-1">Seluruh jadwal dan riwayat audit yang ditugaskan kepada Anda</p>
             </div>
+            <div>
+                <span class="text-xs text-gray-500 font-mono">
+                    {{ filteredAudits.length }} Penugasan terdaftar
+                </span>
+            </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-4 rounded border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div class="w-full sm:w-80">
+        <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-5 text-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div class="w-full sm:w-72">
                 <input
                     v-model="searchQuery"
                     type="text"
-                    placeholder="Cari nomor audit atau nama toko..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Cari nomor audit, nama toko, kategori..."
+                    class="w-full text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white"
                 />
             </div>
             <div class="w-full sm:w-auto flex items-center gap-3">
                 <select
+                    v-model="categoryFilter"
+                    class="text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white font-medium"
+                >
+                    <option value="">Semua Kategori Audit</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">
+                        {{ c.name }}
+                    </option>
+                </select>
+                <select
                     v-model="statusFilter"
-                    class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-1.5"
+                    class="text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white"
                 >
                     <option value="">Semua Status</option>
                     <option value="PLANNED">Planned</option>
@@ -64,53 +98,79 @@ const filteredAudits = computed(() => {
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
+        <!-- Clean Enterprise Table with 10-Item Pagination -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3.5">No. Audit</th>
-                            <th class="px-5 py-3.5">Toko / Lokasi</th>
-                            <th class="px-5 py-3.5">Tanggal Audit</th>
-                            <th class="px-5 py-3.5">Findings</th>
-                            <th class="px-5 py-3.5">Status</th>
-                            <th class="px-5 py-3.5 text-right">Aksi</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-44">No. Surat Tugas</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-44">Kategori Audit</th>
+                            <th class="px-4 py-3 min-w-[200px]">Toko & Lokasi</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-36">Tanggal Audit</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center w-28">Temuan</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center w-28">Status</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-right w-28">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200 bg-white">
                         <tr v-if="filteredAudits.length === 0">
-                            <td colspan="6" class="px-5 py-8 text-center text-gray-500">
-                                Tidak ada data audit yang sesuai kriteria pencarian.
+                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">
+                                Tidak ada penugasan audit yang ditemukan.
                             </td>
                         </tr>
                         <tr
-                            v-for="audit in filteredAudits"
+                            v-for="audit in paginatedAudits"
                             :key="audit.id"
-                            class="hover:bg-gray-50/70 transition-colors"
+                            class="hover:bg-slate-50/70 transition-colors"
                         >
-                            <td class="px-5 py-3.5 font-mono font-medium text-gray-900">
-                                {{ audit.audit_number }}
+                            <td class="px-4 py-3 align-middle whitespace-nowrap">
+                                <Link
+                                    :href="route('auditor.audits.show', audit.id)"
+                                    class="font-mono font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                                >
+                                    {{ audit.audit_number }}
+                                </Link>
+                                <div v-if="audit.title" class="text-[11px] text-gray-500 truncate max-w-[180px]">{{ audit.title }}</div>
                             </td>
-                            <td class="px-5 py-3.5">
+
+                            <td class="px-4 py-3 align-middle whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border"
+                                    :class="{
+                                        'bg-emerald-50 text-emerald-800 border-emerald-200': audit.category && audit.category.includes('Retail'),
+                                        'bg-amber-50 text-amber-800 border-amber-200': audit.category && audit.category.includes('Finance'),
+                                        'bg-indigo-50 text-indigo-800 border-indigo-200': audit.category && audit.category.includes('Distribusi'),
+                                        'bg-slate-100 text-slate-700 border-slate-200': !audit.category || audit.category === '—'
+                                    }"
+                                >
+                                    {{ audit.category || '—' }}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3 align-middle">
                                 <div class="font-medium text-gray-900">{{ audit.store }}</div>
-                                <div class="text-[11px] text-gray-500">{{ audit.store_area || '-' }}</div>
+                                <div class="text-[11px] text-gray-500 font-mono">{{ audit.store_area || audit.store_code }}</div>
                             </td>
-                            <td class="px-5 py-3.5 text-gray-600">
+
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 font-mono text-[11px]">
                                 {{ audit.audit_date }}
                             </td>
-                            <td class="px-5 py-3.5">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
                                     {{ audit.findings_count }} temuan
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5">
+
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
                                 <StatusBadge :status="audit.status" />
                             </td>
-                            <td class="px-5 py-3.5 text-right">
+
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-right">
                                 <Link
                                     :href="route('auditor.audits.show', audit.id)"
-                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                                    class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs"
                                 >
                                     Buka Audit
                                 </Link>
@@ -119,6 +179,14 @@ const filteredAudits = computed(() => {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Footer -->
+            <Pagination
+                :current-page="currentPage"
+                :per-page="10"
+                :total-items="filteredAudits.length"
+                @update:current-page="currentPage = $event"
+            />
         </div>
     </AppLayout>
 </template>

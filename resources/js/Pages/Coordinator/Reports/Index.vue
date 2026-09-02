@@ -1,5 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -13,6 +14,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    by_category: {
+        type: Array,
+        default: () => [],
+    },
     store_losses: {
         type: Array,
         default: () => [],
@@ -21,7 +26,17 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    total_findings: {
+        type: Number,
+        default: 0,
+    },
+    completion_rate: {
+        type: Number,
+        default: 0,
+    },
 });
+
+const exportDropdownOpen = ref(false);
 
 const formatRupiah = (number) => {
     if (!number) return 'Rp 0';
@@ -31,6 +46,100 @@ const formatRupiah = (number) => {
         minimumFractionDigits: 0,
     }).format(number);
 };
+
+// Robust calculations to ensure counts are always accurate
+const totalFindingsCount = computed(() => {
+    const fromSev = Object.values(props.by_severity || {}).reduce((a, b) => a + b, 0);
+    if (fromSev > 0) return fromSev;
+    const fromStatus = Object.values(props.by_status || {}).reduce((a, b) => a + b, 0);
+    if (fromStatus > 0) return fromStatus;
+    return props.total_findings || 0;
+});
+
+const calculatedCompletionRate = computed(() => {
+    const total = Object.values(props.by_status || {}).reduce((a, b) => a + b, 0);
+    const closed = props.by_status?.CLOSED || 0;
+    if (total > 0) {
+        return Math.round((closed / total) * 100);
+    }
+    return props.completion_rate || 0;
+});
+
+const highRiskCount = computed(() => {
+    return (props.by_severity.CRITICAL || 0) + (props.by_severity.MAJOR || 0);
+});
+
+// Color definitions
+const severityColors = {
+    CRITICAL: '#e11d48',
+    MAJOR: '#ea580c',
+    MINOR: '#2563eb',
+    OBSERVATION: '#64748b',
+};
+
+const statusColors = {
+    OPEN: '#ef4444',
+    IN_PROGRESS: '#f59e0b',
+    WAITING_VERIFICATION: '#0284c7',
+    VERIFIED: '#6366f1',
+    CLOSED: '#10b981',
+};
+
+// SVG Donut Calculations for Severity
+const severitySegments = computed(() => {
+    const total = Object.values(props.by_severity).reduce((a, b) => a + b, 0);
+    const C = 2 * Math.PI * 38; // ~238.761
+    let accumulated = 0;
+
+    return Object.entries(props.by_severity).map(([sev, count]) => {
+        const percent = total > 0 ? count / total : 0;
+        const length = percent * C;
+        const offset = -accumulated;
+        accumulated += length;
+        return {
+            key: sev,
+            count,
+            percent: Math.round(percent * 100),
+            color: severityColors[sev] || '#94a3b8',
+            dasharray: `${length} ${C - length}`,
+            dashoffset: offset,
+        };
+    });
+});
+
+// SVG Donut Calculations for Status
+const statusSegments = computed(() => {
+    const total = Object.values(props.by_status).reduce((a, b) => a + b, 0);
+    const C = 2 * Math.PI * 38;
+    let accumulated = 0;
+
+    return Object.entries(props.by_status).map(([st, count]) => {
+        const percent = total > 0 ? count / total : 0;
+        const length = percent * C;
+        const offset = -accumulated;
+        accumulated += length;
+        return {
+            key: st,
+            count,
+            percent: Math.round(percent * 100),
+            color: statusColors[st] || '#94a3b8',
+            dasharray: `${length} ${C - length}`,
+            dashoffset: offset,
+        };
+    });
+});
+
+// Max store loss for proportional bar chart
+const maxStoreLoss = computed(() => {
+    if (!props.store_losses.length) return 1;
+    const max = Math.max(...props.store_losses.map(s => s.total_loss));
+    return max > 0 ? max : 1;
+});
+
+// Top stores by loss
+const topLossStores = computed(() => {
+    return props.store_losses.filter(s => s.total_loss > 0).slice(0, 5);
+});
 </script>
 
 <template>
@@ -40,84 +149,328 @@ const formatRupiah = (number) => {
         <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
-                <p class="text-xs text-gray-500 mt-1">Distribusi severity risiko temuan, efektivitas tindak lanjut, dan ekspor data Excel</p>
+                <p class="text-xs text-gray-500 mt-1">Distribusi severity risiko temuan, efektivitas tindak lanjut, dan visualisasi grafik audit CSA</p>
             </div>
 
-            <!-- Export Buttons Toolbar -->
-            <div class="flex flex-wrap items-center gap-2">
-                <a
-                    :href="route('coordinator.reports.export-findings')"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition-colors"
+            <!-- Single Trigger Button & Smooth Dropdown Menu directly underneath -->
+            <div class="relative">
+                <button
+                    type="button"
+                    @click="exportDropdownOpen = !exportDropdownOpen"
+                    class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition-colors cursor-pointer"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <span>Download Laporan Excel</span>
+                    <svg
+                        class="w-3.5 h-3.5 text-emerald-200 transition-transform duration-200"
+                        :class="{ 'rotate-180': exportDropdownOpen }"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
-                    Download Excel: Seluruh Temuan (.xls)
-                </a>
+                </button>
 
-                <a
-                    :href="route('coordinator.reports.export-stores')"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-xs transition-colors"
-                >
-                    <svg class="w-4 h-4 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Download Excel: Rekap Toko (.xls)
-                </a>
+                <!-- Invisible overlay to close dropdown when clicking outside -->
+                <div
+                    v-if="exportDropdownOpen"
+                    class="fixed inset-0 z-20"
+                    @click="exportDropdownOpen = false"
+                ></div>
 
-                <a
-                    :href="route('coordinator.reports.export-summary')"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-xs transition-colors"
+                <!-- Smooth Dropdown menu directly below the button (no icons or emojis) -->
+                <Transition
+                    enter-active-class="transition ease-out duration-150"
+                    enter-from-class="transform opacity-0 scale-95 -translate-y-1"
+                    enter-to-class="transform opacity-100 scale-100 translate-y-0"
+                    leave-active-class="transition ease-in duration-100"
+                    leave-from-class="transform opacity-100 scale-100 translate-y-0"
+                    leave-to-class="transform opacity-0 scale-95 -translate-y-1"
                 >
-                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Ringkasan Eksekutif (.xls)
-                </a>
+                    <div
+                        v-if="exportDropdownOpen"
+                        class="absolute right-0 mt-1.5 w-56 rounded border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
+                    >
+                        <a
+                            :href="route('coordinator.reports.export-findings')"
+                            @click="exportDropdownOpen = false"
+                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                        >
+                            Rekap Seluruh Temuan (.xls)
+                        </a>
+
+                        <a
+                            :href="route('coordinator.reports.export-stores')"
+                            @click="exportDropdownOpen = false"
+                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                        >
+                            Rekapitulasi per Toko (.xls)
+                        </a>
+
+                        <a
+                            :href="route('coordinator.reports.export-summary')"
+                            @click="exportDropdownOpen = false"
+                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                        >
+                            Ringkasan Eksekutif (.xls)
+                        </a>
+                    </div>
+                </Transition>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-xs">
-            <!-- Severity Summary -->
-            <div class="bg-white rounded border border-gray-200 p-5 shadow-xs">
-                <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4 pb-2 border-b border-gray-100">
-                    Distribusi Severity Temuan
-                </h2>
-                <div class="space-y-3">
-                    <div v-for="(count, sev) in by_severity" :key="sev" class="flex items-center justify-between p-2 rounded bg-gray-50/70 border border-gray-100">
-                        <div class="flex items-center gap-2">
-                            <SeverityBadge :severity="sev" />
+        <!-- 4 Key Metrics Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Kerugian Finansial</div>
+                <div class="text-xl font-bold text-gray-900 font-mono mt-1">{{ formatRupiah(total_loss) }}</div>
+                <div class="text-[11px] text-gray-400 mt-1">Akumulasi seluruh cabang CSA</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Temuan Terdaftar</div>
+                <div class="text-xl font-bold text-gray-900 mt-1">{{ totalFindingsCount }} Temuan</div>
+                <div class="text-[11px] text-gray-400 mt-1">Dari hasil seluruh pemeriksaan</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Tingkat Penyelesaian (Closed)</div>
+                <div class="text-xl font-bold text-emerald-700 mt-1">{{ calculatedCompletionRate }}%</div>
+                <div class="text-[11px] text-gray-400 mt-1">{{ by_status.CLOSED || 0 }} temuan telah ditutup</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Temuan Risiko Tinggi</div>
+                <div class="text-xl font-bold text-rose-700 mt-1">{{ highRiskCount }} Temuan</div>
+                <div class="text-[11px] text-rose-600 mt-1">Kategori Major & Critical</div>
+            </div>
+        </div>
+
+        <!-- Visual Charts Row 1: Donut & Progress Diagrams -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Diagram 1: Distribusi Severity Temuan -->
+            <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-xs text-xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                            Distribusi Severity Temuan
+                        </h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Proporsi tingkat keparahan risiko temuan audit</p>
+                    </div>
+                    <span class="text-[11px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        {{ totalFindingsCount }} Total
+                    </span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <!-- SVG Donut Chart -->
+                    <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="11" />
+                            <circle
+                                v-for="seg in severitySegments"
+                                :key="seg.key"
+                                v-show="seg.count > 0"
+                                cx="50"
+                                cy="50"
+                                r="38"
+                                fill="none"
+                                :stroke="seg.color"
+                                stroke-width="11"
+                                :stroke-dasharray="seg.dasharray"
+                                :stroke-dashoffset="seg.dashoffset"
+                                class="transition-all duration-500"
+                            />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                            <span class="text-xl font-bold text-gray-900 leading-tight">{{ totalFindingsCount }}</span>
+                            <span class="text-[10px] uppercase font-semibold tracking-wider text-gray-400">Temuan</span>
                         </div>
-                        <span class="font-bold text-gray-900 text-sm">{{ count }} temuan</span>
+                    </div>
+
+                    <!-- Progress Bar Breakdown -->
+                    <div class="flex-1 w-full space-y-3">
+                        <div v-for="seg in severitySegments" :key="seg.key" class="space-y-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                    <span class="font-medium text-gray-700 capitalize">{{ seg.key.toLowerCase() }}</span>
+                                </div>
+                                <div class="font-mono text-gray-900">
+                                    <span class="font-semibold">{{ seg.count }}</span>
+                                    <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                    class="h-full rounded-full transition-all duration-500"
+                                    :style="{ width: `${seg.percent}%`, backgroundColor: seg.color }"
+                                ></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Status Summary -->
-            <div class="bg-white rounded border border-gray-200 p-5 shadow-xs">
-                <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4 pb-2 border-b border-gray-100">
-                    Distribusi Status Penyelesaian
-                </h2>
-                <div class="space-y-3">
-                    <div v-for="(count, st) in by_status" :key="st" class="flex items-center justify-between p-2 rounded bg-gray-50/70 border border-gray-100">
-                        <div class="flex items-center gap-2">
-                            <StatusBadge :status="st" />
+            <!-- Diagram 2: Distribusi Status Penyelesaian -->
+            <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-xs text-xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                            Distribusi Status Penyelesaian
+                        </h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Progres alur tindak lanjut dan penutupan temuan</p>
+                    </div>
+                    <span class="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                        {{ calculatedCompletionRate }}% Selesai
+                    </span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <!-- SVG Donut Chart -->
+                    <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="11" />
+                            <circle
+                                v-for="seg in statusSegments"
+                                :key="seg.key"
+                                v-show="seg.count > 0"
+                                cx="50"
+                                cy="50"
+                                r="38"
+                                fill="none"
+                                :stroke="seg.color"
+                                stroke-width="11"
+                                :stroke-dasharray="seg.dasharray"
+                                :stroke-dashoffset="seg.dashoffset"
+                                class="transition-all duration-500"
+                            />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                            <span class="text-xl font-bold text-emerald-700 leading-tight">{{ calculatedCompletionRate }}%</span>
+                            <span class="text-[10px] uppercase font-semibold tracking-wider text-gray-400">Ditutup</span>
                         </div>
-                        <span class="font-bold text-gray-900 text-sm">{{ count }} temuan</span>
+                    </div>
+
+                    <!-- Progress Bar Breakdown -->
+                    <div class="flex-1 w-full space-y-2.5">
+                        <div v-for="seg in statusSegments" :key="seg.key" class="space-y-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                    <span class="font-medium text-gray-700">{{ seg.key.replace('_', ' ') }}</span>
+                                </div>
+                                <div class="font-mono text-gray-900">
+                                    <span class="font-semibold">{{ seg.count }}</span>
+                                    <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                    class="h-full rounded-full transition-all duration-500"
+                                    :style="{ width: `${seg.percent}%`, backgroundColor: seg.color }"
+                                ></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Store Loss Ranking -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-xs text-xs">
+        <!-- Visual Charts Row 2: Perbandingan Kerugian per Cabang & Kategori Audit -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 text-xs">
+            <!-- Diagram 3: Grafik Kerugian Cabang Terbesar (7 cols) -->
+            <div class="lg:col-span-7 bg-white rounded-lg border border-gray-200 p-5 shadow-xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                            Grafik Kerugian Finansial per Cabang
+                        </h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Perbandingan nominal kerugian toko dengan temuan audit tertinggi</p>
+                    </div>
+                    <span class="text-[11px] font-mono font-bold text-gray-900">
+                        {{ formatRupiah(total_loss) }}
+                    </span>
+                </div>
+
+                <div v-if="topLossStores.length > 0" class="space-y-3.5">
+                    <div v-for="store in topLossStores" :key="store.store_code" class="space-y-1.5">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <div class="font-medium text-gray-900 truncate mr-2">
+                                {{ store.store_name }} <span class="text-gray-400 font-mono text-[10px]">({{ store.store_code }})</span>
+                            </div>
+                            <div class="font-mono font-bold text-gray-900 shrink-0">
+                                {{ formatRupiah(store.total_loss) }}
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex items-center">
+                            <div
+                                class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+                                :style="{ width: `${Math.max(5, (store.total_loss / maxStoreLoss) * 100)}%` }"
+                            ></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-gray-400">
+                            <span>Area: {{ store.area || 'Retail' }}</span>
+                            <span>{{ store.total_findings }} temuan dari {{ store.total_audits }} audit</span>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="py-8 text-center text-gray-400 italic">
+                    Belum ada data kerugian finansial cabang.
+                </div>
+            </div>
+
+            <!-- Diagram 4: Distribusi Kategori Audit (5 cols) -->
+            <div class="lg:col-span-5 bg-white rounded-lg border border-gray-200 p-5 shadow-xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                            Kategori Audit (CSA)
+                        </h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Sebaran temuan pada 3 fokus bidang audit</p>
+                    </div>
+                    <span class="text-[11px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        {{ by_category.length }} Kategori
+                    </span>
+                </div>
+
+                <div v-if="by_category.length > 0" class="space-y-3">
+                    <div
+                        v-for="cat in by_category"
+                        :key="cat.id"
+                        class="p-3 rounded-lg border border-gray-200 bg-gray-50/50 space-y-2"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-gray-900 text-xs">{{ cat.name }}</span>
+                            <span class="font-bold text-blue-700 font-mono text-xs">{{ cat.count }} Temuan</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                            <div
+                                class="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                :style="{ width: `${totalFindingsCount > 0 ? (cat.count / totalFindingsCount) * 100 : 0}%` }"
+                            ></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
+                            <span>Estimasi Kerugian:</span>
+                            <span class="font-mono font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="py-8 text-center text-gray-400 italic">
+                    Belum ada data kategori audit.
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Loss Ranking Table -->
+        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs text-xs">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
                 <div>
                     <h2 class="text-sm font-semibold text-gray-900">Rekapitulasi Temuan & Kerugian per Cabang</h2>
                     <p class="text-[11px] text-gray-500">Peringkat kerugian retail berdasarkan hasil temuan audit</p>
                 </div>
                 <div class="font-semibold text-gray-900">
-                    Total Loss Nasional: <span class="text-gray-900 font-bold text-sm">{{ formatRupiah(total_loss) }}</span>
+                    Total Loss Nasional: <span class="text-gray-900 font-bold text-sm font-mono">{{ formatRupiah(total_loss) }}</span>
                 </div>
             </div>
 

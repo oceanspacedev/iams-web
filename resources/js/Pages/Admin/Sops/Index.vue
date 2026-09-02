@@ -1,7 +1,8 @@
 <script setup>
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
@@ -73,6 +74,13 @@ const confirmModal = ref({
     action: null,
 });
 
+const currentPage = ref(1);
+
+const paginatedSops = computed(() => {
+    const start = (currentPage.value - 1) * 10;
+    return props.sops.slice(start, start + 10);
+});
+
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
@@ -112,75 +120,96 @@ const deleteSop = (sop) => {
                 <p class="text-xs text-gray-500 mt-1">Master regulasi internal dan panduan operasional sebagai standar acuan audit</p>
             </div>
 
-            <button
-                @click="openCreateModal"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
-            >
-                + Tambah SOP / SE
-            </button>
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-500 font-mono">
+                    {{ sops.length }} SOP/SE terdaftar
+                </span>
+                <button
+                    @click="openCreateModal"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                >
+                    + Tambah SOP / SE
+                </button>
+            </div>
         </div>
 
         <!-- Table -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3.5">Kode</th>
-                            <th class="px-5 py-3.5">Judul Regulasi</th>
-                            <th class="px-5 py-3.5">Deskripsi</th>
-                            <th class="px-5 py-3.5">Dokumen Acuan</th>
-                            <th class="px-5 py-3.5">Temuan Terkait</th>
-                            <th class="px-5 py-3.5">Status</th>
-                            <th class="px-5 py-3.5 text-right">Aksi</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Kode</th>
+                            <th class="px-4 py-3 min-w-[200px]">Judul Regulasi</th>
+                            <th class="px-4 py-3 min-w-[180px]">Deskripsi</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Dokumen Acuan</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">Temuan Terkait</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">Status</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200 bg-white">
                         <tr v-if="sops.length === 0">
-                            <td colspan="7" class="px-5 py-8 text-center text-gray-500">Belum ada master SOP/SE.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">Belum ada master SOP/SE.</td>
                         </tr>
-                        <tr v-for="sop in sops" :key="sop.id" class="hover:bg-gray-50/70">
-                            <td class="px-5 py-3.5 font-mono font-medium text-gray-900">{{ sop.code }}</td>
-                            <td class="px-5 py-3.5 font-semibold text-gray-900">{{ sop.title }}</td>
-                            <td class="px-5 py-3.5 text-gray-600 max-w-xs truncate">{{ sop.description || '—' }}</td>
-                            <td class="px-5 py-3.5">
+                        <tr v-for="sop in paginatedSops" :key="sop.id" class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-gray-900">{{ sop.code }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ sop.title }}</td>
+                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate">{{ sop.description || '—' }}</td>
+                            <td class="px-4 py-3">
                                 <a
                                     v-if="sop.document"
                                     :href="sop.document_url"
                                     target="_blank"
-                                    class="inline-flex items-center gap-1 text-blue-600 hover:underline font-medium"
+                                    class="inline-flex items-center gap-1 text-slate-700 hover:text-blue-600 font-medium hover:underline"
                                 >
-                                    📄 Buka Dokumen
+                                    Lihat File
                                 </a>
                                 <span v-else class="text-gray-400">Tidak ada file</span>
                             </td>
-                            <td class="px-5 py-3.5 font-medium text-gray-800">{{ sop.findings_count }} temuan</td>
-                            <td class="px-5 py-3.5">
+                            <td class="px-4 py-3 text-center font-medium text-gray-800">
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                    {{ sop.findings_count }} temuan
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
                                 <span
-                                    class="inline-block px-2 py-0.5 rounded text-[11px] font-medium border"
-                                    :class="sop.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'"
+                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border"
+                                    :class="sop.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                                 >
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                                     {{ sop.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5 text-right space-x-2">
-                                <button
-                                    @click="openEditModal(sop)"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    @click="deleteSop(sop)"
-                                    class="px-2.5 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 font-medium"
-                                >
-                                    Hapus
-                                </button>
+                            <td class="px-4 py-3 text-right">
+                                <div class="inline-flex items-center gap-2">
+                                    <button
+                                        @click="openEditModal(sop)"
+                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs"
+                                    >
+                                        Edit
+                                    </button>
+                                    <span class="text-slate-300">|</span>
+                                    <button
+                                        @click="deleteSop(sop)"
+                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Footer -->
+            <Pagination
+                :current-page="currentPage"
+                :per-page="10"
+                :total-items="sops.length"
+                @update:current-page="currentPage = $event"
+            />
         </div>
 
         <!-- Modal Create/Edit -->

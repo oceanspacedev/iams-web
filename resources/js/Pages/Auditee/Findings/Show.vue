@@ -498,7 +498,12 @@ const deleteEvidence = (evidenceId) => {
                 </div>
 
                 <!-- Workflow Step Tracker (Live Animated) -->
-                <WorkflowTracker :status="finding.status" />
+                <WorkflowTracker
+                    :status="finding.status"
+                    :has-documents="finding.has_documents || (finding.audit && finding.audit.documents_count > 0)"
+                    :documents-count="finding.documents_count || (finding.audit ? finding.audit.documents_count : 0)"
+                    :has-action-plan="finding.has_action_plan || !!finding.action_plan?.action_plan"
+                />
             </div>
         </div>
 

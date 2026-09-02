@@ -37,7 +37,7 @@ class UserController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Users/Create', [
-            'roles'  => Role::pluck('name'),
+            'roles'  => Role::where('name', '!=', 'auditee')->pluck('name'),
             'stores' => Store::active()->orderBy('name')->get(['id', 'name', 'code']),
         ]);
     }
@@ -49,7 +49,7 @@ class UserController extends Controller
             'email'     => 'required|email|unique:users,email|max:255',
             'phone'     => 'nullable|string|max:20',
             'password'  => 'required|string|min:6',
-            'role'      => 'required|in:admin,coordinator,auditor,auditee',
+            'role'      => 'required|in:admin,chief,asmen,coordinator,auditor',
             'is_active' => 'boolean',
             'stores'    => 'nullable|array',
             'stores.*'  => 'exists:stores,id',
@@ -69,7 +69,7 @@ class UserController extends Controller
             $user->stores()->sync($validated['stores']);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dibuat.');
+        return redirect()->route('admin.users.index')->with('success', 'Data saved! User berhasil dibuat.');
     }
 
     public function edit(User $user): Response
@@ -82,11 +82,11 @@ class UserController extends Controller
                 'name'      => $user->name,
                 'email'     => $user->email,
                 'phone'     => $user->phone ?? '',
-                'role'      => $user->roles->first()?->name ?? 'auditee',
+                'role'      => $user->roles->first()?->name ?? 'auditor',
                 'is_active' => (bool)$user->is_active,
                 'stores'    => $user->stores->pluck('id')->toArray(),
             ],
-            'roles'  => Role::pluck('name'),
+            'roles'  => Role::where('name', '!=', 'auditee')->pluck('name'),
             'stores' => Store::active()->orderBy('name')->get(['id', 'name', 'code']),
         ]);
     }
@@ -98,7 +98,7 @@ class UserController extends Controller
             'email'     => 'required|email|max:255|unique:users,email,' . $user->id,
             'phone'     => 'nullable|string|max:20',
             'password'  => 'nullable|string|min:6',
-            'role'      => 'required|in:admin,coordinator,auditor,auditee',
+            'role'      => 'required|in:admin,chief,asmen,coordinator,auditor',
             'is_active' => 'boolean',
             'stores'    => 'nullable|array',
             'stores.*'  => 'exists:stores,id',
@@ -118,7 +118,7 @@ class UserController extends Controller
             $user->stores()->sync($validated['stores']);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil diperbarui.');
+        return redirect()->route('admin.users.index')->with('success', 'Data saved! User berhasil diperbarui.');
     }
 
     public function toggleActive(User $user): RedirectResponse

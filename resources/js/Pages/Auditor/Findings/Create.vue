@@ -18,7 +18,7 @@ const props = defineProps({
 });
 
 const form = useForm({
-    category_id: '',
+    category_id: props.audit.category_id || (props.categories.length > 0 ? props.categories[0].id : ''),
     sop_id: '',
     finding: '',
     loss_amount: '',
@@ -87,22 +87,34 @@ const submit = () => {
 
                     <div>
                         <label class="block font-medium text-gray-700 mb-1.5">
-                            Usulan Severity <span class="text-red-500">*</span>
+                            Severity / Dampak <span class="text-red-500">*</span>
                         </label>
                         <select
                             v-model="form.severity"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
                         >
-                            <option value="CRITICAL">CRITICAL</option>
-                            <option value="MAJOR">MAJOR</option>
-                            <option value="MINOR">MINOR</option>
-                            <option value="OBSERVATION">OBSERVATION</option>
+                            <option value="MINOR">Minor (Timeline SLA: 3 - 7 hari)</option>
+                            <option value="MEDIUM">Medium (Timeline SLA: 8 - 14 hari)</option>
+                            <option value="MAJOR">Major (Timeline SLA: 15 - 30 hari)</option>
                         </select>
-                        <p class="text-[10px] text-gray-500 mt-1">
-                            *Usulan awal auditor (akan direview & dikunci oleh Koordinator).
-                        </p>
                         <div v-if="form.errors.severity" class="text-red-600 text-[11px] mt-1">{{ form.errors.severity }}</div>
+                    </div>
+                </div>
+
+                <!-- Severity SLA Info Guide -->
+                <div class="bg-gray-50 border border-gray-200 rounded-md p-3 grid grid-cols-3 gap-3 text-center text-xs">
+                    <div class="p-1.5 rounded bg-white border border-gray-200" :class="form.severity === 'MINOR' ? 'border-blue-500 bg-blue-50/40 text-blue-900 font-semibold' : 'text-gray-700'">
+                        <div class="text-xs">Minor</div>
+                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">3 - 7 hari</div>
+                    </div>
+                    <div class="p-1.5 rounded bg-white border border-gray-200" :class="form.severity === 'MEDIUM' ? 'border-blue-500 bg-blue-50/40 text-blue-900 font-semibold' : 'text-gray-700'">
+                        <div class="text-xs">Medium</div>
+                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">8 - 14 hari</div>
+                    </div>
+                    <div class="p-1.5 rounded bg-white border border-gray-200" :class="form.severity === 'MAJOR' ? 'border-blue-500 bg-blue-50/40 text-blue-900 font-semibold' : 'text-gray-700'">
+                        <div class="text-xs">Major</div>
+                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">15 - 30 hari</div>
                     </div>
                 </div>
 
@@ -162,7 +174,7 @@ const submit = () => {
                             v-model="form.recommendation"
                             rows="3"
                             required
-                            placeholder="Langkah-langkah perbaikan yang disarankan untuk toko / auditee..."
+                            placeholder="Langkah-langkah perbaikan yang disarankan untuk unit / auditee..."
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         ></textarea>
                         <div v-if="form.errors.recommendation" class="text-red-600 text-[11px] mt-1">{{ form.errors.recommendation }}</div>
@@ -180,9 +192,13 @@ const submit = () => {
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
+                        class="inline-flex items-center gap-2 px-5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
                     >
-                        {{ form.processing ? 'Menyimpan...' : 'Simpan Finding' }}
+                        <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Finding' }}</span>
                     </button>
                 </div>
             </form>

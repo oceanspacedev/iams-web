@@ -43,6 +43,11 @@ class User extends Authenticatable
         return $this->hasMany(Audit::class, 'auditor_id');
     }
 
+    public function assignedAudits(): BelongsToMany
+    {
+        return $this->belongsToMany(Audit::class, 'audit_auditor');
+    }
+
     public function stores(): BelongsToMany
     {
         return $this->belongsToMany(Store::class, 'store_user');
@@ -62,6 +67,16 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole('admin');
+    }
+
+    public function isChief(): bool
+    {
+        return $this->hasRole('chief');
+    }
+
+    public function isAsmen(): bool
+    {
+        return $this->hasRole('asmen');
     }
 
     public function isCoordinator(): bool
@@ -84,13 +99,13 @@ class User extends Authenticatable
         if ($this->isAdmin()) {
             return '/admin/dashboard';
         }
-        if ($this->isCoordinator()) {
+        if ($this->isChief() || $this->isAsmen() || $this->isCoordinator()) {
             return '/coordinator/dashboard';
         }
         if ($this->isAuditor()) {
             return '/auditor/dashboard';
         }
 
-        return '/auditee/dashboard';
+        return '/coordinator/dashboard';
     }
 }

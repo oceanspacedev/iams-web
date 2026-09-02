@@ -11,10 +11,6 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    stores: {
-        type: Array,
-        default: () => [],
-    },
 });
 
 const form = useForm({
@@ -22,9 +18,8 @@ const form = useForm({
     email: props.user.email,
     phone: props.user.phone || '',
     password: '',
-    role: props.user.role,
-    is_active: props.user.is_active,
-    stores: props.user.stores || [],
+    role: props.user.role || 'auditor',
+    is_active: Boolean(props.user.is_active),
 });
 
 const submit = () => {
@@ -34,7 +29,7 @@ const submit = () => {
 
 <template>
     <AppLayout :title="`Edit User - ${user.name}`">
-        <Head :title="`Edit User - ${user.name}`" />
+        <Head :title="`Edit User - ${user.name} — Admin`" />
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -42,11 +37,11 @@ const submit = () => {
                 <span>/</span>
                 <span class="text-gray-900 font-medium">{{ user.name }}</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Pengguna</h1>
-            <p class="text-xs text-gray-500 mt-1">Perbarui data profil, role, atau toko yang terhubung</p>
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Data Pengguna</h1>
+            <p class="text-xs text-gray-500 mt-1">Perbarui informasi profil, role jabatan, dan status akun</p>
         </div>
 
-        <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
             <form @submit.prevent="submit" class="space-y-4">
                 <div>
                     <label class="block font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
@@ -72,19 +67,18 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">No. WhatsApp (Notifikasi)</label>
+                        <label class="block font-medium text-gray-700 mb-1">No. WhatsApp</label>
                         <input
                             v-model="form.phone"
                             type="text"
-                            placeholder="081234567890"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
                         />
                         <div v-if="form.errors.phone" class="text-red-600 text-[11px] mt-1">{{ form.errors.phone }}</div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Password Baru (Kosongkan jika tidak ingin mengubah)</label>
+                    <label class="block font-medium text-gray-700 mb-1">Password Baru (Biarkan kosong jika tidak diubah)</label>
                     <input
                         v-model="form.password"
                         type="password"
@@ -96,16 +90,17 @@ const submit = () => {
 
                 <div class="grid grid-cols-2 gap-4 pt-1">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Role Pengguna <span class="text-red-500">*</span></label>
+                        <label class="block font-medium text-gray-700 mb-1">Role / Jabatan <span class="text-red-500">*</span></label>
                         <select
                             v-model="form.role"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
                         >
-                            <option value="admin">Admin</option>
+                            <option value="admin">Administrator (Full Access)</option>
+                            <option value="chief">Chief Auditor (Head of Audit)</option>
+                            <option value="asmen">Asisten Manager (Asmen)</option>
                             <option value="coordinator">Koordinator Audit</option>
-                            <option value="auditor">Auditor</option>
-                            <option value="auditee">Auditee (Toko)</option>
+                            <option value="auditor">Auditor Lapangan</option>
                         </select>
                         <div v-if="form.errors.role" class="text-red-600 text-[11px] mt-1">{{ form.errors.role }}</div>
                     </div>
@@ -122,34 +117,17 @@ const submit = () => {
                     </div>
                 </div>
 
-                <!-- Store Assignment (Auditee) -->
-                <div v-if="form.role === 'auditee'" class="pt-2 border-t border-gray-100">
-                    <label class="block font-medium text-gray-700 mb-1.5">Hubungkan ke Unit Toko</label>
-                    <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-gray-50 rounded border border-gray-200">
-                        <label v-for="s in stores" :key="s.id" class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                :value="s.id"
-                                v-model="form.stores"
-                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span class="text-gray-800">{{ s.name }} ({{ s.code }})</span>
-                        </label>
-                    </div>
-                    <div v-if="form.errors.stores" class="text-red-600 text-[11px] mt-1">{{ form.errors.stores }}</div>
-                </div>
-
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
                         :href="route('admin.users.index')"
-                        class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
+                        class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
                     >
                         {{ form.processing ? 'Menyimpan...' : 'Perbarui User' }}
                     </button>

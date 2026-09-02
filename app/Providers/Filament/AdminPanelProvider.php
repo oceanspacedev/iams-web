@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Sistem Audit (IAMS)')
+            ->favicon(asset('favicon.svg'))
             ->colors([
                 'primary' => Color::hex('#2563EB'), // Blue-600 — corporate accent
             ])

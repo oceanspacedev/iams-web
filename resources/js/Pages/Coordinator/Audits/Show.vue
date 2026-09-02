@@ -81,8 +81,20 @@ const sendNotificationNow = (notif) => {
                     <span>/</span>
                     <span class="text-gray-900 font-medium">{{ audit.audit_number }}</span>
                 </div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-2.5 flex-wrap">
                     {{ audit.audit_number }}
+                    <span
+                        v-if="audit.category"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold tracking-wide border"
+                        :class="{
+                            'bg-emerald-50 text-emerald-800 border-emerald-200': audit.category.includes('Retail'),
+                            'bg-amber-50 text-amber-800 border-amber-200': audit.category.includes('Finance'),
+                            'bg-indigo-50 text-indigo-800 border-indigo-200': audit.category.includes('Distribusi'),
+                            'bg-slate-100 text-slate-700 border-slate-200': !audit.category
+                        }"
+                    >
+                        {{ audit.category }}
+                    </span>
                     <StatusBadge :status="audit.status" />
                 </h1>
             </div>
@@ -110,7 +122,13 @@ const sendNotificationNow = (notif) => {
                 <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4 pb-2 border-b border-gray-100">
                     Informasi Pelaksanaan Audit
                 </h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <div class="text-gray-500 font-medium">Kategori Audit</div>
+                        <div class="text-gray-900 font-semibold mt-1">{{ audit.category || 'Belum Ditentukan' }}</div>
+                        <div class="text-[11px] text-gray-500 font-mono">{{ audit.title || 'Audit Lapangan' }}</div>
+                    </div>
+
                     <div>
                         <div class="text-gray-500 font-medium">Toko Sasaran</div>
                         <div class="text-gray-900 font-semibold mt-1">{{ audit.store.name }}</div>
@@ -124,7 +142,7 @@ const sendNotificationNow = (notif) => {
                     </div>
 
                     <div>
-                        <div class="text-gray-500 font-medium">Auditor Ditugaskan</div>
+                        <div class="text-gray-500 font-medium">Lead Auditor</div>
                         <div class="text-gray-900 font-semibold mt-1">{{ audit.auditor.name }}</div>
                         <div class="text-[11px] text-gray-500">{{ audit.auditor.email }}</div>
                     </div>

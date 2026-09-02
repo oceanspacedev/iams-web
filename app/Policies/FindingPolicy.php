@@ -22,7 +22,7 @@ class FindingPolicy
         }
 
         if ($user->isAuditor()) {
-            return $finding->audit->auditor_id === $user->id;
+            return $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
         }
 
         if ($user->isAuditee()) {
@@ -40,16 +40,23 @@ class FindingPolicy
     public function update(User $user, Finding $finding): bool
     {
         if ($user->hasPermissionTo('finding.edit') && $user->isAuditor()) {
-            return $finding->audit->auditor_id === $user->id;
+            return $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
         }
 
-        // Admin can always edit
+        // Admin and Coordinator can edit
         return $user->hasPermissionTo('finding.view-all');
     }
 
     public function delete(User $user, Finding $finding): bool
     {
-        return $user->hasPermissionTo('finding.delete');
+        if ($user->hasPermissionTo('finding.delete')) {
+            if ($user->isAuditor()) {
+                return $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public function verify(User $user, Finding $finding): bool
@@ -58,7 +65,7 @@ class FindingPolicy
             return false;
         }
 
-        return $finding->audit->auditor_id === $user->id;
+        return $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
     }
 
     public function close(User $user, Finding $finding): bool
@@ -67,6 +74,7 @@ class FindingPolicy
             return false;
         }
 
-        return $finding->audit->auditor_id === $user->id && $finding->isCloseable();
+        $isAssigned = $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
+        return $isAssigned && $finding->isCloseable();
     }
 }

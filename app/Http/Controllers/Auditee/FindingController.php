@@ -16,6 +16,7 @@ class FindingController extends Controller
 
         $finding->load([
             'audit.store',
+            'audit.documents',
             'category',
             'sop',
             'actionPlan',
@@ -24,10 +25,20 @@ class FindingController extends Controller
             'evidences.verifier',
         ]);
 
+        $docsCount = $finding->audit?->documents?->count() ?? 0;
+        $hasDocs = $docsCount > 0 || $finding->evidences->isNotEmpty();
+        $hasActionPlan = !empty($finding->actionPlan?->action_plan);
+
         return Inertia::render('Auditee/Findings/Show', [
             'finding' => [
                 'id'              => $finding->id,
-                'audit'           => $finding->audit->only(['id', 'audit_number', 'status', 'audit_date']),
+                'audit'           => array_merge(
+                    $finding->audit->only(['id', 'audit_number', 'status', 'audit_date']),
+                    ['documents_count' => $docsCount, 'has_documents' => $docsCount > 0]
+                ),
+                'has_documents'   => $hasDocs,
+                'documents_count' => $docsCount,
+                'has_action_plan' => $hasActionPlan,
                 'store'           => $finding->audit->store->only(['name', 'code']),
                 'category'        => $finding->category->name,
                 'sop'             => $finding->sop?->only(['code', 'title']),

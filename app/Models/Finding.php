@@ -45,10 +45,37 @@ class Finding extends Model
     const STATUS_VERIFIED             = 'VERIFIED';
     const STATUS_CLOSED               = 'CLOSED';
 
+    const SEVERITY_MINOR  = 'MINOR';
+    const SEVERITY_MEDIUM = 'MEDIUM';
+    const SEVERITY_MAJOR  = 'MAJOR';
+
+    // Legacy fallback
     const SEVERITY_CRITICAL    = 'CRITICAL';
-    const SEVERITY_MAJOR       = 'MAJOR';
-    const SEVERITY_MINOR       = 'MINOR';
     const SEVERITY_OBSERVATION = 'OBSERVATION';
+
+    public static function severityOptions(): array
+    {
+        return [
+            self::SEVERITY_MINOR  => [
+                'id'       => self::SEVERITY_MINOR,
+                'label'    => 'Minor',
+                'timeline' => '3 - 7 hari',
+                'badge'    => 'bg-sky-100 text-sky-800 border-sky-200',
+            ],
+            self::SEVERITY_MEDIUM => [
+                'id'       => self::SEVERITY_MEDIUM,
+                'label'    => 'Medium',
+                'timeline' => '8 - 14 hari',
+                'badge'    => 'bg-amber-100 text-amber-800 border-amber-300',
+            ],
+            self::SEVERITY_MAJOR  => [
+                'id'       => self::SEVERITY_MAJOR,
+                'label'    => 'Major',
+                'timeline' => '15 - 30 hari',
+                'badge'    => 'bg-rose-100 text-rose-800 border-rose-300',
+            ],
+        ];
+    }
 
     // Relationships
     public function audit(): BelongsTo
@@ -86,6 +113,16 @@ class Finding extends Model
         return $this->hasMany(Evidence::class);
     }
 
+    public function qualityReport(): HasOne
+    {
+        return $this->hasOne(QualityFinding::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(AuditDocument::class);
+    }
+
     // Scopes
     public function scopeOpen($query)
     {
@@ -108,11 +145,11 @@ class Finding extends Model
     // Helpers
     public function isCloseable(): bool
     {
-        return $this->status === self::STATUS_VERIFIED;
+        return $this->status !== self::STATUS_CLOSED;
     }
 
     public function canUploadEvidence(): bool
     {
-        return !in_array($this->status, [self::STATUS_VERIFIED, self::STATUS_CLOSED]);
+        return $this->status !== self::STATUS_CLOSED;
     }
 }

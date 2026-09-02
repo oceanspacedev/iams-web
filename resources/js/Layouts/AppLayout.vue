@@ -2,7 +2,6 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import FlashMessage from '@/Components/FlashMessage.vue';
-import ShimmerLoader from '@/Components/ShimmerLoader.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 const props = defineProps({
@@ -16,9 +15,11 @@ const page = usePage();
 const user = computed(() => page.props.auth?.user || {});
 const roles = computed(() => user.value?.roles || []);
 const isAuditor = computed(() => roles.value.includes('auditor'));
-const isAuditee = computed(() => roles.value.includes('auditee'));
 const isCoordinator = computed(() => roles.value.includes('coordinator'));
 const isAdmin = computed(() => roles.value.includes('admin'));
+const isChief = computed(() => roles.value.includes('chief'));
+const isAsmen = computed(() => roles.value.includes('asmen'));
+const isManagement = computed(() => isCoordinator.value || isChief.value || isAsmen.value || isAdmin.value);
 
 // Mobile drawer state
 const mobileMenuOpen = ref(false);
@@ -47,6 +48,15 @@ const userInitials = computed(() => {
         return (names[0][0] + names[1][0]).toUpperCase();
     }
     return user.value.name.substring(0, 2).toUpperCase();
+});
+
+const roleDisplayLabel = computed(() => {
+    if (isAdmin.value) return 'Administrator';
+    if (isChief.value) return 'Chief Auditor';
+    if (isAsmen.value) return 'Asisten Manager';
+    if (isCoordinator.value) return 'Koordinator Audit';
+    if (isAuditor.value) return 'Auditor';
+    return 'User';
 });
 
 let removeStartListener = null;
@@ -145,7 +155,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Dashboard' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.dashboard') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -168,7 +178,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Audits' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.audits.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.audits.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -183,7 +193,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Findings' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.findings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.findings.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -194,11 +204,26 @@ const logout = () => {
                         </Link>
 
                         <Link
+                            :href="route('coordinator.finding-qualities.index')"
+                            :title="isCollapsed ? 'Finding Quality' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.finding-qualities.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Finding Quality</span>
+                        </Link>
+
+                        <Link
                             :href="route('admin.action-plans.index')"
                             :title="isCollapsed ? 'Action Plans' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.action-plans.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.action-plans.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -213,7 +238,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Reports' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.reports.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.reports.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -227,7 +252,7 @@ const logout = () => {
                     <!-- Master Data -->
                     <div class="space-y-1 pt-1">
                         <div v-if="!isCollapsed" class="px-3 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                            Master Data
+                            Master Data & CSA
                         </div>
                         <div v-else class="border-t border-gray-800 my-2"></div>
 
@@ -236,7 +261,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Users Management' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.users.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.users.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -248,17 +273,17 @@ const logout = () => {
 
                         <Link
                             :href="route('admin.stores.index')"
-                            :title="isCollapsed ? 'Stores Management' : ''"
+                            :title="isCollapsed ? 'Stores & CSA' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.stores.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.stores.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
                             <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span v-if="!isCollapsed" class="truncate">Stores</span>
+                            <span v-if="!isCollapsed" class="truncate">Toko & Gudang (CSA)</span>
                         </Link>
 
                         <Link
@@ -266,7 +291,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Audit Categories' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.audit-categories.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.audit-categories.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -281,7 +306,7 @@ const logout = () => {
                             :title="isCollapsed ? 'SOP / SE Acuan' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.sops.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.sops.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -296,7 +321,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Jadwal Notifikasi' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('admin.notification-rules.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('admin.notification-rules.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -308,15 +333,15 @@ const logout = () => {
                     </div>
                 </template>
 
-                <!-- ================= COORDINATOR NAV ================= -->
-                <template v-if="isCoordinator">
+                <!-- ================= COORDINATOR / CHIEF / ASMEN NAV ================= -->
+                <template v-else-if="isManagement">
                     <div class="space-y-1">
                         <Link
                             :href="route('coordinator.dashboard')"
                             :title="isCollapsed ? 'Dashboard' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('coordinator.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('coordinator.dashboard') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -339,7 +364,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Audits' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('coordinator.audits.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('coordinator.audits.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -354,7 +379,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Findings' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('coordinator.findings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('coordinator.findings.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -365,11 +390,26 @@ const logout = () => {
                         </Link>
 
                         <Link
+                            :href="route('coordinator.finding-qualities.index')"
+                            :title="isCollapsed ? 'Finding Quality' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.finding-qualities.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Finding Quality</span>
+                        </Link>
+
+                        <Link
                             :href="route('coordinator.action-plans.index')"
                             :title="isCollapsed ? 'Action Plans' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('coordinator.action-plans.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('coordinator.action-plans.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -384,7 +424,7 @@ const logout = () => {
                             :title="isCollapsed ? 'Reports' : ''"
                             class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                             :class="[
-                                route().current('coordinator.reports.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                route().current('coordinator.reports.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                                 isCollapsed ? 'justify-center px-2' : ''
                             ]"
                         >
@@ -392,6 +432,29 @@ const logout = () => {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
                             <span v-if="!isCollapsed" class="truncate">Reports</span>
+                        </Link>
+                    </div>
+
+                    <!-- Master Data CSA -->
+                    <div class="space-y-1 pt-1">
+                        <div v-if="!isCollapsed" class="px-3 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                            Master Data CSA
+                        </div>
+                        <div v-else class="border-t border-gray-800 my-2"></div>
+
+                        <Link
+                            :href="route('coordinator.stores.index')"
+                            :title="isCollapsed ? 'Toko & Gudang (CSA)' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('coordinator.stores.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Toko & Gudang (CSA)</span>
                         </Link>
                     </div>
                 </template>
@@ -408,7 +471,7 @@ const logout = () => {
                         :title="isCollapsed ? 'Dashboard Auditor' : ''"
                         class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                         :class="[
-                            route().current('auditor.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                            route().current('auditor.dashboard') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                             isCollapsed ? 'justify-center px-2' : ''
                         ]"
                     >
@@ -423,7 +486,7 @@ const logout = () => {
                         :title="isCollapsed ? 'My Audits' : ''"
                         class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                         :class="[
-                            route().current('auditor.audits.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                            route().current('auditor.audits.*') || route().current('auditor.findings.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                             isCollapsed ? 'justify-center px-2' : ''
                         ]"
                     >
@@ -434,56 +497,18 @@ const logout = () => {
                     </Link>
 
                     <Link
-                        :href="route('auditor.verification.index')"
-                        :title="isCollapsed ? 'Verification Queue' : ''"
+                        :href="route('auditor.finding-qualities.index')"
+                        :title="isCollapsed ? 'Report Finding Quality' : ''"
                         class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
                         :class="[
-                            route().current('auditor.verification.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                            route().current('auditor.finding-qualities.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                             isCollapsed ? 'justify-center px-2' : ''
                         ]"
                     >
                         <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span v-if="!isCollapsed" class="truncate">Verification Queue</span>
-                    </Link>
-                </template>
-
-                <!-- ================= AUDITEE NAV ================= -->
-                <template v-if="isAuditee">
-                    <div v-if="!isCollapsed" class="px-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                        Store Menu
-                    </div>
-                    <div v-else class="border-t border-gray-800 my-2"></div>
-
-                    <Link
-                        :href="route('auditee.dashboard')"
-                        :title="isCollapsed ? 'Store Dashboard' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('auditee.dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Dashboard</span>
-                    </Link>
-
-                    <Link
-                        :href="route('auditee.audits.index')"
-                        :title="isCollapsed ? 'Toko Audits' : ''"
-                        class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
-                        :class="[
-                            route().current('auditee.audits.*') || route().current('auditee.findings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                            isCollapsed ? 'justify-center px-2' : ''
-                        ]"
-                    >
-                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span v-if="!isCollapsed" class="truncate">Toko Audits</span>
+                        <span v-if="!isCollapsed" class="truncate">Finding Quality</span>
                     </Link>
                 </template>
             </nav>
@@ -523,43 +548,39 @@ const logout = () => {
                 <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto" @click="mobileMenuOpen = false">
                     <!-- Admin Mobile -->
                     <template v-if="isAdmin">
-                        <Link :href="route('admin.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">
-                            Dashboard
-                        </Link>
+                        <Link :href="route('admin.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</Link>
                         <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Audit Management</div>
                         <Link :href="route('admin.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audits</Link>
                         <Link :href="route('admin.findings.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Findings</Link>
+                        <Link :href="route('coordinator.finding-qualities.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Finding Quality</Link>
                         <Link :href="route('admin.action-plans.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Action Plans</Link>
                         <Link :href="route('admin.reports.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Reports</Link>
-                        <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Master Data</div>
+                        <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Master Data & CSA</div>
                         <Link :href="route('admin.users.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Users</Link>
-                        <Link :href="route('admin.stores.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Stores</Link>
+                        <Link :href="route('admin.stores.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Toko & Gudang (CSA)</Link>
                         <Link :href="route('admin.audit-categories.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audit Categories</Link>
                         <Link :href="route('admin.sops.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">SOP / SE</Link>
-                        <Link :href="route('admin.notification-rules.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Jadwal Notifikasi</Link>
                     </template>
 
-                    <!-- Coordinator Mobile -->
-                    <template v-if="isCoordinator">
+                    <!-- Coordinator / Chief / Asmen Mobile -->
+                    <template v-else-if="isManagement">
                         <Link :href="route('coordinator.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</Link>
                         <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Audit Management</div>
                         <Link :href="route('coordinator.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audits</Link>
                         <Link :href="route('coordinator.findings.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Findings</Link>
+                        <Link :href="route('coordinator.finding-qualities.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Finding Quality</Link>
                         <Link :href="route('coordinator.action-plans.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Action Plans</Link>
                         <Link :href="route('coordinator.reports.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Reports</Link>
+                        <div class="px-3 pt-2 text-[10px] font-semibold text-gray-500 uppercase">Master Data CSA</div>
+                        <Link :href="route('coordinator.stores.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Toko & Gudang (CSA)</Link>
                     </template>
 
                     <!-- Auditor Mobile -->
                     <template v-if="isAuditor">
                         <Link :href="route('auditor.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</Link>
                         <Link :href="route('auditor.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">My Audits</Link>
+                        <Link :href="route('auditor.finding-qualities.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Finding Quality</Link>
                         <Link :href="route('auditor.verification.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Verification Queue</Link>
-                    </template>
-
-                    <!-- Auditee Mobile -->
-                    <template v-if="isAuditee">
-                        <Link :href="route('auditee.dashboard')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</Link>
-                        <Link :href="route('auditee.audits.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Toko Audits</Link>
                     </template>
                 </nav>
             </aside>
@@ -613,7 +634,7 @@ const logout = () => {
                         <div class="text-left hidden sm:block">
                             <div class="text-xs font-semibold text-gray-800 leading-tight">{{ user.name }}</div>
                             <div class="text-[10px] text-gray-500 leading-tight">
-                                {{ isAdmin ? 'Administrator' : (isCoordinator ? 'Koordinator' : (isAuditor ? 'Auditor' : 'Store Team')) }}
+                                {{ roleDisplayLabel }}
                             </div>
                         </div>
 
@@ -640,7 +661,7 @@ const logout = () => {
                             <p class="text-[11px] text-gray-500 truncate mt-0.5">{{ user.email }}</p>
                             <div class="mt-1.5">
                                 <span class="inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-800 border border-slate-200">
-                                    {{ isAdmin ? 'Administrator' : (isCoordinator ? 'Koordinator Audit' : (isAuditor ? 'Auditor Lapangan' : 'Store Team')) }}
+                                    {{ roleDisplayLabel }}
                                 </span>
                             </div>
                         </div>

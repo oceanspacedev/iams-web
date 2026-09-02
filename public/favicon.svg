@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+    <defs>
+        <linearGradient id="iamsShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3B82F6" />
+            <stop offset="1" stop-color="#1D4ED8" />
+        </linearGradient>
+        <linearGradient id="iamsHighlightGrad" x1="16" y1="8" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#60A5FA" stop-opacity="0.8" />
+            <stop offset="1" stop-color="#1E40AF" stop-opacity="0.2" />
+        </linearGradient>
+    </defs>
+    
+    <!-- Shield Background -->
+    <path d="M32 4L10 12V28C10 43 19.5 56.5 32 60C44.5 56.5 54 43 54 28V12L32 4Z" fill="url(#iamsShieldGrad)" />
+    
+    <!-- Shield Half Highlight -->
+    <path d="M32 7.5L14 14V27.5C14 40.5 22 52.2 32 55.8V7.5Z" fill="white" fill-opacity="0.18" />
+    
+    <!-- Inner Accent Area -->
+    <circle cx="32" cy="31" r="15" fill="url(#iamsHighlightGrad)" fill-opacity="0.35" />
+    
+    <!-- Verified Checkmark -->
+    <path d="M23 32L29 38L42 24" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Modern Audit Status Dot -->
+    <circle cx="44" cy="18" r="3.5" fill="#38BDF8" />
+</svg>

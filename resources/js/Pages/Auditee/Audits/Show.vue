@@ -136,11 +136,11 @@ const formatRupiah = (number) => {
                         <div class="pt-2 border-t border-gray-100">
                             <div class="text-gray-500 font-medium mb-1">Status Action Plan</div>
                             <div v-if="finding.action_plan?.action_plan" class="text-gray-800">
-                                <span class="font-medium text-emerald-700">✓ Sudah diisi</span>
+                                <span class="font-medium text-emerald-700">Sudah diisi</span>
                                 <div class="text-[11px] text-gray-500 mt-0.5">PIC: {{ finding.action_plan.pic || '-' }} | Deadline: {{ finding.action_plan.deadline || '-' }}</div>
                             </div>
-                            <div v-else class="text-red-600 font-medium">
-                                ⚠ Belum diisi
+                            <div v-else class="text-amber-700 font-medium">
+                                Belum diisi
                             </div>
                         </div>
                     </div>

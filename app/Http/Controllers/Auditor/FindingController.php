@@ -20,7 +20,7 @@ class FindingController extends Controller
         $this->authorize('view', $audit);
 
         return Inertia::render('Auditor/Findings/Create', [
-            'audit'      => $audit->load('store')->only(['id', 'audit_number', 'store']),
+            'audit'      => $audit->load(['store', 'category'])->only(['id', 'audit_number', 'store', 'category', 'category_id']),
             'categories' => AuditCategory::active()->orderBy('name')->get(['id', 'name']),
             'sops'       => Sop::active()->orderBy('code')->get(['id', 'code', 'title']),
         ]);
@@ -38,7 +38,7 @@ class FindingController extends Controller
             'loss_amount'     => 'nullable|numeric|min:0',
             'auditor_opinion' => 'nullable|string',
             'recommendation'  => 'required|string',
-            'severity'        => 'required|in:CRITICAL,MAJOR,MINOR,OBSERVATION',
+            'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
         ]);
 
         $finding = $audit->findings()->create([
@@ -57,7 +57,18 @@ class FindingController extends Controller
         \App\Services\WhatsAppService::notifyFindingCreated($finding);
 
         return redirect()->route('auditor.audits.show', $audit)
-            ->with('success', 'Finding berhasil dibuat & notifikasi WhatsApp terkirim ke Toko.');
+            ->with('success', 'Data saved! Temuan (Finding) baru berhasil disimpan.');
+    }
+
+    public function destroy(Request $request, Finding $finding): RedirectResponse
+    {
+        $this->authorize('delete', $finding);
+
+        $audit = $finding->audit;
+        $finding->delete();
+
+        return redirect()->route('auditor.audits.show', $audit)
+            ->with('success', 'Temuan (Finding) berhasil dihapus.');
     }
 
     public function show(Request $request, Finding $finding): Response
@@ -66,6 +77,7 @@ class FindingController extends Controller
 
         $finding->load([
             'audit.store',
+            'audit.documents',
             'category',
             'sop',
             'severityReviewer',
@@ -75,10 +87,23 @@ class FindingController extends Controller
             'evidences.verifier',
         ]);
 
+        $docsCount = $finding->audit?->documents?->count() ?? 0;
+        $hasDocs = $docsCount > 0 || $finding->evidences->isNotEmpty();
+        $hasActionPlan = !empty($finding->actionPlan?->action_plan);
+
         return Inertia::render('Auditor/Findings/Show', [
             'finding' => [
                 'id'                   => $finding->id,
-                'audit'                => $finding->audit->only(['id', 'audit_number', 'status']),
+                'audit'                => [
+                    'id'              => $finding->audit->id,
+                    'audit_number'    => $finding->audit->audit_number,
+                    'status'          => $finding->audit->status,
+                    'documents_count' => $docsCount,
+                    'has_documents'   => $docsCount > 0,
+                ],
+                'has_documents'        => $hasDocs,
+                'documents_count'      => $docsCount,
+                'has_action_plan'      => $hasActionPlan,
                 'store'                => $finding->audit->store->only(['name', 'code']),
                 'category'             => $finding->category->name,
                 'sop'                  => $finding->sop?->only(['code', 'title']),
@@ -137,7 +162,7 @@ class FindingController extends Controller
 
         // Only validate severity if it has not been locked by Coordinator
         if (!$finding->is_severity_locked) {
-            $rules['severity'] = 'required|in:CRITICAL,MAJOR,MINOR,OBSERVATION';
+            $rules['severity'] = 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION';
         }
 
         $validated = $request->validate($rules);
@@ -165,6 +190,60 @@ class FindingController extends Controller
         \App\Services\WhatsAppService::notifyFindingClosed($finding);
 
         return redirect()->route('auditor.findings.show', $finding)
-            ->with('success', 'Finding berhasil ditutup & notifikasi WhatsApp terkirim ke Toko.');
+            ->with('success', 'Data saved! Finding berhasil ditutup.');
+    }
+
+    public function updateActionPlan(Request $request, Finding $finding): RedirectResponse
+    {
+        $this->authorize('update', $finding);
+
+        $validated = $request->validate([
+            'action_plan' => 'required|string',
+            'pic'         => 'nullable|string|max:100',
+            'deadline'    => 'nullable|date',
+            'notes'       => 'nullable|string',
+        ]);
+
+        $finding->actionPlan()->updateOrCreate(
+            ['finding_id' => $finding->id],
+            [
+                'action_plan' => $validated['action_plan'],
+                'pic'         => $validated['pic'] ?? null,
+                'deadline'    => $validated['deadline'] ?? null,
+                'response'    => $validated['notes'] ?? null,
+                'status'      => 'IN_PROGRESS',
+            ]
+        );
+
+        if ($finding->status === Finding::STATUS_OPEN) {
+            $finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
+        }
+
+        return redirect()->route('auditor.findings.show', $finding)
+            ->with('success', 'Data saved! Komitmen tindak lanjut toko berhasil disimpan.');
+    }
+
+    public function storeEvidence(Request $request, Finding $finding): RedirectResponse
+    {
+        $this->authorize('update', $finding);
+
+        $validated = $request->validate([
+            'description' => 'required|string|max:255',
+            'file'        => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
+        ]);
+
+        $path = $request->file('file')->store('evidences', 'public');
+
+        $finding->evidences()->create([
+            'uploaded_by_id'      => $request->user()->id,
+            'file_path'           => $path,
+            'description'         => $validated['description'],
+            'verification_status' => 'APPROVED',
+            'verified_by_id'      => $request->user()->id,
+            'verified_at'         => now(),
+        ]);
+
+        return redirect()->route('auditor.findings.show', $finding)
+            ->with('success', 'Data saved! Bukti tindak lanjut berhasil diunggah.');
     }
 }

@@ -14,6 +14,8 @@ class Store extends Model
     protected $fillable = [
         'code',
         'name',
+        'business_entity',
+        'type',
         'area',
         'regional',
         'status',
@@ -21,6 +23,7 @@ class Store extends Model
 
     protected $casts = [
         'status' => 'string',
+        'type'   => 'string',
     ];
 
     // Relationships

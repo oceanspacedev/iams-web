@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,6 +17,7 @@ class Audit extends Model
         'audit_number',
         'title',
         'store_id',
+        'category_id',
         'location',
         'auditor_id',
         'audit_date',
@@ -30,6 +32,11 @@ class Audit extends Model
     ];
 
     // Relationships
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AuditCategory::class, 'category_id');
+    }
+
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
@@ -40,9 +47,24 @@ class Audit extends Model
         return $this->belongsTo(User::class, 'auditor_id');
     }
 
+    public function auditors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'audit_auditor');
+    }
+
     public function findings(): HasMany
     {
         return $this->hasMany(Finding::class);
+    }
+
+    public function qualityFindings(): HasMany
+    {
+        return $this->hasMany(QualityFinding::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(AuditDocument::class);
     }
 
     public function notifications(): HasMany
@@ -53,7 +75,10 @@ class Audit extends Model
     // Scopes
     public function scopeForAuditor($query, int $userId)
     {
-        return $query->where('auditor_id', $userId);
+        return $query->where(function ($q) use ($userId) {
+            $q->where('auditor_id', $userId)
+              ->orWhereHas('auditors', fn ($sub) => $sub->where('users.id', $userId));
+        });
     }
 
     public function scopeForStore($query, int $storeId)

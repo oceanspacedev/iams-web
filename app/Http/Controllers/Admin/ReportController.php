@@ -65,12 +65,18 @@ class ReportController extends Controller
             'CLOSED'               => Finding::where('status', 'CLOSED')->count(),
         ];
 
+        $totalFindings = Finding::count();
+        $closedFindings = Finding::where('status', 'CLOSED')->count();
+        $completionRate = $totalFindings > 0 ? round(($closedFindings / $totalFindings) * 100, 1) : 0;
+
         return Inertia::render('Admin/Reports/Index', [
-            'by_severity'  => $bySeverity,
-            'by_category'  => $byCategory,
-            'store_losses' => $storeLosses,
-            'by_status'    => $byStatus,
-            'total_loss'   => Finding::sum('loss_amount') ?? 0,
+            'by_severity'     => $bySeverity,
+            'by_category'     => $byCategory,
+            'store_losses'    => $storeLosses,
+            'by_status'       => $byStatus,
+            'total_loss'      => (float) (Finding::sum('loss_amount') ?? 0),
+            'total_findings'  => $totalFindings,
+            'completion_rate' => $completionRate,
         ]);
     }
 

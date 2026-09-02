@@ -35,6 +35,16 @@ class ReportController extends Controller
             'CLOSED'               => Finding::where('status', Finding::STATUS_CLOSED)->count(),
         ];
 
+        $byCategory = \App\Models\AuditCategory::active()
+            ->withCount('findings')
+            ->get()
+            ->map(fn ($cat) => [
+                'id'         => $cat->id,
+                'name'       => $cat->name,
+                'count'      => $cat->findings_count,
+                'total_loss' => (float) $cat->findings()->sum('loss_amount'),
+            ]);
+
         $storeLosses = Store::withCount('audits')
             ->get()
             ->map(function ($s) {
@@ -52,11 +62,18 @@ class ReportController extends Controller
             ->sortByDesc('total_loss')
             ->values();
 
+        $totalFindings = Finding::count();
+        $closedFindings = Finding::where('status', Finding::STATUS_CLOSED)->count();
+        $completionRate = $totalFindings > 0 ? round(($closedFindings / $totalFindings) * 100, 1) : 0;
+
         return Inertia::render('Coordinator/Reports/Index', [
-            'by_severity'  => $bySeverity,
-            'by_status'    => $byStatus,
-            'store_losses' => $storeLosses,
-            'total_loss'   => (float) Finding::sum('loss_amount'),
+            'by_severity'     => $bySeverity,
+            'by_status'       => $byStatus,
+            'by_category'     => $byCategory,
+            'store_losses'    => $storeLosses,
+            'total_loss'      => (float) Finding::sum('loss_amount'),
+            'total_findings'  => $totalFindings,
+            'completion_rate' => $completionRate,
         ]);
     }
 

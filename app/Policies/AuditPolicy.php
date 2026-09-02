@@ -22,7 +22,7 @@ class AuditPolicy
         }
 
         if ($user->hasPermissionTo('audit.view-assigned') && $user->isAuditor()) {
-            return $audit->auditor_id === $user->id;
+            return $audit->auditor_id === $user->id || $audit->auditors()->where('users.id', $user->id)->exists();
         }
 
         if ($user->isAuditee()) {

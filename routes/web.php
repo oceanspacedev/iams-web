@@ -11,19 +11,17 @@ use App\Http\Controllers\Admin\SopController as AdminSopController;
 use App\Http\Controllers\Admin\StoreController as AdminStoreController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auditor\AuditController as AuditorAuditController;
+use App\Http\Controllers\Auditor\AuditDocumentController as AuditorAuditDocumentController;
 use App\Http\Controllers\Auditor\DashboardController as AuditorDashboardController;
 use App\Http\Controllers\Auditor\EvidenceVerificationController;
 use App\Http\Controllers\Auditor\FindingController as AuditorFindingController;
-use App\Http\Controllers\Auditee\ActionPlanController;
-use App\Http\Controllers\Auditee\AuditController as AuditeeAuditController;
-use App\Http\Controllers\Auditee\DashboardController as AuditeeDashboardController;
-use App\Http\Controllers\Auditee\EvidenceController;
-use App\Http\Controllers\Auditee\FindingController as AuditeeFindingController;
+use App\Http\Controllers\Auditor\QualityFindingController as AuditorQualityFindingController;
 use App\Http\Controllers\Coordinator\ActionPlanController as CoordinatorActionPlanController;
 use App\Http\Controllers\Coordinator\AuditController as CoordinatorAuditController;
 use App\Http\Controllers\Coordinator\DashboardController as CoordinatorDashboardController;
 use App\Http\Controllers\Coordinator\FindingController as CoordinatorFindingController;
 use App\Http\Controllers\Coordinator\ReportController as CoordinatorReportController;
+use App\Http\Controllers\Coordinator\StoreController as CoordinatorStoreController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,9 +44,9 @@ Route::middleware('auth')->group(function () {
 Route::get('/admin', fn () => redirect()->route('admin.dashboard'));
 
 // ==========================================
-// ADMIN ROUTES (VUE + INERTIA)
+// ADMIN & CHIEF ROUTES (VUE + INERTIA)
 // ==========================================
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -61,10 +59,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/users/{user}/toggle-active', [AdminUserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
-    // Stores
+    // Stores & CSA Import
     Route::get('/stores', [AdminStoreController::class, 'index'])->name('stores.index');
     Route::get('/stores/create', [AdminStoreController::class, 'create'])->name('stores.create');
     Route::post('/stores', [AdminStoreController::class, 'store'])->name('stores.store');
+    Route::get('/stores/download-template', [AdminStoreController::class, 'downloadTemplate'])->name('stores.download-template');
+    Route::post('/stores/import-csv', [AdminStoreController::class, 'importCsv'])->name('stores.import-csv');
     Route::get('/stores/{store}/edit', [AdminStoreController::class, 'edit'])->name('stores.edit');
     Route::put('/stores/{store}', [AdminStoreController::class, 'update'])->name('stores.update');
     Route::delete('/stores/{store}', [AdminStoreController::class, 'destroy'])->name('stores.destroy');
@@ -119,16 +119,30 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 // ==========================================
-// COORDINATOR ROUTES (KOORDINATOR AUDIT)
+// COORDINATOR, ASMEN, CHIEF ROUTES (KOORDINATOR AUDIT)
 // ==========================================
-Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
+Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coordinator')->name('coordinator.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [CoordinatorDashboardController::class, 'index'])->name('dashboard');
+
+    // Stores & CSA Import (Koordinator)
+    Route::get('/stores', [CoordinatorStoreController::class, 'index'])->name('stores.index');
+    Route::get('/stores/create', [CoordinatorStoreController::class, 'create'])->name('stores.create');
+    Route::post('/stores', [CoordinatorStoreController::class, 'store'])->name('stores.store');
+    Route::get('/stores/download-template', [CoordinatorStoreController::class, 'downloadTemplate'])->name('stores.download-template');
+    Route::post('/stores/import-csv', [CoordinatorStoreController::class, 'importCsv'])->name('stores.import-csv');
+    Route::get('/stores/{store}/edit', [CoordinatorStoreController::class, 'edit'])->name('stores.edit');
+    Route::put('/stores/{store}', [CoordinatorStoreController::class, 'update'])->name('stores.update');
+    Route::delete('/stores/{store}', [CoordinatorStoreController::class, 'destroy'])->name('stores.destroy');
 
     // Severity Reviews / Findings
     Route::get('/findings', [CoordinatorFindingController::class, 'index'])->name('findings.index');
     Route::get('/findings/{finding}', [CoordinatorFindingController::class, 'show'])->name('findings.show');
     Route::patch('/findings/{finding}/review-severity', [CoordinatorFindingController::class, 'reviewSeverity'])->name('findings.review-severity');
+
+    // Finding Quality Monitoring
+    Route::get('/finding-qualities', [AuditorQualityFindingController::class, 'index'])->name('finding-qualities.index');
+    Route::get('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'show'])->name('finding-qualities.show');
 
     // Audits Monitoring & Management
     Route::get('/audits', [CoordinatorAuditController::class, 'index'])->name('audits.index');
@@ -164,41 +178,32 @@ Route::middleware(['auth', 'role:auditor'])->prefix('auditor')->name('auditor.')
     Route::get('/audits', [AuditorAuditController::class, 'index'])->name('audits.index');
     Route::get('/audits/{audit}', [AuditorAuditController::class, 'show'])->name('audits.show');
 
+    // Audit Signed Documents (LHP, BAP, Bukti Lapangan)
+    Route::post('/audits/{audit}/documents', [AuditorAuditDocumentController::class, 'store'])->name('audits.documents.store');
+    Route::delete('/documents/{document}', [AuditorAuditDocumentController::class, 'destroy'])->name('documents.destroy');
+
     // Findings
     Route::get('/audits/{audit}/findings/create', [AuditorFindingController::class, 'create'])->name('findings.create');
     Route::post('/audits/{audit}/findings', [AuditorFindingController::class, 'store'])->name('findings.store');
     Route::get('/findings/{finding}', [AuditorFindingController::class, 'show'])->name('findings.show');
     Route::get('/findings/{finding}/edit', [AuditorFindingController::class, 'edit'])->name('findings.edit');
     Route::patch('/findings/{finding}', [AuditorFindingController::class, 'update'])->name('findings.update');
+    Route::delete('/findings/{finding}', [AuditorFindingController::class, 'destroy'])->name('findings.destroy');
+    Route::patch('/findings/{finding}/action-plan', [AuditorFindingController::class, 'updateActionPlan'])->name('findings.action-plan.update');
+    Route::post('/findings/{finding}/evidences', [AuditorFindingController::class, 'storeEvidence'])->name('findings.evidences.store');
     Route::patch('/findings/{finding}/close', [AuditorFindingController::class, 'close'])->name('findings.close');
+
+    // Finding Quality Reports
+    Route::get('/finding-qualities', [AuditorQualityFindingController::class, 'index'])->name('finding-qualities.index');
+    Route::get('/finding-qualities/create', [AuditorQualityFindingController::class, 'create'])->name('finding-qualities.create');
+    Route::post('/finding-qualities', [AuditorQualityFindingController::class, 'store'])->name('finding-qualities.store');
+    Route::get('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'show'])->name('finding-qualities.show');
+    Route::delete('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'destroy'])->name('finding-qualities.destroy');
 
     // Evidence Verification
     Route::get('/verification', [EvidenceVerificationController::class, 'index'])->name('verification.index');
     Route::patch('/evidences/{evidence}/approve', [EvidenceVerificationController::class, 'approve'])->name('evidences.approve');
     Route::patch('/evidences/{evidence}/reject', [EvidenceVerificationController::class, 'reject'])->name('evidences.reject');
-});
-
-// ==========================================
-// AUDITEE ROUTES
-// ==========================================
-Route::middleware(['auth', 'role:auditee'])->prefix('auditee')->name('auditee.')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [AuditeeDashboardController::class, 'index'])->name('dashboard');
-
-    // Audits
-    Route::get('/audits', [AuditeeAuditController::class, 'index'])->name('audits.index');
-    Route::get('/audits/{audit}', [AuditeeAuditController::class, 'show'])->name('audits.show');
-
-    // Findings
-    Route::get('/findings/{finding}', [AuditeeFindingController::class, 'show'])->name('findings.show');
-
-    // Action Plans
-    Route::post('/findings/{finding}/action-plan', [ActionPlanController::class, 'store'])->name('action-plans.store');
-    Route::patch('/findings/{finding}/action-plan', [ActionPlanController::class, 'update'])->name('action-plans.update');
-
-    // Evidence Upload
-    Route::post('/findings/{finding}/evidences', [EvidenceController::class, 'store'])->name('evidences.store');
-    Route::delete('/evidences/{evidence}', [EvidenceController::class, 'destroy'])->name('evidences.destroy');
 });
 
 require __DIR__ . '/auth.php';

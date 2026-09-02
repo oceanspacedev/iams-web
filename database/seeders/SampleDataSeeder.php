@@ -17,14 +17,9 @@ class SampleDataSeeder extends Seeder
     {
         // Audit Categories
         $categories = [
-            ['name' => 'Penjualan Langsung / COD',  'description' => 'Audit terhadap penjualan tunai dan cash on delivery'],
-            ['name' => 'Transfer Order',             'description' => 'Audit proses transfer order antar toko/gudang'],
-            ['name' => 'Buku Customer',              'description' => 'Audit pengelolaan data dan buku pelanggan'],
-            ['name' => 'Stock Opname',               'description' => 'Audit stock opname dan kesesuaian fisik dengan sistem'],
-            ['name' => 'Visibility',                 'description' => 'Audit display produk dan visibility toko'],
-            ['name' => 'IC BIC',                     'description' => 'Audit internal control dan business internal control'],
-            ['name' => 'Kas & Bank',                 'description' => 'Audit pengelolaan kas dan rekening bank toko'],
-            ['name' => 'Administrasi',               'description' => 'Audit kelengkapan dan ketertiban administrasi'],
+            ['name' => 'Audit Operational Retail',  'description' => 'Pemeriksaan operasional toko retail, kasir, display produk, dan kepatuhan SOP cabang ritel'],
+            ['name' => 'Audit Finance',             'description' => 'Pemeriksaan keuangan, cash flow, kas & bank, rekonsiliasi, dan administrasi finansial'],
+            ['name' => 'Audit Distribusi & Online', 'description' => 'Pemeriksaan gudang distribusi logistik, stok fisik, order transfer, dan penjualan online / marketplace'],
         ];
 
         foreach ($categories as $cat) {
@@ -46,13 +41,14 @@ class SampleDataSeeder extends Seeder
             Sop::firstOrCreate(['code' => $sop['code']], $sop);
         }
 
-        // Stores
+        // Stores (Termasuk data toko CSA: Toko Megu, Toko Tuparev, Toko Jatiwangi)
         $stores = [
-            ['code' => 'STR-001', 'name' => 'Toko Jakarta Pusat',  'area' => 'Jakarta',   'regional' => 'Regional 1', 'status' => 'active'],
-            ['code' => 'STR-002', 'name' => 'Toko Jakarta Selatan', 'area' => 'Jakarta',   'regional' => 'Regional 1', 'status' => 'active'],
-            ['code' => 'STR-003', 'name' => 'Toko Bandung Utara',   'area' => 'Bandung',   'regional' => 'Regional 2', 'status' => 'active'],
-            ['code' => 'STR-004', 'name' => 'Toko Surabaya Timur',  'area' => 'Surabaya',  'regional' => 'Regional 3', 'status' => 'active'],
-            ['code' => 'STR-005', 'name' => 'Toko Medan Barat',     'area' => 'Medan',     'regional' => 'Regional 4', 'status' => 'inactive'],
+            ['code' => 'TKO-MEGU', 'name' => 'Toko Megu',      'business_entity' => 'CSA Retail', 'type' => 'toko', 'area' => 'Cirebon',    'regional' => 'Jawa Barat', 'status' => 'active'],
+            ['code' => 'TKO-TPRV', 'name' => 'Toko Tuparev',   'business_entity' => 'CSA Retail', 'type' => 'toko', 'area' => 'Cirebon',    'regional' => 'Jawa Barat', 'status' => 'active'],
+            ['code' => 'TKO-JTWG', 'name' => 'Toko Jatiwangi', 'business_entity' => 'CSA Retail', 'type' => 'toko', 'area' => 'Majalengka', 'regional' => 'Jawa Barat', 'status' => 'active'],
+            ['code' => 'STR-001',  'name' => 'Toko Jakarta Pusat',  'business_entity' => 'PT CSA Retail', 'type' => 'toko', 'area' => 'Jakarta',   'regional' => 'Regional 1', 'status' => 'active'],
+            ['code' => 'STR-002',  'name' => 'Toko Jakarta Selatan', 'business_entity' => 'PT CSA Retail', 'type' => 'toko', 'area' => 'Jakarta',   'regional' => 'Regional 1', 'status' => 'active'],
+            ['code' => 'STR-003',  'name' => 'Toko Bandung Utara',   'business_entity' => 'PT CSA Retail', 'type' => 'toko', 'area' => 'Bandung',   'regional' => 'Regional 2', 'status' => 'active'],
         ];
 
         foreach ($stores as $store) {
@@ -65,20 +61,22 @@ class SampleDataSeeder extends Seeder
         $storeB  = Store::where('code', 'STR-002')->first();
 
         if ($auditor && $storeA) {
+            $category = AuditCategory::where('name', 'Audit Operational Retail')->first();
+
             $audit1 = Audit::firstOrCreate(
                 ['audit_number' => 'AUD/2026/08/0001'],
                 [
-                    'store_id'   => $storeA->id,
-                    'auditor_id' => $auditor->id,
-                    'audit_date' => '2026-08-15',
-                    'status'     => 'IN_PROGRESS',
-                    'notes'      => 'Audit rutin bulanan toko Jakarta Pusat',
+                    'category_id' => $category?->id,
+                    'store_id'    => $storeA->id,
+                    'auditor_id'  => $auditor->id,
+                    'audit_date'  => '2026-08-15',
+                    'status'      => 'IN_PROGRESS',
+                    'notes'       => 'Audit rutin bulanan toko Jakarta Pusat',
                 ]
             );
 
             // Sample Finding
-            $category = AuditCategory::where('name', 'Stock Opname')->first();
-            $sop      = Sop::where('code', 'SOP-003')->first();
+            $sop = Sop::where('code', 'SOP-003')->first();
 
             if ($category && $sop) {
                 $finding = Finding::firstOrCreate(

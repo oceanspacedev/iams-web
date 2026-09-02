@@ -53,6 +53,36 @@ class RolePermissionSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions(Permission::all());
 
+        $managementPermissions = [
+            'audit.view-all',
+            'audit.create',
+            'audit.edit',
+            'audit.delete',
+            'audit.change-status',
+            'store.view',
+            'store.create',
+            'store.edit',
+            'finding.view-all',
+            'finding.edit',
+            'finding.delete',
+            'finding.verify',
+            'finding.close',
+            'action-plan.view',
+            'action-plan.edit',
+            'evidence.view',
+            'sop.view',
+            'audit-category.view',
+            'report.view',
+        ];
+
+        // --- CHIEF (CHIEF AUDITOR) ---
+        $chief = Role::firstOrCreate(['name' => 'chief', 'guard_name' => 'web']);
+        $chief->syncPermissions($managementPermissions);
+
+        // --- ASMEN (ASISTEN MANAGER) ---
+        $asmen = Role::firstOrCreate(['name' => 'asmen', 'guard_name' => 'web']);
+        $asmen->syncPermissions($managementPermissions);
+
         // --- AUDITOR ---
         $auditor = Role::firstOrCreate(['name' => 'auditor', 'guard_name' => 'web']);
         $auditor->syncPermissions([
@@ -60,9 +90,11 @@ class RolePermissionSeeder extends Seeder
             'finding.view-assigned',
             'finding.create',
             'finding.edit',
+            'finding.delete',
             'finding.verify',
             'finding.close',
             'action-plan.view',
+            'evidence.upload',
             'evidence.verify',
             'evidence.view',
             'sop.view',
@@ -72,25 +104,13 @@ class RolePermissionSeeder extends Seeder
 
         // --- COORDINATOR (KOORDINATOR AUDIT) ---
         $coordinator = Role::firstOrCreate(['name' => 'coordinator', 'guard_name' => 'web']);
-        $coordinator->syncPermissions([
-            'audit.view-all',
-            'finding.view-all',
-            'finding.edit',
-            'action-plan.view',
-            'evidence.view',
-            'sop.view',
-            'audit-category.view',
-            'report.view',
-        ]);
+        $coordinator->syncPermissions($managementPermissions);
 
-        // --- AUDITEE ---
+        // Clean up or keep auditee permissions for safety
         $auditee = Role::firstOrCreate(['name' => 'auditee', 'guard_name' => 'web']);
         $auditee->syncPermissions([
             'audit.view-assigned',
             'finding.view-assigned',
-            'action-plan.create',
-            'action-plan.edit',
-            'evidence.upload',
             'evidence.view',
         ]);
 

@@ -1,0 +1,93 @@
+services:
+  # ------------------------------------------------------------
+  # Application (PHP 8.2 FPM)
+  # ------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auditflow_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - storage_uploads:/var/www/storage/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - auditflow_network
+
+  # ------------------------------------------------------------
+  # Web Server (Nginx Reverse Proxy)
+  # ------------------------------------------------------------
+  web:
+    image: nginx:alpine
+    container_name: auditflow_web
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - storage_uploads:/var/www/public/storage:ro
+    depends_on:
+      - app
+    networks:
+      - auditflow_network
+
+  # ------------------------------------------------------------
+  # Database (MySQL 8.0)
+  # ------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: auditflow_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-audit_flow}
+      MYSQL_USER: ${DB_USERNAME:-audit_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret123}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret123}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "${FORWARD_DB_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - auditflow_network
+
+  # ------------------------------------------------------------
+  # Queue Worker (Background Jobs & Reminders)
+  # ------------------------------------------------------------
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auditflow_queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - auditflow_network
+
+# ------------------------------------------------------------
+# Networks & Persistent Volumes
+# ------------------------------------------------------------
+networks:
+  auditflow_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  storage_uploads:
+    driver: local

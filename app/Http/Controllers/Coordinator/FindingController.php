@@ -45,6 +45,7 @@ class FindingController extends Controller
     {
         $finding->load([
             'audit.store',
+            'audit.documents',
             'audit.auditor',
             'category',
             'sop',
@@ -55,10 +56,20 @@ class FindingController extends Controller
             'evidences.verifier',
         ]);
 
+        $docsCount = $finding->audit?->documents?->count() ?? 0;
+        $hasDocs = $docsCount > 0 || $finding->evidences->isNotEmpty();
+        $hasActionPlan = !empty($finding->actionPlan?->action_plan);
+
         return Inertia::render('Coordinator/Findings/Show', [
             'finding' => [
                 'id'                   => $finding->id,
-                'audit'                => $finding->audit?->only(['id', 'audit_number', 'status', 'audit_date']) ?? [],
+                'audit'                => array_merge(
+                    $finding->audit?->only(['id', 'audit_number', 'status', 'audit_date']) ?? [],
+                    ['documents_count' => $docsCount, 'has_documents' => $docsCount > 0]
+                ),
+                'has_documents'        => $hasDocs,
+                'documents_count'      => $docsCount,
+                'has_action_plan'      => $hasActionPlan,
                 'store'                => $finding->audit?->store?->only(['name', 'code', 'area']) ?? [],
                 'auditor'              => $finding->audit?->auditor?->only(['name', 'email', 'phone']) ?? [],
                 'category'             => $finding->category?->name ?? '—',
@@ -93,7 +104,7 @@ class FindingController extends Controller
     public function reviewSeverity(Request $request, Finding $finding): RedirectResponse
     {
         $validated = $request->validate([
-            'severity'       => 'required|in:CRITICAL,MAJOR,MINOR,OBSERVATION',
+            'severity'       => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
             'severity_notes' => 'nullable|string|max:500',
         ]);
 

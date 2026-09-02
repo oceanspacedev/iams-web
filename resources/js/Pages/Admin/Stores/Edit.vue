@@ -7,19 +7,17 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-    auditees: {
-        type: Array,
-        default: () => [],
-    },
 });
 
 const form = useForm({
     code: props.store.code,
     name: props.store.name,
+    business_entity: props.store.business_entity || '',
+    type: props.store.type || 'TOKO',
     area: props.store.area || '',
     regional: props.store.regional || '',
-    status: props.store.status,
-    auditees: props.store.auditees || [],
+    address: props.store.address || '',
+    status: props.store.status || 'active',
 });
 
 const submit = () => {
@@ -29,23 +27,23 @@ const submit = () => {
 
 <template>
     <AppLayout :title="`Edit Toko - ${store.name}`">
-        <Head :title="`Edit Toko - ${store.name}`" />
+        <Head :title="`Edit Toko - ${store.name} — Admin`" />
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                 <Link :href="route('admin.stores.index')" class="hover:text-blue-600">Stores</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">{{ store.name }}</span>
+                <span class="text-gray-900 font-medium">{{ store.code }}</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Toko</h1>
-            <p class="text-xs text-gray-500 mt-1">Perbarui data unit cabang retail atau PIC yang terhubung</p>
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Toko / CSA</h1>
+            <p class="text-xs text-gray-500 mt-1">Perbarui data unit cabang retail, gudang, atau badan usaha finance</p>
         </div>
 
-        <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
             <form @submit.prevent="submit" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Kode Toko <span class="text-red-500">*</span></label>
+                        <label class="block font-medium text-gray-700 mb-1">Kode Unit / Toko <span class="text-red-500">*</span></label>
                         <input
                             v-model="form.code"
                             type="text"
@@ -56,7 +54,7 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
+                        <label class="block font-medium text-gray-700 mb-1">Nama Toko / Unit <span class="text-red-500">*</span></label>
                         <input
                             v-model="form.name"
                             type="text"
@@ -64,6 +62,32 @@ const submit = () => {
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                         <div v-if="form.errors.name" class="text-red-600 text-[11px] mt-1">{{ form.errors.name }}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Badan Usaha (Finance / PT / CV)</label>
+                        <input
+                            v-model="form.business_entity"
+                            type="text"
+                            placeholder="Contoh: PT Sumber Ritel Utama / CV Maju"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                        <div v-if="form.errors.business_entity" class="text-red-600 text-[11px] mt-1">{{ form.errors.business_entity }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Tipe Unit <span class="text-red-500">*</span></label>
+                        <select
+                            v-model="form.type"
+                            required
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                        >
+                            <option value="TOKO">TOKO (Cabang Retail)</option>
+                            <option value="GUDANG">GUDANG (Warehouse / DC)</option>
+                            <option value="FINANCE">FINANCE / Kantor Pusat (HO)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -93,41 +117,33 @@ const submit = () => {
                             class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         >
                             <option value="active">Aktif</option>
-                            <option value="inactive">Tidak Aktif</option>
+                            <option value="inactive">Nonaktif</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Auditee PIC Assignment -->
-                <div class="pt-2 border-t border-gray-100">
-                    <label class="block font-medium text-gray-700 mb-1.5">Hubungkan Pengguna Auditee (PIC Toko)</label>
-                    <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-gray-50 rounded border border-gray-200">
-                        <label v-for="a in auditees" :key="a.id" class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                :value="a.id"
-                                v-model="form.auditees"
-                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span class="text-gray-800">{{ a.name }}</span>
-                        </label>
-                    </div>
-                    <div v-if="form.errors.auditees" class="text-red-600 text-[11px] mt-1">{{ form.errors.auditees }}</div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+                    <textarea
+                        v-model="form.address"
+                        rows="2"
+                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    ></textarea>
                 </div>
 
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
                         :href="route('admin.stores.index')"
-                        class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
+                        class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
                     >
-                        {{ form.processing ? 'Menyimpan...' : 'Perbarui Toko' }}
+                        {{ form.processing ? 'Menyimpan...' : 'Perbarui Toko / CSA' }}
                     </button>
                 </div>
             </form>

@@ -54,6 +54,28 @@ class UserSeeder extends Seeder
         );
         $coordinator->assignRole('coordinator');
 
+        // Chief Auditor
+        $chief = User::firstOrCreate(
+            ['email' => 'chief@auditflow.com'],
+            [
+                'name'      => 'Bambang Kusuma (Chief Auditor)',
+                'password'  => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $chief->assignRole('chief');
+
+        // Asmen (Asisten Manager)
+        $asmen = User::firstOrCreate(
+            ['email' => 'asmen@auditflow.com'],
+            [
+                'name'      => 'Rina Wulandari (Asmen)',
+                'password'  => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $asmen->assignRole('asmen');
+
         // Auditee
         $auditee = User::firstOrCreate(
             ['email' => 'auditee@auditflow.com'],
