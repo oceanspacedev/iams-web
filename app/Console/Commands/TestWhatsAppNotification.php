@@ -16,6 +16,7 @@ class TestWhatsAppNotification extends Command
 
         $this->info("Mengirim pesan tes WhatsApp ke: {$phone}...");
 
+        $name = 'Pengguna Sistem';
         $text = "🔔 *Sistem Audit (IAMS) Notification Test*\n\n"
             . "Halo *{$name}*,\n"
             . "Ini adalah pesan uji coba integrasi WhatsApp Gateway WagHub untuk sistem audit.\n\n"

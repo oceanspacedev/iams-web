@@ -359,4 +359,53 @@ class WhatsAppService
 
         return $sentCount;
     }
+
+    /**
+     * Send Login OTP code to user's WhatsApp.
+     */
+    public static function sendLoginOtp(string $phone, string $otp, string $userName): bool
+    {
+        $msg = "*{$otp}* adalah kode OTP Anda untuk masuk ke Sistem Audit (IAMS).\n\n"
+            . "Berlaku selama 5 menit. Jangan berikan kode ini kepada siapa pun demi keamanan akun Anda.";
+
+        return self::send($phone, $msg, 'notification');
+    }
+
+    /**
+     * Notify user that their account registration was approved by Admin.
+     */
+    public static function notifyAccountApproved(User $user, string $roleTitle): bool
+    {
+        if (empty($user->phone)) {
+            return false;
+        }
+
+        $loginUrl = url('/login');
+
+        $msg = "Halo {$user->name},\n\n"
+            . "Pendaftaran akun Anda di Sistem Audit (IAMS) telah disetujui sebagai *{$roleTitle}*.\n\n"
+            . "Silakan masuk ke sistem melalui tautan berikut:\n"
+            . "{$loginUrl}";
+
+        return self::send($user->phone, $msg, 'notification');
+    }
+
+    /**
+     * Notify user that their account registration was rejected by Admin.
+     */
+    public static function notifyAccountRejected(User $user, ?string $reason = null): bool
+    {
+        if (empty($user->phone)) {
+            return false;
+        }
+
+        $reasonText = $reason ? "\nAlasan: {$reason}\n" : "\n";
+
+        $msg = "Halo {$user->name},\n\n"
+            . "Pendaftaran akun Anda di Sistem Audit (IAMS) belum dapat disetujui.{$reasonText}\n"
+            . "Silakan hubungi Administrator jika memerlukan bantuan lebih lanjut.";
+
+        return self::send($user->phone, $msg, 'notification');
+    }
 }
+

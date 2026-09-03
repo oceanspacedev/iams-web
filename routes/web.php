@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\NotificationRuleController as AdminNotificationRu
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SopController as AdminSopController;
 use App\Http\Controllers\Admin\StoreController as AdminStoreController;
+use App\Http\Controllers\Admin\SystemSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auditor\AuditController as AuditorAuditController;
 use App\Http\Controllers\Auditor\AuditDocumentController as AuditorAuditDocumentController;
@@ -57,6 +58,8 @@ Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::patch('/users/{user}/toggle-active', [AdminUserController::class, 'toggleActive'])->name('users.toggle-active');
+    Route::patch('/users/{user}/approve', [AdminUserController::class, 'approve'])->name('users.approve');
+    Route::patch('/users/{user}/reject', [AdminUserController::class, 'reject'])->name('users.reject');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
     // Stores & CSA Import
@@ -73,7 +76,9 @@ Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')
     Route::get('/audit-categories', [AdminAuditCategoryController::class, 'index'])->name('audit-categories.index');
     Route::post('/audit-categories', [AdminAuditCategoryController::class, 'store'])->name('audit-categories.store');
     Route::put('/audit-categories/{auditCategory}', [AdminAuditCategoryController::class, 'update'])->name('audit-categories.update');
+    Route::patch('/audit-categories/{auditCategory}/toggle-active', [AdminAuditCategoryController::class, 'toggleActive'])->name('audit-categories.toggle-active');
     Route::delete('/audit-categories/{auditCategory}', [AdminAuditCategoryController::class, 'destroy'])->name('audit-categories.destroy');
+    Route::post('/audit-categories/{id}/restore', [AdminAuditCategoryController::class, 'restore'])->name('audit-categories.restore');
 
     // SOP / SE
     Route::get('/sops', [AdminSopController::class, 'index'])->name('sops.index');
@@ -116,6 +121,14 @@ Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')
     Route::get('/reports/export-findings', [AdminReportController::class, 'exportFindings'])->name('reports.export-findings');
     Route::get('/reports/export-stores', [AdminReportController::class, 'exportStores'])->name('reports.export-stores');
     Route::get('/reports/export-summary', [AdminReportController::class, 'exportSummary'])->name('reports.export-summary');
+
+    // System Settings & Maintenance (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings/toggle-demo-accounts', [SystemSettingController::class, 'toggleDemoAccounts'])->name('settings.toggle-demo-accounts');
+        Route::post('/settings/reset-transactional', [SystemSettingController::class, 'resetTransactional'])->name('settings.reset-transactional');
+        Route::post('/settings/factory-reset', [SystemSettingController::class, 'factoryReset'])->name('settings.factory-reset');
+    });
 });
 
 // ==========================================

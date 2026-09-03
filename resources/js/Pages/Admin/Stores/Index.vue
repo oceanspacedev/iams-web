@@ -101,50 +101,50 @@ const deleteStore = (store) => {
         <Head title="Manajemen Unit Toko & CSA — Admin" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Master Unit, Toko & Gudang (CSA)</h1>
-                <p class="text-xs text-gray-500 mt-1">Data master toko retail, gudang logistik, dan entitas badan usaha pemeriksaan</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Master Unit, Toko & Gudang (CSA)</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Data master toko retail, gudang logistik, dan entitas badan usaha pemeriksaan</p>
             </div>
 
-            <div class="flex items-center flex-wrap gap-2.5">
-                <span class="text-xs text-gray-500 font-mono">
-                    {{ filteredStores.length }} Unit terdaftar
+            <div class="flex items-center flex-wrap gap-2 sm:gap-2.5">
+                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                    {{ filteredStores.length }} Unit
                 </span>
 
                 <button
                     @click="importModalOpen = true"
                     type="button"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+                    class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
                 >
-                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    Import CSV CSA
+                    Import CSV
                 </button>
 
                 <a
                     :href="route('admin.stores.download-template')"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+                    class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
                 >
-                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Download Template
+                    Template
                 </a>
 
                 <Link
                     :href="route('admin.stores.create')"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
                 >
-                    + Tambah Unit Manual
+                    + Unit Manual
                 </Link>
             </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-5 text-xs">
-            <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
                 <div class="relative flex-1 w-full">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -184,9 +184,69 @@ const deleteStore = (store) => {
             </div>
         </div>
 
-        <!-- Clean Enterprise Table with 10-Item Pagination -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredStores.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada data unit toko/gudang ditemukan.
+                </div>
+                <div
+                    v-for="s in paginatedStores"
+                    :key="'m-store-' + s.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ s.name }}</div>
+                            <div class="text-[10px] text-gray-500 font-mono mt-0.5">
+                                Kode: <strong class="text-gray-800">{{ s.code }}</strong>
+                                <span v-if="s.business_entity"> • {{ s.business_entity }}</span>
+                            </div>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            :class="s.status === 'active' ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
+                        >
+                            <span class="w-1.5 h-1.5 rounded-full" :class="s.status === 'active' ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                            {{ s.status === 'active' ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ s.type || 'TOKO' }}
+                        </span>
+                        <span class="font-mono text-gray-500 text-[10px]">
+                            {{ s.area || '—' }} <span v-if="s.regional">({{ s.regional }})</span>
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-between border-t border-gray-100">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ s.audits_count }} audit
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <Link
+                                :href="route('admin.stores.edit', s.id)"
+                                class="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-[11px]"
+                            >
+                                Edit
+                            </Link>
+                            <button
+                                @click="deleteStore(s)"
+                                class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px]"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>

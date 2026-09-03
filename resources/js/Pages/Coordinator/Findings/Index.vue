@@ -69,10 +69,10 @@ const paginatedFindings = computed(() => {
         <Head title="Review Severity — Koordinator" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Review & Standardisasi Severity Temuan</h1>
-                <p class="text-xs text-gray-500 mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Review & Standardisasi Severity Temuan</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity</p>
             </div>
             <div>
                 <span class="text-xs text-gray-500 font-mono">
@@ -82,8 +82,8 @@ const paginatedFindings = computed(() => {
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-5 text-xs">
-            <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
                 <div class="relative flex-1 w-full">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,7 +101,7 @@ const paginatedFindings = computed(() => {
                 <div class="w-full sm:w-56 shrink-0">
                     <select
                         v-model="lockFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white font-medium"
                     >
                         <option value="">Semua Status Review</option>
                         <option value="PENDING">Menunggu Review (Pending)</option>
@@ -123,9 +123,70 @@ const paginatedFindings = computed(() => {
             </div>
         </div>
 
-        <!-- Clean Enterprise Table with 10-Item Pagination -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredFindings.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada temuan yang sesuai filter.
+                </div>
+                <div
+                    v-for="f in paginatedFindings"
+                    :key="'m-finding-' + f.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ f.store }}</div>
+                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
+                        </div>
+                        <StatusBadge :status="f.status" />
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            {{ f.category }}
+                        </span>
+                        <SeverityBadge :severity="f.severity" />
+                        <span
+                            v-if="f.is_severity_locked"
+                            class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200 ml-auto"
+                        >
+                            {{ f.severity_status || 'LOCKED' }}
+                        </span>
+                        <span
+                            v-else
+                            class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 ml-auto"
+                        >
+                            Review Pending
+                        </span>
+                    </div>
+
+                    <div class="text-xs text-gray-800 leading-relaxed line-clamp-2">
+                        {{ f.finding }}
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>Auditor: <strong class="text-gray-800 font-medium">{{ f.auditor }}</strong></span>
+                        <span v-if="f.loss_amount" class="font-mono text-[11px] font-semibold text-slate-700">
+                            {{ formatRupiah(f.loss_amount) }}
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex justify-end border-t border-gray-100">
+                        <Link
+                            :href="route('coordinator.findings.show', f.id)"
+                            class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-xs"
+                        >
+                            {{ f.is_severity_locked ? 'Detail' : 'Review Severity →' }}
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>

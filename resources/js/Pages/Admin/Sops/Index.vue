@@ -114,28 +114,91 @@ const deleteSop = (sop) => {
     <AppLayout title="SOP & Surat Edaran">
         <Head title="SOP & Surat Edaran" />
 
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- Header -->
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">SOP & Surat Edaran (SE)</h1>
-                <p class="text-xs text-gray-500 mt-1">Master regulasi internal dan panduan operasional sebagai standar acuan audit</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">SOP & Surat Edaran (SE)</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Master regulasi internal dan panduan operasional sebagai standar acuan audit</p>
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 font-mono">
+                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
                     {{ sops.length }} SOP/SE terdaftar
                 </span>
                 <button
                     @click="openCreateModal"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
                 >
                     + Tambah SOP / SE
                 </button>
             </div>
         </div>
 
-        <!-- Table -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="sops.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Belum ada master SOP/SE.
+                </div>
+                <div
+                    v-for="sop in paginatedSops"
+                    :key="'m-sop-' + sop.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ sop.title }}</div>
+                            <div class="font-mono text-[10px] text-gray-500 mt-0.5 font-bold">{{ sop.code }}</div>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            :class="sop.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
+                        >
+                            <span class="w-1.5 h-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                            {{ sop.is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </div>
+
+                    <div v-if="sop.description" class="text-xs text-gray-600 line-clamp-2">
+                        {{ sop.description }}
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ sop.findings_count }} temuan terkait
+                        </span>
+                        <a
+                            v-if="sop.document"
+                            :href="sop.document_url"
+                            target="_blank"
+                            class="inline-flex items-center gap-1 text-blue-600 font-medium hover:underline text-xs"
+                        >
+                            Lihat Dokumen ↗
+                        </a>
+                        <span v-else class="text-gray-400 text-[11px]">Tanpa file</span>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                        <button
+                            @click="openEditModal(sop)"
+                            class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] cursor-pointer"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            @click="deleteSop(sop)"
+                            class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px] cursor-pointer"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>
@@ -185,14 +248,14 @@ const deleteSop = (sop) => {
                                 <div class="inline-flex items-center gap-2">
                                     <button
                                         @click="openEditModal(sop)"
-                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs"
+                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs cursor-pointer"
                                     >
                                         Edit
                                     </button>
                                     <span class="text-slate-300">|</span>
                                     <button
                                         @click="deleteSop(sop)"
-                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs"
+                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs cursor-pointer"
                                     >
                                         Hapus
                                     </button>

@@ -74,14 +74,77 @@ const approveEvidence = (evidenceId) => {
     <AppLayout title="Antrean Verifikasi Evidence">
         <Head title="Verification Queue" />
 
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Antrean Verifikasi Evidence</h1>
-            <p class="text-xs text-gray-500 mt-1">Daftar bukti perbaikan yang diunggah oleh toko dan menunggu verifikasi Anda</p>
+        <!-- Header -->
+        <div class="mb-4 sm:mb-6">
+            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Antrean Verifikasi Evidence</h1>
+            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Daftar bukti perbaikan yang diunggah oleh toko dan menunggu verifikasi Anda</p>
         </div>
 
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="pending_evidences.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada evidence yang menunggu verifikasi saat ini.
+                </div>
+                <div
+                    v-for="e in pending_evidences"
+                    :key="'m-ev-' + e.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ e.store }}</div>
+                            <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ e.audit }}</div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs">
+                        <Link
+                            :href="route('auditor.findings.show', e.finding_id)"
+                            class="font-medium text-gray-900 hover:text-blue-600 hover:underline line-clamp-2"
+                        >
+                            {{ e.finding }}
+                        </Link>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-50 rounded border border-gray-100 text-[11px] text-gray-700">
+                        <span class="font-medium text-gray-500">Keterangan:</span> {{ e.description || 'Bukti perbaikan' }}
+                    </div>
+
+                    <div class="text-[10px] text-gray-500 flex items-center justify-between pt-1 border-t border-gray-100">
+                        <span>Oleh: <strong class="text-gray-700 font-medium">{{ e.uploaded_by }}</strong></span>
+                        <span>{{ e.uploaded_at }}</span>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                        <a
+                            :href="e.file_url"
+                            target="_blank"
+                            class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                            Lihat File
+                        </a>
+                        <button
+                            @click="approveEvidence(e.id)"
+                            class="px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                        >
+                            Approve
+                        </button>
+                        <button
+                            @click="openRejectModal(e.id)"
+                            class="px-2.5 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                        >
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>
                             <th class="px-5 py-3.5">No. Audit & Toko</th>
@@ -131,13 +194,13 @@ const approveEvidence = (evidenceId) => {
                                 </a>
                                 <button
                                     @click="approveEvidence(e.id)"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
                                 >
                                     Approve
                                 </button>
                                 <button
                                     @click="openRejectModal(e.id)"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
                                 >
                                     Reject
                                 </button>

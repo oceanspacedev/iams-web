@@ -17,10 +17,19 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
+    Route::get('register/pending', [RegisteredUserController::class, 'pending'])
+        ->name('register.pending');
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::post('login/otp/request', [\App\Http\Controllers\Auth\OtpLoginController::class, 'requestOtp'])
+        ->name('login.otp.request');
+
+    Route::post('login/otp/verify', [\App\Http\Controllers\Auth\OtpLoginController::class, 'verifyOtp'])
+        ->name('login.otp.verify');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

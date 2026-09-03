@@ -202,58 +202,106 @@ const deleteDoc = (docId) => {
                 Belum ada dokumen LHP / BAP bertanda tangan yang diunggah untuk audit ini.
             </div>
 
-            <div v-else class="overflow-x-auto border border-gray-200 rounded">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
-                        <tr>
-                            <th class="px-3.5 py-2.5 w-20 text-center">Tipe</th>
-                            <th class="px-3.5 py-2.5">Judul Dokumen</th>
-                            <th class="px-3.5 py-2.5">Nama File & Ukuran</th>
-                            <th class="px-3.5 py-2.5">Keterangan</th>
-                            <th class="px-3.5 py-2.5 w-32 whitespace-nowrap">Waktu Upload</th>
-                            <th class="px-3.5 py-2.5 w-28 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                        <tr v-for="doc in audit.documents" :key="doc.id" class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-3.5 py-2.5 text-center align-middle">
+            <div v-else class="border border-gray-200 rounded overflow-hidden">
+                <!-- 1. Mobile Card View -->
+                <div class="block md:hidden divide-y divide-gray-100">
+                    <div
+                        v-for="doc in audit.documents"
+                        :key="'m-doc-' + doc.id"
+                        class="p-3.5 space-y-2 bg-white"
+                    >
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
                                 <span
-                                    class="inline-block px-2 py-0.5 text-[10px] font-bold rounded"
+                                    class="inline-block px-2 py-0.5 text-[10px] font-bold rounded mb-1"
                                     :class="doc.document_type === 'LHP' ? 'bg-blue-50 text-blue-700 border border-blue-200' : (doc.document_type === 'BAP' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-200')"
                                 >
                                     {{ doc.document_type }}
                                 </span>
-                            </td>
-                            <td class="px-3.5 py-2.5 font-medium text-gray-900 align-middle">
-                                {{ doc.title }}
-                            </td>
-                            <td class="px-3.5 py-2.5 text-gray-600 font-mono text-[11px] align-middle">
-                                {{ doc.file_name }} <span class="text-gray-400">({{ doc.file_size }})</span>
-                            </td>
-                            <td class="px-3.5 py-2.5 text-gray-600 align-middle">
-                                {{ doc.notes || '—' }}
-                            </td>
-                            <td class="px-3.5 py-2.5 text-gray-500 font-mono text-[11px] align-middle whitespace-nowrap">
-                                {{ doc.created_at }}
-                            </td>
-                            <td class="px-3.5 py-2.5 text-right align-middle whitespace-nowrap space-x-1.5">
+                                <div class="font-semibold text-gray-900 text-xs">{{ doc.title }}</div>
+                                <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ doc.file_name }} ({{ doc.file_size }})</div>
+                            </div>
+                        </div>
+
+                        <div v-if="doc.notes" class="text-[11px] text-gray-600 bg-slate-50 p-2 rounded border border-gray-100">
+                            {{ doc.notes }}
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 text-[10px] text-gray-400 border-t border-gray-100">
+                            <span>{{ doc.created_at }}</span>
+                            <div class="flex items-center gap-1.5">
                                 <a
                                     :href="doc.file_url"
                                     target="_blank"
-                                    class="inline-flex items-center px-2 py-1 text-[11px] font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs"
+                                    class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs"
                                 >
                                     Lihat File
                                 </a>
                                 <button
                                     @click="deleteDoc(doc.id)"
-                                    class="inline-flex items-center px-2 py-1 text-[11px] font-medium rounded border border-red-200 bg-white text-red-600 hover:bg-red-50 shadow-2xs"
+                                    class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 bg-white text-red-600 hover:bg-red-50 shadow-2xs cursor-pointer"
                                 >
                                     Hapus
                                 </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
+                            <tr>
+                                <th class="px-3.5 py-2.5 w-20 text-center">Tipe</th>
+                                <th class="px-3.5 py-2.5">Judul Dokumen</th>
+                                <th class="px-3.5 py-2.5">Nama File & Ukuran</th>
+                                <th class="px-3.5 py-2.5">Keterangan</th>
+                                <th class="px-3.5 py-2.5 w-32 whitespace-nowrap">Waktu Upload</th>
+                                <th class="px-3.5 py-2.5 w-28 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            <tr v-for="doc in audit.documents" :key="doc.id" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="px-3.5 py-2.5 text-center align-middle">
+                                    <span
+                                        class="inline-block px-2 py-0.5 text-[10px] font-bold rounded"
+                                        :class="doc.document_type === 'LHP' ? 'bg-blue-50 text-blue-700 border border-blue-200' : (doc.document_type === 'BAP' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-200')"
+                                    >
+                                        {{ doc.document_type }}
+                                    </span>
+                                </td>
+                                <td class="px-3.5 py-2.5 font-medium text-gray-900 align-middle">
+                                    {{ doc.title }}
+                                </td>
+                                <td class="px-3.5 py-2.5 text-gray-600 font-mono text-[11px] align-middle">
+                                    {{ doc.file_name }} <span class="text-gray-400">({{ doc.file_size }})</span>
+                                </td>
+                                <td class="px-3.5 py-2.5 text-gray-600 align-middle">
+                                    {{ doc.notes || '—' }}
+                                </td>
+                                <td class="px-3.5 py-2.5 text-gray-500 font-mono text-[11px] align-middle whitespace-nowrap">
+                                    {{ doc.created_at }}
+                                </td>
+                                <td class="px-3.5 py-2.5 text-right align-middle whitespace-nowrap space-x-1.5">
+                                    <a
+                                        :href="doc.file_url"
+                                        target="_blank"
+                                        class="inline-flex items-center px-2 py-1 text-[11px] font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs"
+                                    >
+                                        Lihat File
+                                    </a>
+                                    <button
+                                        @click="deleteDoc(doc.id)"
+                                        class="inline-flex items-center px-2 py-1 text-[11px] font-medium rounded border border-red-200 bg-white text-red-600 hover:bg-red-50 shadow-2xs cursor-pointer"
+                                    >
+                                        Hapus
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

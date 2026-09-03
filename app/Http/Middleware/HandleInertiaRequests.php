@@ -46,6 +46,36 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
                 'message' => fn () => $request->session()->get('message'),
             ],
+            'notifications' => function () use ($user) {
+                if (!$user || !$user->hasAnyRole(['admin', 'chief'])) {
+                    return ['count' => 0, 'items' => []];
+                }
+
+                $pendingUsers = \App\Models\User::where('approval_status', 'pending')
+                    ->orderByDesc('created_at')
+                    ->take(5)
+                    ->get(['id', 'name', 'phone', 'requested_role', 'created_at']);
+
+                return [
+                    'count' => \App\Models\User::where('approval_status', 'pending')->count(),
+                    'items' => $pendingUsers->map(function ($u) {
+                        $roleName = match ($u->requested_role) {
+                            'chief'       => 'Chief Auditor',
+                            'asmen'       => 'Asisten Manager',
+                            'coordinator' => 'Koordinator Audit',
+                            default       => 'Auditor Lapangan',
+                        };
+
+                        return [
+                            'id'      => $u->id,
+                            'title'   => 'Pendaftaran Akun Baru',
+                            'message' => "{$u->name} mengajukan jabatan {$roleName}",
+                            'time'    => $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja',
+                            'url'     => route('admin.users.index', ['status' => 'pending']),
+                        ];
+                    }),
+                ];
+            },
         ];
     }
 }

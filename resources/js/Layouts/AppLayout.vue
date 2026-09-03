@@ -30,10 +30,22 @@ const isPageLoading = ref(false);
 // Desktop Collapsible state (stored in localStorage)
 const isCollapsed = ref(false);
 const userDropdownOpen = ref(false);
+const notificationsOpen = ref(false);
+const notifications = computed(() => page.props.notifications || { count: 0, items: [] });
 
 // Close dropdown when clicking outside
 const toggleUserDropdown = () => {
     userDropdownOpen.value = !userDropdownOpen.value;
+    if (userDropdownOpen.value) {
+        notificationsOpen.value = false;
+    }
+};
+
+const toggleNotifications = () => {
+    notificationsOpen.value = !notificationsOpen.value;
+    if (notificationsOpen.value) {
+        userDropdownOpen.value = false;
+    }
 };
 
 const closeUserDropdown = () => {
@@ -72,6 +84,10 @@ onMounted(() => {
         const dropdown = document.getElementById('user-profile-dropdown');
         if (dropdown && !dropdown.contains(e.target)) {
             userDropdownOpen.value = false;
+        }
+        const notifDropdown = document.getElementById('notification-dropdown');
+        if (notifDropdown && !notifDropdown.contains(e.target)) {
+            notificationsOpen.value = false;
         }
     });
 
@@ -330,6 +346,22 @@ const logout = () => {
                             </svg>
                             <span v-if="!isCollapsed" class="truncate">Jadwal Notifikasi</span>
                         </Link>
+
+                        <Link
+                            :href="route('admin.settings.index')"
+                            :title="isCollapsed ? 'Pengaturan Sistem' : ''"
+                            class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded transition-colors"
+                            :class="[
+                                route().current('admin.settings.*') ? 'bg-slate-800 text-white font-medium border border-slate-700/60 shadow-2xs' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                isCollapsed ? 'justify-center px-2' : ''
+                            ]"
+                        >
+                            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span v-if="!isCollapsed" class="truncate">Pengaturan Sistem</span>
+                        </Link>
                     </div>
                 </template>
 
@@ -560,6 +592,8 @@ const logout = () => {
                         <Link :href="route('admin.stores.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Toko & Gudang (CSA)</Link>
                         <Link :href="route('admin.audit-categories.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Audit Categories</Link>
                         <Link :href="route('admin.sops.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">SOP / SE</Link>
+                        <Link :href="route('admin.notification-rules.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Jadwal Notifikasi</Link>
+                        <Link :href="route('admin.settings.index')" class="flex items-center gap-3 px-3 py-2 text-xs font-medium rounded text-gray-300 hover:bg-gray-800 hover:text-white">Pengaturan Sistem</Link>
                     </template>
 
                     <!-- Coordinator / Chief / Asmen Mobile -->
@@ -589,12 +623,12 @@ const logout = () => {
         <!-- ================= MAIN CONTENT AREA ================= -->
         <div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
             <!-- Topbar Header -->
-            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 sticky top-0 z-20">
-                <div class="flex items-center gap-3">
+            <header class="h-14 sm:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-6 shrink-0 sticky top-0 z-20">
+                <div class="flex items-center gap-2 sm:gap-3">
                     <!-- Mobile Hamburger -->
                     <button
                         @click="mobileMenuOpen = true"
-                        class="md:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 rounded"
+                        class="md:hidden p-1.5 -ml-1 text-gray-600 hover:text-gray-900 rounded focus:outline-none"
                     >
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -613,71 +647,125 @@ const logout = () => {
                     </button>
 
                     <slot name="header">
-                        <h1 class="text-base font-semibold text-gray-900 truncate">{{ title }}</h1>
+                        <h1 class="text-sm sm:text-base font-semibold text-gray-900 truncate max-w-[170px] sm:max-w-none">{{ title }}</h1>
                     </slot>
                 </div>
 
-                <!-- User Profile Avatar & Dropdown -->
-                <div id="user-profile-dropdown" class="relative">
-                    <button
-                        @click.stop="toggleUserDropdown"
-                        type="button"
-                        class="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full sm:rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        :class="userDropdownOpen ? 'bg-gray-100' : ''"
-                    >
-                        <!-- Avatar Icon / Initials Circle -->
-                        <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-xs">
-                            {{ userInitials }}
-                        </div>
-
-                        <!-- User Name and Role (Desktop) -->
-                        <div class="text-left hidden sm:block">
-                            <div class="text-xs font-semibold text-gray-800 leading-tight">{{ user.name }}</div>
-                            <div class="text-[10px] text-gray-500 leading-tight">
-                                {{ roleDisplayLabel }}
-                            </div>
-                        </div>
-
-                        <!-- Dropdown Chevron Icon -->
-                        <svg
-                            class="w-3.5 h-3.5 text-gray-500 transition-transform duration-200"
-                            :class="userDropdownOpen ? 'rotate-180 text-blue-600' : ''"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Notification Bell -->
+                    <div id="notification-dropdown" class="relative">
+                        <button
+                            @click.stop="toggleNotifications"
+                            type="button"
+                            title="Notifikasi"
+                            class="w-9 h-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 flex items-center justify-center transition relative cursor-pointer"
+                            :class="notificationsOpen ? 'bg-gray-100 text-gray-900' : ''"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
 
-                    <!-- Dropdown Menu Popup -->
-                    <div
-                        v-if="userDropdownOpen"
-                        class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs"
-                    >
-                        <!-- User Info Header -->
-                        <div class="px-4 py-2.5 border-b border-gray-100">
-                            <p class="font-semibold text-gray-900 truncate">{{ user.name }}</p>
-                            <p class="text-[11px] text-gray-500 truncate mt-0.5">{{ user.email }}</p>
-                            <div class="mt-1.5">
-                                <span class="inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-800 border border-slate-200">
-                                    {{ roleDisplayLabel }}
+                            <!-- Badge Indicator -->
+                            <span
+                                v-if="notifications.count > 0"
+                                class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white leading-none"
+                            >
+                                {{ notifications.count > 9 ? '9+' : notifications.count }}
+                            </span>
+                        </button>
+
+                        <!-- Notification Dropdown Menu -->
+                        <div
+                            v-if="notificationsOpen"
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 text-xs"
+                        >
+                            <div class="px-3.5 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                                <div class="font-semibold text-gray-900">Notifikasi</div>
+                                <span
+                                    v-if="notifications.count > 0"
+                                    class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800"
+                                >
+                                    {{ notifications.count }} Pendaftar Baru
                                 </span>
                             </div>
-                        </div>
 
-                        <!-- Logout Action -->
-                        <div class="p-1">
-                            <button
-                                @click="logout"
-                                type="button"
-                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium text-xs"
-                            >
-                                <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                <span>Keluar / Logout</span>
-                            </button>
+                            <div class="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                                <template v-if="notifications.items && notifications.items.length > 0">
+                                    <Link
+                                        v-for="item in notifications.items"
+                                        :key="item.id"
+                                        :href="item.url"
+                                        @click="notificationsOpen = false"
+                                        class="block px-3.5 py-2.5 hover:bg-slate-50 transition-colors"
+                                    >
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="w-2 h-2 rounded-full bg-blue-600 mt-1.5 shrink-0"></span>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="font-medium text-gray-900 truncate">{{ item.title }}</div>
+                                                <div class="text-[11px] text-gray-600 mt-0.5 leading-snug">{{ item.message }}</div>
+                                                <div class="text-[10px] text-gray-400 mt-1 font-mono">{{ item.time }}</div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </template>
+                                <div v-else class="px-4 py-6 text-center text-gray-400 text-xs">
+                                    Tidak ada notifikasi baru
+                                </div>
+                            </div>
+
+                            <div v-if="notifications.count > 0" class="p-2 border-t border-gray-100 bg-slate-50 rounded-b-lg">
+                                <Link
+                                    :href="route('admin.users.index', { status: 'pending' })"
+                                    @click="notificationsOpen = false"
+                                    class="block text-center text-xs text-blue-600 hover:text-blue-800 font-medium py-1"
+                                >
+                                    Tinjau Semua Pendaftar &rarr;
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Profile Icon Button -->
+                    <div id="user-profile-dropdown" class="relative">
+                        <button
+                            @click.stop="toggleUserDropdown"
+                            type="button"
+                            title="Akun Pengguna"
+                            class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-xs transition hover:ring-2 hover:ring-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-xs"
+                            :class="userDropdownOpen ? 'ring-2 ring-blue-500' : ''"
+                        >
+                            {{ userInitials }}
+                        </button>
+
+                        <!-- Dropdown Menu Popup -->
+                        <div
+                            v-if="userDropdownOpen"
+                            class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1.5 z-50 text-xs"
+                        >
+                            <!-- User Info Header -->
+                            <div class="px-3.5 py-2.5 border-b border-gray-100">
+                                <p class="font-semibold text-gray-900 truncate">{{ user.name }}</p>
+                                <p class="text-[11px] text-gray-500 truncate mt-0.5">{{ user.email }}</p>
+                                <div class="mt-1.5">
+                                    <span class="inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                        {{ roleDisplayLabel }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Logout Action -->
+                            <div class="p-1">
+                                <button
+                                    @click="logout"
+                                    type="button"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium text-xs cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    <span>Logout (Keluar)</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -689,7 +777,7 @@ const logout = () => {
             </div>
 
             <!-- Main Content Container with Smooth Transition -->
-            <main class="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-200">
+            <main class="flex-1 p-3 sm:p-6 md:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-200">
                 <FlashMessage />
                 <slot />
             </main>

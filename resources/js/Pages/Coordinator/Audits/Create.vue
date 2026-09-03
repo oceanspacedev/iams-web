@@ -70,6 +70,35 @@ const sameStoreAudits = computed(() => {
     return props.upcoming_audits.filter(a => a.store_id === form.store_id);
 });
 
+const availableAuditors = computed(() => {
+    return props.auditors.filter(a => !form.auditor_ids.includes(a.id));
+});
+
+const addAuditor = (event) => {
+    const val = Number(event.target.value);
+    if (!val) return;
+    if (form.auditor_ids.length >= 5) {
+        alert('Maksimal penugasan 5 orang auditor per surat tugas audit.');
+        event.target.value = '';
+        return;
+    }
+    if (!form.auditor_ids.includes(val)) {
+        form.auditor_ids.push(val);
+    }
+    event.target.value = '';
+};
+
+const removeAuditor = (auditorId) => {
+    const index = form.auditor_ids.indexOf(auditorId);
+    if (index > -1) {
+        form.auditor_ids.splice(index, 1);
+    }
+};
+
+const getAuditor = (auditorId) => {
+    return props.auditors.find(a => a.id === auditorId);
+};
+
 const toggleAuditor = (auditorId) => {
     const index = form.auditor_ids.indexOf(auditorId);
     if (index > -1) {
@@ -120,10 +149,8 @@ const submit = () => {
             <p class="text-xs text-gray-500 mt-1">Pilih kategori audit, tentukan unit toko retail / gudang (atau ketik nama toko bebas), dan atur tim auditor bertugas.</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-xs">
-            <!-- Kolom Kiri: Form Input Jadwal Audit -->
-            <div class="lg:col-span-8 bg-white rounded-lg border border-gray-200 p-6 shadow-xs">
-                <form @submit.prevent="submit" class="space-y-5">
+        <div class="max-w-4xl bg-white rounded-lg border border-gray-200 p-4 sm:p-6 shadow-xs text-xs">
+            <form @submit.prevent="submit" class="space-y-4 sm:space-y-5">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Nomor Surat Tugas Audit <span class="text-red-500">*</span></label>
@@ -208,7 +235,7 @@ const submit = () => {
                                 :class="useCustomStore ? 'bg-white text-gray-900 font-medium shadow-xs' : 'text-gray-600 hover:text-gray-900'"
                                 class="px-2.5 py-1 rounded transition-colors cursor-pointer"
                             >
-                                Input Manual (Free Text)
+                                Input Manual
                             </button>
                         </div>
                     </div>
@@ -240,49 +267,57 @@ const submit = () => {
                     <div v-if="form.errors.custom_store_name" class="text-red-600 text-[11px] mt-1">{{ form.errors.custom_store_name }}</div>
                 </div>
 
-                <!-- TIM AUDITOR: MULTI-SELECT UP TO 5 PERSONS -->
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block font-bold text-gray-800 text-xs">
+                <!-- TIM AUDITOR: DROPDOWN SELECTOR -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block font-medium text-gray-700">
                             Tim Auditor Aktif Bertugas <span class="text-red-500">*</span>
                         </label>
-                        <span
-                            class="px-2 py-0.5 text-[10px] font-bold rounded-full"
-                            :class="form.auditor_ids.length > 0 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'"
-                        >
-                            {{ form.auditor_ids.length }} / 5 Dipilih
+                        <span class="text-[11px] text-gray-500">
+                            {{ form.auditor_ids.length }} / 5 Dipilih (Urutan pertama: Lead Auditor)
                         </span>
                     </div>
-                    <p class="text-[11px] text-gray-500 mb-3">
-                        Pilih minimal 1 dan maksimal 5 auditor aktif. Auditor urutan pertama bertindak sebagai <strong>Lead Auditor</strong>.
-                    </p>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1 bg-white rounded border border-gray-200">
-                        <div
-                            v-for="auditor in auditors"
+                    <select
+                        @change="addAuditor"
+                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                        :disabled="form.auditor_ids.length >= 5"
+                    >
+                        <option value="" selected>
+                            {{ form.auditor_ids.length === 0 ? '-- Pilih Auditor Bertugas (Lead Auditor) --' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor tercapai' : '+ Tambah Anggota Auditor...') }}
+                        </option>
+                        <option
+                            v-for="auditor in availableAuditors"
                             :key="auditor.id"
-                            @click="toggleAuditor(auditor.id)"
-                            class="p-2.5 rounded border transition-all cursor-pointer flex items-center justify-between gap-2"
-                            :class="form.auditor_ids.includes(auditor.id) ? 'border-blue-500 bg-blue-50/60 font-semibold text-blue-950' : 'border-gray-200 text-gray-700 hover:bg-gray-50'"
+                            :value="auditor.id"
                         >
-                            <div class="truncate">
-                                <div class="truncate text-xs">{{ auditor.name }}</div>
-                                <div class="text-[10px] text-gray-400 font-normal truncate">{{ auditor.email }}</div>
-                            </div>
-                            <div class="shrink-0 flex items-center">
-                                <span
-                                    v-if="form.auditor_ids.indexOf(auditor.id) === 0"
-                                    class="text-[9px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold mr-1"
-                                >
-                                    Lead
-                                </span>
-                                <input
-                                    type="checkbox"
-                                    :checked="form.auditor_ids.includes(auditor.id)"
-                                    class="rounded text-blue-600 focus:ring-blue-500"
-                                    @click.stop="toggleAuditor(auditor.id)"
-                                />
-                            </div>
+                            {{ auditor.name }} ({{ auditor.email }})
+                        </option>
+                    </select>
+
+                    <!-- Tags Auditor Terpilih -->
+                    <div v-if="form.auditor_ids.length > 0" class="flex flex-wrap gap-2 mt-2">
+                        <div
+                            v-for="(auditorId, index) in form.auditor_ids"
+                            :key="auditorId"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border"
+                            :class="index === 0 ? 'bg-blue-50 border-blue-200 text-blue-900 font-medium' : 'bg-gray-50 border-gray-200 text-gray-700'"
+                        >
+                            <span
+                                v-if="index === 0"
+                                class="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]"
+                            >
+                                Lead
+                            </span>
+                            <span>{{ getAuditor(auditorId)?.name || auditorId }}</span>
+                            <button
+                                type="button"
+                                @click="removeAuditor(auditorId)"
+                                class="text-gray-400 hover:text-red-600 font-bold ml-1 cursor-pointer text-sm leading-none"
+                                title="Hapus dari tim"
+                            >
+                                &times;
+                            </button>
                         </div>
                     </div>
                     <div v-if="form.errors.auditor_ids" class="text-red-600 text-[11px] mt-1">{{ form.errors.auditor_ids }}</div>
@@ -323,17 +358,17 @@ const submit = () => {
                     ></textarea>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                <div class="pt-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 sm:gap-3">
                     <Link
                         :href="route('coordinator.audits.index')"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="w-full sm:w-auto text-center px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium cursor-pointer"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs cursor-pointer"
                     >
                         <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -344,144 +379,5 @@ const submit = () => {
                 </div>
             </form>
         </div>
-
-        <!-- Kolom Kanan: Ringkasan Penugasan & Kalender Jadwal Aktif CSA -->
-        <div class="lg:col-span-4 space-y-4">
-            <!-- Card 1: Pratinjau / Ringkasan Surat Tugas yang Sedang Dibuat -->
-            <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-xs text-xs space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-800 uppercase tracking-wider text-[11px]">
-                        Ringkasan Surat Tugas Baru
-                    </h3>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        Draft
-                    </span>
-                </div>
-
-                <div class="space-y-2.5">
-                    <div>
-                        <span class="text-gray-400 font-medium">Nomor Surat Tugas:</span>
-                        <div class="font-mono font-bold text-gray-900 mt-0.5">{{ form.audit_number || '—' }}</div>
-                    </div>
-
-                    <div>
-                        <span class="text-gray-400 font-medium">Kategori Audit:</span>
-                        <div class="font-semibold text-blue-700 mt-0.5">{{ selectedCategoryName }}</div>
-                    </div>
-
-                    <div>
-                        <span class="text-gray-400 font-medium">Sasaran Toko / Badan Usaha:</span>
-                        <div class="font-semibold text-gray-900 mt-0.5">{{ selectedStoreName }}</div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <span class="text-gray-400 font-medium">Tanggal:</span>
-                            <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ form.audit_date || '—' }}</div>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-medium">Waktu:</span>
-                            <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ form.audit_time || '09:00' }} WIB</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-400 font-medium">Tim Auditor Bertugas:</span>
-                            <span class="text-[11px] font-mono" :class="selectedAuditorsList.length > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'">
-                                {{ selectedAuditorsList.length }}/5 Dipilih
-                            </span>
-                        </div>
-                        <div v-if="selectedAuditorsList.length > 0" class="mt-1.5 space-y-1">
-                            <div
-                                v-for="(aud, idx) in selectedAuditorsList"
-                                :key="aud.id"
-                                class="flex items-center justify-between bg-gray-50 px-2.5 py-1 rounded border border-gray-200 text-[11px]"
-                            >
-                                <span class="font-medium text-gray-800">{{ aud.name }}</span>
-                                <span v-if="idx === 0" class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Lead Auditor</span>
-                                <span v-else class="text-[10px] text-gray-500">Anggota</span>
-                            </div>
-                        </div>
-                        <div v-else class="text-gray-400 italic mt-0.5">
-                            Belum ada auditor dipilih
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alert / Deteksi Jadwal Sama -->
-            <div v-if="sameDateAudits.length > 0" class="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <div class="font-semibold text-amber-800 text-[11px] mb-1">
-                    Pemberitahuan Jadwal: {{ form.audit_date }}
-                </div>
-                <p class="text-amber-700 text-[11px] leading-relaxed">
-                    Terdapat {{ sameDateAudits.length }} agenda audit lain pada tanggal ini. Mohon pastikan ketersediaan personil agar tidak terjadi bentrok penugasan.
-                </p>
-            </div>
-
-            <!-- Alert / Toko Yang Sama Memiliki Audit Aktif -->
-            <div v-if="sameStoreAudits.length > 0" class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div class="font-semibold text-blue-800 text-[11px] mb-1">
-                    Informasi Unit Toko
-                </div>
-                <p class="text-blue-700 text-[11px] leading-relaxed">
-                    Unit toko ini tercatat memiliki {{ sameStoreAudits.length }} jadwal pemeriksaan lain di sistem.
-                </p>
-            </div>
-
-            <!-- Card 2: Jadwal Audit Aktif / Terdekat di CSA -->
-            <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-xs text-xs space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <div>
-                        <h3 class="font-semibold text-gray-800 uppercase tracking-wider text-[11px]">
-                            Jadwal Audit Aktif di CSA
-                        </h3>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Penugasan audit yang sedang berjalan atau terdekat</p>
-                    </div>
-                    <span class="text-gray-500 font-mono text-[11px] bg-gray-100 px-1.5 py-0.5 rounded">
-                        {{ upcoming_audits.length }}
-                    </span>
-                </div>
-
-                <div v-if="upcoming_audits.length > 0" class="space-y-2 max-h-[420px] overflow-y-auto pr-0.5">
-                    <div
-                        v-for="item in upcoming_audits"
-                        :key="item.id"
-                        class="p-2.5 rounded border transition-colors text-[11px]"
-                        :class="item.audit_date === form.audit_date ? 'bg-amber-50/70 border-amber-300' : 'bg-gray-50/70 border-gray-200 hover:bg-gray-50'"
-                    >
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <div class="font-semibold text-gray-900">{{ item.store_name }}</div>
-                                <div class="text-[10px] text-gray-500 font-mono">{{ item.audit_number }}</div>
-                            </div>
-                            <span
-                                class="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0"
-                                :class="item.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-700'"
-                            >
-                                {{ item.status === 'IN_PROGRESS' ? 'Berjalan' : 'Terjadwal' }}
-                            </span>
-                        </div>
-
-                        <div class="mt-2 flex items-center justify-between text-[11px] border-t border-gray-200/60 pt-1.5">
-                            <span class="font-medium text-blue-700 truncate mr-2">{{ item.category }}</span>
-                            <span class="font-mono text-gray-600 shrink-0">{{ item.audit_date_formatted }}</span>
-                        </div>
-
-                        <div class="mt-1 text-[10px] text-gray-500 flex items-center justify-between">
-                            <span>Lead: <strong class="text-gray-700">{{ item.lead_auditor }}</strong></span>
-                            <span v-if="item.audit_date === form.audit_date" class="text-amber-700 font-semibold">
-                                Tanggal Sama
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="text-gray-400 italic text-center py-4 text-[11px]">
-                    Tidak ada agenda audit aktif terdekat.
-                </div>
-            </div>
-        </div>
-    </div>
     </AppLayout>
 </template>

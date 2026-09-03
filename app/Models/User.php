@@ -21,7 +21,25 @@ class User extends Authenticatable
         'phone',
         'password',
         'is_active',
+        'approval_status',
+        'requested_role',
+        'rejection_reason',
     ];
+
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->approval_status === 'pending';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === 'rejected';
+    }
 
     protected $hidden = [
         'password',

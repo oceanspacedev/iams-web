@@ -133,29 +133,99 @@ const deleteRule = (rule) => {
         <Head title="Jadwal Notifikasi Audit — Admin" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Jadwal Notifikasi Audit (Notification Rules)</h1>
-                <p class="text-xs text-gray-500 mt-1">Kelola aturan pengingat otomatis jadwal audit (H-7, H-3, H-1, Hari H) yang dihitung berdasarkan Tanggal Audit</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Jadwal Notifikasi Audit (Notification Rules)</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Kelola aturan pengingat otomatis jadwal audit (H-7, H-3, H-1, Hari H) yang dihitung berdasarkan Tanggal Audit</p>
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 font-mono">
-                    {{ rules.length }} Aturan terdaftar
+                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                    {{ rules.length }} Aturan
                 </span>
                 <button
                     @click="openCreateModal"
                     type="button"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
                 >
-                    + Tambah Aturan Notifikasi
+                    + Tambah Aturan
                 </button>
             </div>
         </div>
 
-        <!-- Table -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="rules.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Belum ada aturan notifikasi yang dibuat.
+                </div>
+                <div
+                    v-for="rule in paginatedRules"
+                    :key="'m-rule-' + rule.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ rule.name }}</div>
+                            <div class="text-[11px] text-gray-500 mt-0.5">
+                                Penerima: <strong class="text-gray-700 capitalize">{{ rule.recipient_type || 'Semua' }}</strong>
+                            </div>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            :class="rule.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
+                        >
+                            <span class="w-1.5 h-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                            {{ rule.is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span class="font-medium text-blue-700">
+                            {{ rule.days_before === 0 ? 'Hari H (0 Hari)' : rule.days_before + ' hari sebelum audit' }}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-gray-500 text-[10px]">{{ rule.send_time }} WIB</span>
+                            <span
+                                class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border"
+                                :class="{
+                                    'bg-emerald-50 text-emerald-700 border-emerald-200': rule.channel === 'whatsapp',
+                                    'bg-blue-50 text-blue-700 border-blue-200': rule.channel === 'email',
+                                    'bg-slate-100 text-slate-700 border-slate-200': rule.channel === 'internal',
+                                }"
+                            >
+                                {{ rule.channel }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                        <button
+                            @click="openEditModal(rule)"
+                            class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] cursor-pointer"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            @click="toggleActive(rule)"
+                            class="px-2.5 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 text-slate-700 font-medium text-[11px] cursor-pointer"
+                        >
+                            {{ rule.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                        </button>
+                        <button
+                            @click="deleteRule(rule)"
+                            class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px] cursor-pointer"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>
@@ -203,7 +273,7 @@ const deleteRule = (rule) => {
                             <td class="px-4 py-3 text-center">
                                 <button
                                     @click="toggleActive(rule)"
-                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors border"
+                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer"
                                     :class="rule.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100' : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'"
                                 >
                                     <span class="w-1.5 h-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
@@ -214,14 +284,14 @@ const deleteRule = (rule) => {
                                 <div class="inline-flex items-center gap-2">
                                     <button
                                         @click="openEditModal(rule)"
-                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs"
+                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs cursor-pointer"
                                     >
                                         Edit
                                     </button>
                                     <span class="text-slate-300">|</span>
                                     <button
                                         @click="deleteRule(rule)"
-                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs"
+                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs cursor-pointer"
                                     >
                                         Hapus
                                     </button>

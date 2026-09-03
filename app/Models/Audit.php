@@ -34,7 +34,7 @@ class Audit extends Model
     // Relationships
     public function category(): BelongsTo
     {
-        return $this->belongsTo(AuditCategory::class, 'category_id');
+        return $this->belongsTo(AuditCategory::class, 'category_id')->withTrashed();
     }
 
     public function store(): BelongsTo

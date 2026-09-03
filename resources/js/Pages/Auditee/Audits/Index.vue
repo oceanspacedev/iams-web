@@ -32,25 +32,26 @@ const filteredAudits = computed(() => {
     <AppLayout title="Audit Toko">
         <Head title="Audit Toko" />
 
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Daftar Audit Toko</h1>
-            <p class="text-xs text-gray-500 mt-1">Seluruh riwayat pelaksanaan audit pada toko Anda</p>
+        <!-- Header -->
+        <div class="mb-4 sm:mb-6">
+            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Daftar Audit Toko</h1>
+            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Seluruh riwayat pelaksanaan audit pada toko Anda</p>
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-4 rounded border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-center justify-between">
             <div class="w-full sm:w-80">
                 <input
                     v-model="searchQuery"
                     type="text"
                     placeholder="Cari nomor audit atau auditor..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
                 />
             </div>
-            <div class="w-full sm:w-auto flex items-center gap-3">
+            <div class="w-full sm:w-auto">
                 <select
                     v-model="statusFilter"
-                    class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-1.5"
+                    class="w-full sm:w-auto text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
                 >
                     <option value="">Semua Status</option>
                     <option value="PLANNED">Planned</option>
@@ -61,10 +62,55 @@ const filteredAudits = computed(() => {
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredAudits.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada data audit yang ditemukan.
+                </div>
+                <div
+                    v-for="audit in filteredAudits"
+                    :key="'m-auditee-audit-' + audit.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
+                            <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ audit.store_code }}</div>
+                        </div>
+                        <StatusBadge :status="audit.status" />
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-mono text-xs font-semibold text-blue-600">
+                            {{ audit.audit_number }}
+                        </span>
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ audit.findings_count }} temuan
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>Auditor: <strong class="text-gray-800 font-medium">{{ audit.auditor }}</strong></span>
+                        <span class="font-mono text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
+                    </div>
+
+                    <div class="pt-2 flex justify-end border-t border-gray-100">
+                        <Link
+                            :href="route('auditee.audits.show', audit.id)"
+                            class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-xs"
+                        >
+                            Buka Temuan →
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>
                             <th class="px-5 py-3.5">No. Audit</th>

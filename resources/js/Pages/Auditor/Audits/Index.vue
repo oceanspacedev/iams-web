@@ -53,10 +53,10 @@ const paginatedAudits = computed(() => {
         <Head title="My Audits" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Daftar Penugasan Audit</h1>
-                <p class="text-xs text-gray-500 mt-1">Seluruh jadwal dan riwayat audit yang ditugaskan kepada Anda</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Daftar Penugasan Audit</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Seluruh jadwal dan riwayat audit yang ditugaskan kepada Anda</p>
             </div>
             <div>
                 <span class="text-xs text-gray-500 font-mono">
@@ -66,19 +66,19 @@ const paginatedAudits = computed(() => {
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-5 text-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-center justify-between">
             <div class="w-full sm:w-72">
                 <input
                     v-model="searchQuery"
                     type="text"
                     placeholder="Cari nomor audit, nama toko, kategori..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white"
+                    class="w-full text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-2 px-3 bg-white"
                 />
             </div>
-            <div class="w-full sm:w-auto flex items-center gap-3">
+            <div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
                 <select
                     v-model="categoryFilter"
-                    class="text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white font-medium"
+                    class="w-full sm:w-auto text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-2 px-3 bg-white font-medium"
                 >
                     <option value="">Semua Kategori Audit</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">
@@ -87,7 +87,7 @@ const paginatedAudits = computed(() => {
                 </select>
                 <select
                     v-model="statusFilter"
-                    class="text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-1.5 bg-white"
+                    class="w-full sm:w-auto text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 py-2 px-3 bg-white"
                 >
                     <option value="">Semua Status</option>
                     <option value="PLANNED">Planned</option>
@@ -98,9 +98,67 @@ const paginatedAudits = computed(() => {
             </div>
         </div>
 
-        <!-- Clean Enterprise Table with 10-Item Pagination -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredAudits.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada penugasan audit yang ditemukan.
+                </div>
+                <div
+                    v-for="audit in paginatedAudits"
+                    :key="'m-auditor-audit-' + audit.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
+                            <div class="text-[10px] text-gray-500 font-mono mt-0.5">{{ audit.store_area || audit.store_code }}</div>
+                        </div>
+                        <StatusBadge :status="audit.status" />
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2">
+                        <Link
+                            :href="route('auditor.audits.show', audit.id)"
+                            class="font-mono text-xs font-semibold text-blue-600 hover:underline"
+                        >
+                            {{ audit.audit_number }}
+                        </Link>
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border"
+                            :class="{
+                                'bg-emerald-50 text-emerald-800 border-emerald-200': audit.category && audit.category.includes('Retail'),
+                                'bg-amber-50 text-amber-800 border-amber-200': audit.category && audit.category.includes('Finance'),
+                                'bg-indigo-50 text-indigo-800 border-indigo-200': audit.category && audit.category.includes('Distribusi'),
+                                'bg-slate-100 text-slate-700 border-slate-200': !audit.category || audit.category === '—'
+                            }"
+                        >
+                            {{ audit.category || '—' }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>Tanggal: <strong class="text-gray-800 font-medium font-mono text-[10px]">{{ audit.audit_date }}</strong></span>
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ audit.findings_count }} temuan
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex justify-end border-t border-gray-100">
+                        <Link
+                            :href="route('auditor.audits.show', audit.id)"
+                            class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-xs"
+                        >
+                            Buka Audit & Temuan →
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>

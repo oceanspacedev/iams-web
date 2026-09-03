@@ -103,10 +103,10 @@ const deleteFinding = (finding) => {
         <Head title="Daftar Temuan — Admin" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Daftar Seluruh Temuan Audit (Findings)</h1>
-                <p class="text-xs text-gray-500 mt-1">Monitoring dan pengawasan temuan audit dari seluruh unit cabang toko retail</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Daftar Seluruh Temuan Audit (Findings)</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Monitoring dan pengawasan temuan audit dari seluruh unit cabang toko retail</p>
             </div>
             <div>
                 <span class="text-xs text-gray-500 font-mono">
@@ -116,8 +116,8 @@ const deleteFinding = (finding) => {
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-5 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
                 <div class="relative sm:col-span-2 md:col-span-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,9 +168,65 @@ const deleteFinding = (finding) => {
             </div>
         </div>
 
-        <!-- Clean Enterprise Table with 10-Item Pagination -->
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredFindings.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada data temuan yang sesuai filter.
+                </div>
+                <div
+                    v-for="f in paginatedFindings"
+                    :key="'m-finding-' + f.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ f.store }}</div>
+                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
+                        </div>
+                        <StatusBadge :status="f.status" />
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            {{ f.category }}
+                        </span>
+                        <SeverityBadge :severity="f.severity" />
+                        <span v-if="f.loss_amount > 0" class="font-mono text-[11px] font-semibold text-red-700 ml-auto">
+                            {{ formatRupiah(f.loss_amount) }}
+                        </span>
+                    </div>
+
+                    <div class="text-xs text-gray-800 leading-relaxed line-clamp-2">
+                        {{ f.finding }}
+                    </div>
+
+                    <div v-if="f.action_plan" class="p-2 bg-slate-50 rounded border border-gray-100 text-[11px] space-y-1">
+                        <div class="text-gray-700 line-clamp-1"><span class="font-medium text-gray-500">Plan:</span> {{ f.action_plan }}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">PIC: {{ f.pic || '—' }} | Target: {{ f.deadline || '—' }}</div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                        <Link
+                            :href="route('admin.findings.show', f.id)"
+                            class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px]"
+                        >
+                            Detail
+                        </Link>
+                        <button
+                            @click="deleteFinding(f)"
+                            class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px]"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
                         <tr>

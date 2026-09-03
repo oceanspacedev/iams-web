@@ -85,16 +85,16 @@ const broadcastAllReminders = () => {
         <Head title="Action Plans" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Manajemen Action Plans</h1>
-                <p class="text-xs text-gray-500 mt-1">Daftar tindak lanjut perbaikan temuan audit dan status penyelesaian toko</p>
+                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Manajemen Action Plans</h1>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Daftar tindak lanjut perbaikan temuan audit dan status penyelesaian toko</p>
             </div>
             <div>
                 <button
                     @click="broadcastAllReminders"
                     type="button"
-                    class="px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
+                    class="w-full sm:w-auto px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
                 >
                     Jalankan Pengingat WA
                 </button>
@@ -102,33 +102,91 @@ const broadcastAllReminders = () => {
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white p-4 rounded border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div class="w-full sm:w-80">
-                <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Cari rencana, toko, no. audit..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                />
-            </div>
-            <div class="w-full sm:w-auto">
-                <select
-                    v-model="statusFilter"
-                    class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-1.5"
-                >
-                    <option value="">Semua Status Plan</option>
-                    <option value="OPEN">Open</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="OVERDUE">Overdue</option>
-                </select>
+        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
+                <div class="relative flex-1 w-full">
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Cari rencana, toko, no. audit..."
+                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                </div>
+                <div class="w-full sm:w-52 shrink-0">
+                    <select
+                        v-model="statusFilter"
+                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
+                    >
+                        <option value="">Semua Status Plan</option>
+                        <option value="OPEN">Open</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="OVERDUE">Overdue</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <!-- Table Container -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-xs">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
+        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
+            
+            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
+            <div class="block md:hidden divide-y divide-gray-200">
+                <div v-if="filteredPlans.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                    Tidak ada data action plan.
+                </div>
+                <div
+                    v-for="ap in filteredPlans"
+                    :key="'m-ap-' + ap.id"
+                    class="p-4 space-y-2.5"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ ap.store }}</div>
+                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ ap.audit_number }}</div>
+                        </div>
+                        <StatusBadge :status="ap.is_overdue ? 'OVERDUE' : ap.status" />
+                    </div>
+
+                    <div class="text-xs text-gray-800 line-clamp-2">
+                        <span class="font-medium text-gray-500">Temuan:</span> {{ ap.finding }}
+                    </div>
+
+                    <div class="p-2.5 bg-slate-50 rounded border border-gray-100 text-[11px] space-y-1">
+                        <div class="text-gray-800 font-medium">Rencana Perbaikan:</div>
+                        <div v-if="ap.action_plan" class="text-gray-700 line-clamp-2">{{ ap.action_plan }}</div>
+                        <div v-else class="text-gray-400 italic">Belum diisi oleh toko</div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>PIC: <strong class="text-gray-800 font-medium">{{ ap.pic || '—' }}</strong></span>
+                        <span :class="ap.is_overdue ? 'text-red-600 font-semibold' : 'text-gray-500 font-mono'">
+                            Target: {{ ap.deadline || '—' }}
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                        <button
+                            v-if="ap.status !== 'COMPLETED'"
+                            @click="sendSingleReminder(ap)"
+                            type="button"
+                            class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        >
+                            Ingatkan WA
+                        </button>
+                        <Link
+                            :href="route('admin.findings.show', ap.finding_id)"
+                            class="px-2.5 py-1 text-xs rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium"
+                        >
+                            Detail
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3.5 whitespace-nowrap">No. Audit & Toko</th>
@@ -196,13 +254,13 @@ const broadcastAllReminders = () => {
                                     v-if="ap.status !== 'COMPLETED'"
                                     @click="sendSingleReminder(ap)"
                                     type="button"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium cursor-pointer"
                                 >
                                     Ingatkan WA
                                 </button>
                                 <Link
                                     :href="route('admin.findings.show', ap.finding_id)"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium cursor-pointer"
                                 >
                                     Detail
                                 </Link>

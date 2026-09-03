@@ -20,50 +20,50 @@ const props = defineProps({
         <Head title="Auditor Dashboard" />
 
         <!-- Header -->
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Auditor Dashboard</h1>
-            <p class="text-xs text-gray-500 mt-1">Ringkasan penugasan audit dan temuan yang menjadi tanggung jawab Anda</p>
+        <div class="mb-4 sm:mb-6">
+            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Auditor Dashboard</h1>
+            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Ringkasan penugasan audit dan temuan yang menjadi tanggung jawab Anda</p>
         </div>
 
         <!-- Metrics Overview (Clean Corporate Grid) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
-            <div class="bg-white p-4 rounded border border-gray-200">
-                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Assigned Audits</div>
-                <div class="text-2xl font-semibold text-gray-900 mt-1">{{ stats.assigned_audits }}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
+                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Assigned Audits</div>
+                <div class="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{{ stats.assigned_audits }}</div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-gray-200">
-                <div class="text-[11px] font-medium text-red-600 uppercase tracking-wider">Open Findings</div>
-                <div class="text-2xl font-semibold text-red-600 mt-1">{{ stats.open_findings }}</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
+                <div class="text-[10px] sm:text-[11px] font-medium text-red-600 uppercase tracking-wider">Open Findings</div>
+                <div class="text-xl sm:text-2xl font-semibold text-red-600 mt-1">{{ stats.open_findings }}</div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-gray-200">
-                <div class="text-[11px] font-medium text-amber-600 uppercase tracking-wider">In Progress</div>
-                <div class="text-2xl font-semibold text-amber-600 mt-1">{{ stats.in_progress_findings }}</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
+                <div class="text-[10px] sm:text-[11px] font-medium text-amber-600 uppercase tracking-wider">In Progress</div>
+                <div class="text-xl sm:text-2xl font-semibold text-amber-600 mt-1">{{ stats.in_progress_findings }}</div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-blue-200 bg-blue-50/20">
-                <div class="text-[11px] font-medium text-blue-700 uppercase tracking-wider">Waiting Verify</div>
-                <div class="text-2xl font-semibold text-blue-700 mt-1">{{ stats.waiting_verification }}</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-blue-200 bg-blue-50/20">
+                <div class="text-[10px] sm:text-[11px] font-medium text-blue-700 uppercase tracking-wider">Waiting Verify</div>
+                <div class="text-xl sm:text-2xl font-semibold text-blue-700 mt-1">{{ stats.waiting_verification }}</div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-gray-200">
-                <div class="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">Closed</div>
-                <div class="text-2xl font-semibold text-emerald-600 mt-1">{{ stats.closed_findings }}</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
+                <div class="text-[10px] sm:text-[11px] font-medium text-emerald-600 uppercase tracking-wider">Closed</div>
+                <div class="text-xl sm:text-2xl font-semibold text-emerald-600 mt-1">{{ stats.closed_findings }}</div>
             </div>
 
-            <div class="bg-white p-4 rounded border border-red-200 bg-red-50/30">
-                <div class="text-[11px] font-medium text-red-700 uppercase tracking-wider">Overdue Actions</div>
-                <div class="text-2xl font-semibold text-red-700 mt-1">{{ stats.overdue_findings }}</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-red-200 bg-red-50/30">
+                <div class="text-[10px] sm:text-[11px] font-medium text-red-700 uppercase tracking-wider">Overdue Actions</div>
+                <div class="text-xl sm:text-2xl font-semibold text-red-700 mt-1">{{ stats.overdue_findings }}</div>
             </div>
         </div>
 
-        <!-- Recent Audits Table -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
-            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+        <!-- Recent Audits Table / List -->
+        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-2xs">
+            <div class="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-semibold text-gray-900">Recent Assigned Audits</h2>
-                    <p class="text-xs text-gray-500">Daftar penugasan audit terkini</p>
+                    <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Recent Assigned Audits</h2>
+                    <p class="text-[10px] sm:text-xs text-gray-500">Daftar penugasan audit terkini</p>
                 </div>
                 <Link
                     :href="route('auditor.audits.index')"
@@ -73,7 +73,42 @@ const props = defineProps({
                 </Link>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- 1. Mobile List View (No horizontal scrolling) -->
+            <div class="block sm:hidden divide-y divide-gray-100">
+                <div v-if="recent_audits.length === 0" class="p-5 text-center text-gray-400 text-xs">
+                    Belum ada penugasan audit untuk akun Anda.
+                </div>
+                <div
+                    v-for="audit in recent_audits"
+                    :key="'m-auditor-audit-' + audit.id"
+                    class="p-3.5 space-y-2 hover:bg-gray-50 transition-colors"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
+                            <div class="font-mono text-[11px] text-gray-500 mt-0.5">{{ audit.audit_number }}</div>
+                        </div>
+                        <StatusBadge :status="audit.status" />
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>Tanggal: <strong class="text-gray-700 font-medium">{{ audit.audit_date }}</strong></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
+                            {{ audit.findings_count }} temuan
+                        </span>
+                    </div>
+                    <div class="pt-1.5 flex justify-end">
+                        <Link
+                            :href="route('auditor.audits.show', audit.id)"
+                            class="inline-flex items-center px-3 py-1 text-xs font-medium rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            Detail & Temuan →
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Desktop Table View -->
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>

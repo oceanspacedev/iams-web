@@ -50,6 +50,28 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        if ($user) {
+            if ($user->approval_status === 'pending') {
+                Auth::logout();
+                throw ValidationException::withMessages([
+                    'email' => 'Pendaftaran akun Anda masih MENUNGGU PERSETUJUAN dari Administrator.',
+                ]);
+            }
+            if ($user->approval_status === 'rejected') {
+                Auth::logout();
+                throw ValidationException::withMessages([
+                    'email' => 'Permohonan pendaftaran akun Anda ditolak oleh Administrator.',
+                ]);
+            }
+            if (!$user->is_active) {
+                Auth::logout();
+                throw ValidationException::withMessages([
+                    'email' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
+                ]);
+            }
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

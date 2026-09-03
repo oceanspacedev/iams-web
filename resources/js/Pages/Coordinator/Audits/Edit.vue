@@ -37,6 +37,35 @@ const form = useForm({
     notes: props.audit.notes || '',
 });
 
+const availableAuditors = computed(() => {
+    return props.auditors.filter(a => !form.auditor_ids.includes(a.id));
+});
+
+const addAuditor = (event) => {
+    const val = Number(event.target.value);
+    if (!val) return;
+    if (form.auditor_ids.length >= 5) {
+        alert('Maksimal penugasan 5 orang auditor per surat tugas audit.');
+        event.target.value = '';
+        return;
+    }
+    if (!form.auditor_ids.includes(val)) {
+        form.auditor_ids.push(val);
+    }
+    event.target.value = '';
+};
+
+const removeAuditor = (auditorId) => {
+    const index = form.auditor_ids.indexOf(auditorId);
+    if (index > -1) {
+        form.auditor_ids.splice(index, 1);
+    }
+};
+
+const getAuditor = (auditorId) => {
+    return props.auditors.find(a => a.id === auditorId);
+};
+
 const toggleAuditor = (auditorId) => {
     const index = form.auditor_ids.indexOf(auditorId);
     if (index > -1) {
@@ -173,7 +202,7 @@ const submit = () => {
                                 :class="useCustomStore ? 'bg-white text-gray-900 font-medium shadow-xs' : 'text-gray-600 hover:text-gray-900'"
                                 class="px-2.5 py-1 rounded transition-colors cursor-pointer"
                             >
-                                Input Manual (Free Text)
+                                Input Manual 
                             </button>
                         </div>
                     </div>
@@ -204,49 +233,57 @@ const submit = () => {
                     <div v-if="form.errors.custom_store_name" class="text-red-600 text-[11px] mt-1">{{ form.errors.custom_store_name }}</div>
                 </div>
 
-                <!-- TIM AUDITOR: MULTI-SELECT UP TO 5 PERSONS -->
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block font-bold text-gray-800 text-xs">
+                <!-- TIM AUDITOR: DROPDOWN SELECTOR -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block font-medium text-gray-700">
                             Tim Auditor Aktif Bertugas <span class="text-red-500">*</span>
                         </label>
-                        <span
-                            class="px-2 py-0.5 text-[10px] font-bold rounded-full"
-                            :class="form.auditor_ids.length > 0 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'"
-                        >
-                            {{ form.auditor_ids.length }} / 5 Dipilih
+                        <span class="text-[11px] text-gray-500">
+                            {{ form.auditor_ids.length }} / 5 Dipilih (Urutan pertama: Lead Auditor)
                         </span>
                     </div>
-                    <p class="text-[11px] text-gray-500 mb-3">
-                        Pilih minimal 1 dan maksimal 5 auditor aktif. Auditor urutan pertama bertindak sebagai <strong>Lead Auditor</strong>.
-                    </p>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1 bg-white rounded border border-gray-200">
-                        <div
-                            v-for="auditor in auditors"
+                    <select
+                        @change="addAuditor"
+                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                        :disabled="form.auditor_ids.length >= 5"
+                    >
+                        <option value="" selected>
+                            {{ form.auditor_ids.length === 0 ? '-- Pilih Auditor Bertugas (Lead Auditor) --' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor tercapai' : '+ Tambah Anggota Auditor...') }}
+                        </option>
+                        <option
+                            v-for="auditor in availableAuditors"
                             :key="auditor.id"
-                            @click="toggleAuditor(auditor.id)"
-                            class="p-2.5 rounded border transition-all cursor-pointer flex items-center justify-between gap-2"
-                            :class="form.auditor_ids.includes(auditor.id) ? 'border-blue-500 bg-blue-50/60 font-semibold text-blue-950' : 'border-gray-200 text-gray-700 hover:bg-gray-50'"
+                            :value="auditor.id"
                         >
-                            <div class="truncate">
-                                <div class="truncate text-xs">{{ auditor.name }}</div>
-                                <div class="text-[10px] text-gray-400 font-normal truncate">{{ auditor.email }}</div>
-                            </div>
-                            <div class="shrink-0 flex items-center">
-                                <span
-                                    v-if="form.auditor_ids.indexOf(auditor.id) === 0"
-                                    class="text-[9px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold mr-1"
-                                >
-                                    Lead
-                                </span>
-                                <input
-                                    type="checkbox"
-                                    :checked="form.auditor_ids.includes(auditor.id)"
-                                    class="rounded text-blue-600 focus:ring-blue-500"
-                                    @click.stop="toggleAuditor(auditor.id)"
-                                />
-                            </div>
+                            {{ auditor.name }} ({{ auditor.email }})
+                        </option>
+                    </select>
+
+                    <!-- Tags Auditor Terpilih -->
+                    <div v-if="form.auditor_ids.length > 0" class="flex flex-wrap gap-2 mt-2">
+                        <div
+                            v-for="(auditorId, index) in form.auditor_ids"
+                            :key="auditorId"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border"
+                            :class="index === 0 ? 'bg-blue-50 border-blue-200 text-blue-900 font-medium' : 'bg-gray-50 border-gray-200 text-gray-700'"
+                        >
+                            <span
+                                v-if="index === 0"
+                                class="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]"
+                            >
+                                Lead
+                            </span>
+                            <span>{{ getAuditor(auditorId)?.name || auditorId }}</span>
+                            <button
+                                type="button"
+                                @click="removeAuditor(auditorId)"
+                                class="text-gray-400 hover:text-red-600 font-bold ml-1 cursor-pointer text-sm leading-none"
+                                title="Hapus dari tim"
+                            >
+                                &times;
+                            </button>
                         </div>
                     </div>
                     <div v-if="form.errors.auditor_ids" class="text-red-600 text-[11px] mt-1">{{ form.errors.auditor_ids }}</div>

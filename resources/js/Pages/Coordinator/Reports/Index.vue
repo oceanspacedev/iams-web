@@ -146,9 +146,10 @@ const topLossStores = computed(() => {
     <AppLayout title="Laporan & Rekapitulasi Audit">
         <Head title="Laporan & Rekapitulasi — Koordinator" />
 
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- Header -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
                 <p class="text-xs text-gray-500 mt-1">Distribusi severity risiko temuan, efektivitas tindak lanjut, dan visualisasi grafik audit CSA</p>
             </div>
 
@@ -157,7 +158,7 @@ const topLossStores = computed(() => {
                 <button
                     type="button"
                     @click="exportDropdownOpen = !exportDropdownOpen"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition-colors cursor-pointer"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
                 >
                     <span>Download Laporan Excel</span>
                     <svg
@@ -189,7 +190,7 @@ const topLossStores = computed(() => {
                 >
                     <div
                         v-if="exportDropdownOpen"
-                        class="absolute right-0 mt-1.5 w-56 rounded border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
+                        class="absolute right-0 mt-1.5 w-56 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
                     >
                         <a
                             :href="route('coordinator.reports.export-findings')"
@@ -219,30 +220,30 @@ const topLossStores = computed(() => {
             </div>
         </div>
 
-        <!-- 4 Key Metrics Overview Cards -->
+        <!-- 4 Key Metrics Overview Cards (Matching Screenshot Exactly) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
-                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Kerugian Finansial</div>
-                <div class="text-xl font-bold text-gray-900 font-mono mt-1">{{ formatRupiah(total_loss) }}</div>
-                <div class="text-[11px] text-gray-400 mt-1">Akumulasi seluruh cabang CSA</div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs">
+                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">TOTAL KERUGIAN</div>
+                <div class="text-2xl font-bold text-gray-900 font-mono mt-1.5">{{ formatRupiah(total_loss) }}</div>
+                <div class="text-xs text-gray-400 mt-1">Akumulasi cabang CSA</div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
-                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Temuan Terdaftar</div>
-                <div class="text-xl font-bold text-gray-900 mt-1">{{ totalFindingsCount }} Temuan</div>
-                <div class="text-[11px] text-gray-400 mt-1">Dari hasil seluruh pemeriksaan</div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs">
+                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">TOTAL TEMUAN</div>
+                <div class="text-2xl font-bold text-gray-900 mt-1.5">{{ totalFindingsCount }} Temuan</div>
+                <div class="text-xs text-gray-400 mt-1">Dari hasil pemeriksaan</div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
-                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Tingkat Penyelesaian (Closed)</div>
-                <div class="text-xl font-bold text-emerald-700 mt-1">{{ calculatedCompletionRate }}%</div>
-                <div class="text-[11px] text-gray-400 mt-1">{{ by_status.CLOSED || 0 }} temuan telah ditutup</div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs">
+                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">TINGKAT CLOSED</div>
+                <div class="text-2xl font-bold text-emerald-600 mt-1.5">{{ calculatedCompletionRate }}%</div>
+                <div class="text-xs text-gray-400 mt-1">{{ by_status.CLOSED || 0 }} temuan ditutup</div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
-                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Temuan Risiko Tinggi</div>
-                <div class="text-xl font-bold text-rose-700 mt-1">{{ highRiskCount }} Temuan</div>
-                <div class="text-[11px] text-rose-600 mt-1">Kategori Major & Critical</div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs">
+                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">RISIKO TINGGI</div>
+                <div class="text-2xl font-bold text-rose-600 mt-1.5">{{ highRiskCount }} Temuan</div>
+                <div class="text-xs text-rose-500 font-medium mt-1">Major & Critical</div>
             </div>
         </div>
 
@@ -462,19 +463,46 @@ const topLossStores = computed(() => {
             </div>
         </div>
 
-        <!-- Store Loss Ranking Table -->
+        <!-- Store Loss Ranking Table / List -->
         <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs text-xs">
-            <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+            <div class="p-3 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 bg-gray-50/50">
                 <div>
-                    <h2 class="text-sm font-semibold text-gray-900">Rekapitulasi Temuan & Kerugian per Cabang</h2>
-                    <p class="text-[11px] text-gray-500">Peringkat kerugian retail berdasarkan hasil temuan audit</p>
+                    <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Rekapitulasi Temuan & Kerugian per Cabang</h2>
+                    <p class="text-[10px] sm:text-[11px] text-gray-500">Peringkat kerugian retail berdasarkan hasil temuan audit</p>
                 </div>
-                <div class="font-semibold text-gray-900">
-                    Total Loss Nasional: <span class="text-gray-900 font-bold text-sm font-mono">{{ formatRupiah(total_loss) }}</span>
+                <div class="text-[11px] sm:text-xs font-semibold text-gray-700">
+                    Total Loss: <span class="text-gray-900 font-bold text-xs sm:text-sm font-mono">{{ formatRupiah(total_loss) }}</span>
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- 1. Mobile List View (No horizontal scrolling) -->
+            <div class="block md:hidden divide-y divide-gray-100">
+                <div v-if="store_losses.length === 0" class="p-5 text-center text-gray-400 text-xs">
+                    Belum ada data rekapitulasi cabang.
+                </div>
+                <div
+                    v-for="s in store_losses"
+                    :key="'m-sl-coord-' + s.store_code"
+                    class="p-3.5 space-y-2 hover:bg-gray-50 transition-colors"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-semibold text-gray-900 text-xs">{{ s.store_name }}</div>
+                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ s.store_code }} • Area: {{ s.area || '-' }}</div>
+                        </div>
+                        <div class="font-mono font-bold text-xs text-gray-900 shrink-0">
+                            {{ formatRupiah(s.total_loss) }}
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span>Total Audit: <strong class="text-gray-700 font-medium">{{ s.total_audits }} kali</strong></span>
+                        <span class="font-semibold text-slate-800">{{ s.total_findings }} temuan</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left">
                     <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>

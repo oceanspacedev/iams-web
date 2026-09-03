@@ -90,7 +90,7 @@ class Finding extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(AuditCategory::class, 'category_id');
+        return $this->belongsTo(AuditCategory::class, 'category_id')->withTrashed();
     }
 
     public function sop(): BelongsTo
