@@ -232,14 +232,15 @@ class FindingController extends Controller
             'file'        => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ]);
 
-        $path = $request->file('file')->store('evidences', 'public');
+        $disk = config('filesystems.default');
+        $path = $request->file('file')->store('evidences', $disk);
 
         $finding->evidences()->create([
-            'uploaded_by_id'      => $request->user()->id,
-            'file_path'           => $path,
+            'uploaded_by'         => $request->user()->id,
+            'file'                => $path,
             'description'         => $validated['description'],
             'verification_status' => 'APPROVED',
-            'verified_by_id'      => $request->user()->id,
+            'verified_by'         => $request->user()->id,
             'verified_at'         => now(),
         ]);
 

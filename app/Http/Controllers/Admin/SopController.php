@@ -35,7 +35,8 @@ class SopController extends Controller
 
         $docPath = null;
         if ($request->hasFile('document')) {
-            $docPath = $request->file('document')->store('sop-documents', 'public');
+            $disk = config('filesystems.default');
+            $docPath = $request->file('document')->store('sop-documents', $disk);
         }
 
         Sop::create([
@@ -61,10 +62,13 @@ class SopController extends Controller
 
         $docPath = $sop->document;
         if ($request->hasFile('document')) {
-            if ($docPath && Storage::disk('public')->exists($docPath)) {
+            $disk = config('filesystems.default');
+            if ($docPath && Storage::disk($disk)->exists($docPath)) {
+                Storage::disk($disk)->delete($docPath);
+            } elseif ($docPath && Storage::disk('public')->exists($docPath)) {
                 Storage::disk('public')->delete($docPath);
             }
-            $docPath = $request->file('document')->store('sop-documents', 'public');
+            $docPath = $request->file('document')->store('sop-documents', $disk);
         }
 
         $sop->update([
@@ -84,7 +88,10 @@ class SopController extends Controller
             return back()->with('error', 'SOP/SE tidak dapat dihapus karena ditautkan pada temuan audit.');
         }
 
-        if ($sop->document && Storage::disk('public')->exists($sop->document)) {
+        $disk = config('filesystems.default');
+        if ($sop->document && Storage::disk($disk)->exists($sop->document)) {
+            Storage::disk($disk)->delete($sop->document);
+        } elseif ($sop->document && Storage::disk('public')->exists($sop->document)) {
             Storage::disk('public')->delete($sop->document);
         }
 

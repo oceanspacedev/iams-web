@@ -30,7 +30,7 @@ class SopForm
                             ->columnSpanFull(),
                         Forms\Components\FileUpload::make('document')
                             ->label('Dokumen (PDF)')
-                            ->disk('public')
+                            ->disk(config('filesystems.default'))
                             ->directory('sop-documents')
                             ->acceptedFileTypes(['application/pdf'])
                             ->maxSize(10240)

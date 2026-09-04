@@ -20,6 +20,8 @@ class AuditDocument extends Model
         'uploaded_by',
     ];
 
+    protected $appends = ['file_url'];
+
     public function audit(): BelongsTo
     {
         return $this->belongsTo(Audit::class);
@@ -41,6 +43,20 @@ class AuditDocument extends Model
             return $this->file_path;
         }
 
-        return Storage::url($this->file_path);
+        $disk = config('filesystems.default');
+
+        if ($disk === 's3' || Storage::disk('s3')->exists($this->file_path)) {
+            try {
+                return Storage::disk('s3')->temporaryUrl($this->file_path, now()->addDays(7));
+            } catch (\Throwable $e) {
+                return Storage::disk('s3')->url($this->file_path);
+            }
+        }
+
+        if (Storage::disk('public')->exists($this->file_path)) {
+            return Storage::disk('public')->url($this->file_path);
+        }
+
+        return Storage::disk($disk)->url($this->file_path);
     }
 }

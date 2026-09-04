@@ -20,7 +20,8 @@ class EvidenceController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        $filePath = $request->file('file')->store('evidences', 'public');
+        $disk = config('filesystems.default');
+        $filePath = $request->file('file')->store('evidences', $disk);
 
         $evidence = $finding->evidences()->create([
             'uploaded_by'         => $request->user()->id,
@@ -41,7 +42,10 @@ class EvidenceController extends Controller
     {
         $this->authorize('delete', $evidence);
 
-        if (Storage::disk('public')->exists($evidence->file)) {
+        $disk = config('filesystems.default');
+        if (Storage::disk($disk)->exists($evidence->file)) {
+            Storage::disk($disk)->delete($evidence->file);
+        } elseif (Storage::disk('public')->exists($evidence->file)) {
             Storage::disk('public')->delete($evidence->file);
         }
 

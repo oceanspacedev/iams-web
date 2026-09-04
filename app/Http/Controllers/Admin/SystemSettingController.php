@@ -188,9 +188,16 @@ class SystemSettingController extends Controller
      */
     private function cleanStorageDirectory(string $path): void
     {
-        if (Storage::exists($path)) {
-            $files = Storage::allFiles($path);
-            Storage::delete($files);
+        $disks = array_unique([config('filesystems.default'), 'public']);
+        foreach ($disks as $disk) {
+            try {
+                if (Storage::disk($disk)->exists($path)) {
+                    $files = Storage::disk($disk)->allFiles($path);
+                    Storage::disk($disk)->delete($files);
+                }
+            } catch (\Throwable $e) {
+                // Ignore failure if bucket or directory is inaccessible
+            }
         }
     }
 }

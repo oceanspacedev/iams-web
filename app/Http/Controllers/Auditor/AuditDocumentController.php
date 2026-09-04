@@ -24,7 +24,8 @@ class AuditDocumentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('audit-documents', 'public');
+        $disk = config('filesystems.default');
+        $path = $file->store('audit-documents', $disk);
 
         $audit->documents()->create([
             'document_type' => $validated['document_type'],
@@ -44,7 +45,10 @@ class AuditDocumentController extends Controller
     {
         $this->authorize('view', $document->audit);
 
-        if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
+        $disk = config('filesystems.default');
+        if ($document->file_path && Storage::disk($disk)->exists($document->file_path)) {
+            Storage::disk($disk)->delete($document->file_path);
+        } elseif ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
             Storage::disk('public')->delete($document->file_path);
         }
 
