@@ -17,6 +17,7 @@ use App\Http\Controllers\Auditor\DashboardController as AuditorDashboardControll
 use App\Http\Controllers\Auditor\EvidenceVerificationController;
 use App\Http\Controllers\Auditor\FindingController as AuditorFindingController;
 use App\Http\Controllers\Auditor\QualityFindingController as AuditorQualityFindingController;
+use App\Http\Controllers\Auditor\ReportController as AuditorReportController;
 use App\Http\Controllers\Coordinator\ActionPlanController as CoordinatorActionPlanController;
 use App\Http\Controllers\Coordinator\AuditController as CoordinatorAuditController;
 use App\Http\Controllers\Coordinator\DashboardController as CoordinatorDashboardController;
@@ -157,9 +158,12 @@ Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coord
     Route::patch('/findings/{finding}/recommendation', [CoordinatorFindingController::class, 'updateRecommendation'])->name('findings.recommendation.update');
     Route::patch('/findings/{finding}/close', [CoordinatorFindingController::class, 'close'])->name('findings.close');
 
-    // Finding Quality Monitoring
+    // Finding Quality Reports & Monitoring
     Route::get('/finding-qualities', [AuditorQualityFindingController::class, 'index'])->name('finding-qualities.index');
+    Route::get('/finding-qualities/create', [AuditorQualityFindingController::class, 'create'])->name('finding-qualities.create');
+    Route::post('/finding-qualities', [AuditorQualityFindingController::class, 'store'])->name('finding-qualities.store');
     Route::get('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'show'])->name('finding-qualities.show');
+    Route::delete('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'destroy'])->name('finding-qualities.destroy');
 
     // Audits Monitoring & Management
     Route::get('/audits', [CoordinatorAuditController::class, 'index'])->name('audits.index');
@@ -215,6 +219,12 @@ Route::middleware(['auth', 'role:auditor'])->prefix('auditor')->name('auditor.')
     Route::post('/finding-qualities', [AuditorQualityFindingController::class, 'store'])->name('finding-qualities.store');
     Route::get('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'show'])->name('finding-qualities.show');
     Route::delete('/finding-qualities/{findingQuality}', [AuditorQualityFindingController::class, 'destroy'])->name('finding-qualities.destroy');
+
+    // Reports
+    Route::get('/reports', [AuditorReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export-findings', [AuditorReportController::class, 'exportFindings'])->name('reports.export-findings');
+    Route::get('/reports/export-stores', [AuditorReportController::class, 'exportStores'])->name('reports.export-stores');
+    Route::get('/reports/export-summary', [AuditorReportController::class, 'exportSummary'])->name('reports.export-summary');
 
     // Evidence Verification
     Route::get('/verification', [EvidenceVerificationController::class, 'index'])->name('verification.index');

@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -20,6 +20,18 @@ const props = defineProps({
         type: [String, Number],
         default: null,
     },
+    routePrefix: {
+        type: String,
+        default: '',
+    },
+});
+
+const page = usePage();
+const currentPrefix = computed(() => {
+    if (props.routePrefix) return props.routePrefix;
+    if (typeof route === 'function' && route().current('coordinator.*')) return 'coordinator.';
+    if (typeof route === 'function' && route().current('auditor.*')) return 'auditor.';
+    return (page.props.auth?.user?.roles || []).includes('auditor') ? 'auditor.' : 'coordinator.';
 });
 
 const form = useForm({
@@ -121,7 +133,7 @@ const selectedFindingObj = computed(() => {
 });
 
 const submit = () => {
-    form.post(route('auditor.finding-qualities.store'));
+    form.post(route(`${currentPrefix.value}finding-qualities.store`));
 };
 </script>
 
@@ -131,7 +143,7 @@ const submit = () => {
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('auditor.finding-qualities.index')" class="hover:text-blue-600">Finding Quality</Link>
+                <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
                 <span>/</span>
                 <span class="text-gray-900 font-medium">Buat Laporan Baru</span>
             </div>
@@ -318,7 +330,7 @@ const submit = () => {
                 <!-- Buttons -->
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route('auditor.finding-qualities.index')"
+                        :href="route(`${currentPrefix}finding-qualities.index`)"
                         class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal

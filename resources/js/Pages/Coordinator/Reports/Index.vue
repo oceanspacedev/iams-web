@@ -1,6 +1,6 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -42,9 +42,43 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    categories: {
+        type: Array,
+        default: () => [],
+    },
+    selected_category: {
+        type: [String, Number],
+        default: 'all',
+    },
 });
 
 const exportDropdownOpen = ref(false);
+const selectedCategory = ref(String(props.selected_category || 'all'));
+
+const page = usePage();
+const currentPrefix = computed(() => {
+    if (typeof route === 'function' && route().current('auditor.*')) return 'auditor.';
+    if (typeof route === 'function' && route().current('coordinator.*')) return 'coordinator.';
+    return (page.props.auth?.user?.roles || []).includes('auditor') ? 'auditor.' : 'coordinator.';
+});
+
+watch(() => props.selected_category, (newVal) => {
+    selectedCategory.value = String(newVal || 'all');
+});
+
+const handleCategoryChange = () => {
+    router.get(
+        route(`${currentPrefix.value}reports.index`),
+        selectedCategory.value !== 'all' ? { category_id: selectedCategory.value } : {},
+        { preserveState: true, preserveScroll: true, replace: true }
+    );
+};
+
+const setCategory = (catId) => {
+    const target = String(catId);
+    selectedCategory.value = selectedCategory.value === target ? 'all' : target;
+    handleCategoryChange();
+};
 
 const formatRupiah = (number) => {
     if (!number) return 'Rp 0';
@@ -152,79 +186,112 @@ const topLossStores = computed(() => {
 
 <template>
     <AppLayout title="Laporan & Rekapitulasi Audit">
-        <Head title="Laporan & Rekapitulasi — Koordinator" />
+        <Head title="Laporan & Rekapitulasi Audit" />
 
         <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
                 <p class="text-xs text-gray-500 mt-1">Distribusi severity risiko temuan, efektivitas tindak lanjut, dan visualisasi grafik audit CSA</p>
+                <div v-if="selectedCategory !== 'all'" class="mt-2 flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                        <span>Filter aktif: <strong>{{ categories.find(c => String(c.id) === selectedCategory)?.name || selectedCategory }}</strong></span>
+                        <button type="button" @click="setCategory('all')" class="hover:text-blue-950 font-bold ml-1 cursor-pointer" title="Reset filter">✕</button>
+                    </span>
+                </div>
             </div>
 
-            <!-- Single Trigger Button & Smooth Dropdown Menu directly underneath -->
-            <div class="relative">
-                <button
-                    type="button"
-                    @click="exportDropdownOpen = !exportDropdownOpen"
-                    class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
-                >
-                    <span>Download Laporan Excel</span>
-                    <svg
-                        class="w-3.5 h-3.5 text-emerald-200 transition-transform duration-200"
-                        :class="{ 'rotate-180': exportDropdownOpen }"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+            <!-- Action Controls: Category Filter Box & Download Button -->
+            <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                <!-- Kotak Navigasi Filter Kategori -->
+                <div class="relative flex items-center bg-white border border-gray-300 rounded-md shadow-2xs hover:border-gray-400 transition-colors">
+                    <div class="flex items-center gap-1.5 pl-3 pr-1 py-2 text-xs text-gray-500 pointer-events-none select-none">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <span class="font-medium text-gray-600 hidden sm:inline">Kategori:</span>
+                    </div>
+                    <select
+                        v-model="selectedCategory"
+                        @change="handleCategoryChange"
+                        class="text-xs font-semibold text-gray-800 bg-transparent py-2 pl-1 pr-8 border-0 focus:ring-0 focus:outline-hidden cursor-pointer"
                     >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+                        <option value="all">Semua Kategori (All)</option>
+                        <option
+                            v-for="cat in categories"
+                            :key="cat.id"
+                            :value="String(cat.id)"
+                        >
+                            {{ cat.name }}
+                        </option>
+                    </select>
+                </div>
 
-                <!-- Invisible overlay to close dropdown when clicking outside -->
-                <div
-                    v-if="exportDropdownOpen"
-                    class="fixed inset-0 z-20"
-                    @click="exportDropdownOpen = false"
-                ></div>
+                <!-- Single Trigger Button & Smooth Dropdown Menu directly underneath -->
+                <div class="relative">
+                    <button
+                        type="button"
+                        @click="exportDropdownOpen = !exportDropdownOpen"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
+                    >
+                        <span>Download Laporan Excel</span>
+                        <svg
+                            class="w-3.5 h-3.5 text-emerald-200 transition-transform duration-200"
+                            :class="{ 'rotate-180': exportDropdownOpen }"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
 
-                <!-- Smooth Dropdown menu directly below the button (no icons or emojis) -->
-                <Transition
-                    enter-active-class="transition ease-out duration-150"
-                    enter-from-class="transform opacity-0 scale-95 -translate-y-1"
-                    enter-to-class="transform opacity-100 scale-100 translate-y-0"
-                    leave-active-class="transition ease-in duration-100"
-                    leave-from-class="transform opacity-100 scale-100 translate-y-0"
-                    leave-to-class="transform opacity-0 scale-95 -translate-y-1"
-                >
+                    <!-- Invisible overlay to close dropdown when clicking outside -->
                     <div
                         v-if="exportDropdownOpen"
-                        class="absolute right-0 mt-1.5 w-56 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
+                        class="fixed inset-0 z-20"
+                        @click="exportDropdownOpen = false"
+                    ></div>
+
+                    <!-- Smooth Dropdown menu directly below the button -->
+                    <Transition
+                        enter-active-class="transition ease-out duration-150"
+                        enter-from-class="transform opacity-0 scale-95 -translate-y-1"
+                        enter-to-class="transform opacity-100 scale-100 translate-y-0"
+                        leave-active-class="transition ease-in duration-100"
+                        leave-from-class="transform opacity-100 scale-100 translate-y-0"
+                        leave-to-class="transform opacity-0 scale-95 -translate-y-1"
                     >
-                        <a
-                            :href="route('coordinator.reports.export-findings')"
-                            @click="exportDropdownOpen = false"
-                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                        <div
+                            v-if="exportDropdownOpen"
+                            class="absolute right-0 mt-1.5 w-56 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
                         >
-                            Rekap Seluruh Temuan (.xls)
-                        </a>
+                            <a
+                                :href="route(`${currentPrefix}reports.export-findings`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
+                                @click="exportDropdownOpen = false"
+                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                            >
+                                Rekap Seluruh Temuan (.xls)
+                            </a>
 
-                        <a
-                            :href="route('coordinator.reports.export-stores')"
-                            @click="exportDropdownOpen = false"
-                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                        >
-                            Rekapitulasi per Toko (.xls)
-                        </a>
+                            <a
+                                :href="route(`${currentPrefix}reports.export-stores`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
+                                @click="exportDropdownOpen = false"
+                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                            >
+                                Rekapitulasi per Toko (.xls)
+                            </a>
 
-                        <a
-                            :href="route('coordinator.reports.export-summary')"
-                            @click="exportDropdownOpen = false"
-                            class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                        >
-                            Ringkasan Eksekutif (.xls)
-                        </a>
-                    </div>
-                </Transition>
+                            <a
+                                :href="route(`${currentPrefix}reports.export-summary`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
+                                @click="exportDropdownOpen = false"
+                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                            >
+                                Ringkasan Eksekutif (.xls)
+                            </a>
+                        </div>
+                    </Transition>
+                </div>
             </div>
         </div>
 
@@ -453,11 +520,16 @@ const topLossStores = computed(() => {
                     <div
                         v-for="cat in by_category"
                         :key="cat.id"
-                        class="p-3 rounded-lg border border-gray-200 bg-gray-50/50 space-y-2"
+                        @click="setCategory(cat.id)"
+                        class="p-3 rounded-lg border transition-all cursor-pointer select-none space-y-2"
+                        :class="selectedCategory === String(cat.id) ? 'border-blue-500 bg-blue-50/70 ring-1 ring-blue-400 shadow-2xs' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-100/60'"
                     >
                         <div class="flex items-center justify-between">
-                            <span class="font-semibold text-gray-900 text-xs">{{ cat.name }}</span>
-                            <span class="font-bold text-blue-700 font-mono text-xs">{{ cat.count }} Temuan</span>
+                            <span class="font-semibold text-xs flex items-center gap-1.5" :class="selectedCategory === String(cat.id) ? 'text-blue-900 font-bold' : 'text-gray-900'">
+                                <span v-if="selectedCategory === String(cat.id)" class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                {{ cat.name }}
+                            </span>
+                            <span class="font-bold font-mono text-xs" :class="selectedCategory === String(cat.id) ? 'text-blue-800' : 'text-blue-700'">{{ cat.count }} Temuan</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                             <div

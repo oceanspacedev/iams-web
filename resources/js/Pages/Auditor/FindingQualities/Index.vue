@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -23,6 +23,18 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    routePrefix: {
+        type: String,
+        default: '',
+    },
+});
+
+const page = usePage();
+const currentPrefix = computed(() => {
+    if (props.routePrefix) return props.routePrefix;
+    if (typeof route === 'function' && route().current('coordinator.*')) return 'coordinator.';
+    if (typeof route === 'function' && route().current('auditor.*')) return 'auditor.';
+    return (page.props.auth?.user?.roles || []).includes('auditor') ? 'auditor.' : 'coordinator.';
 });
 
 const currentPage = ref(1);
@@ -38,7 +50,7 @@ const formatRupiah = (number) => {
 
 const filterByCategory = (categoryKey) => {
     router.get(
-        route('auditor.finding-qualities.index'),
+        route(`${currentPrefix.value}finding-qualities.index`),
         { category: categoryKey === props.selectedCategory ? '' : categoryKey },
         { preserveState: true, replace: true }
     );
@@ -121,7 +133,7 @@ const getCategoryTheme = (key, isSelected) => {
             </div>
 
             <Link
-                :href="route('auditor.finding-qualities.create')"
+                :href="route(`${currentPrefix}finding-qualities.create`)"
                 class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
             >
                 + Buat Laporan Baru
@@ -212,7 +224,7 @@ const getCategoryTheme = (key, isSelected) => {
                     </div>
 
                     <Link
-                        :href="route('auditor.finding-qualities.show', item.id)"
+                        :href="route(`${currentPrefix}finding-qualities.show`, item.id)"
                         class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                         Lihat Laporan →

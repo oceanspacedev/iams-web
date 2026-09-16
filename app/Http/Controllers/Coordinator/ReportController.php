@@ -20,22 +20,35 @@ class ReportController extends Controller
 
     public function index(Request $request): Response
     {
+        $categoryId = $request->query('category_id');
+
+        $baseFindingQuery = function () use ($categoryId) {
+            $q = Finding::query();
+            if ($categoryId && $categoryId !== 'all') {
+                $q->where(function ($sub) use ($categoryId) {
+                    $sub->where('category_id', $categoryId)
+                        ->orWhereHas('audit', fn ($aq) => $aq->where('category_id', $categoryId));
+                });
+            }
+            return $q;
+        };
+
         $bySeverity = [
-            'CRITICAL'    => Finding::where('severity', 'CRITICAL')->count(),
-            'MAJOR'       => Finding::where('severity', 'MAJOR')->count(),
-            'MINOR'       => Finding::where('severity', 'MINOR')->count(),
-            'OBSERVATION' => Finding::where('severity', 'OBSERVATION')->count(),
+            'CRITICAL'    => $baseFindingQuery()->where('severity', 'CRITICAL')->count(),
+            'MAJOR'       => $baseFindingQuery()->where('severity', 'MAJOR')->count(),
+            'MINOR'       => $baseFindingQuery()->where('severity', 'MINOR')->count(),
+            'OBSERVATION' => $baseFindingQuery()->where('severity', 'OBSERVATION')->count(),
         ];
 
         $byStatus = [
-            'OPEN'                 => Finding::where('status', Finding::STATUS_OPEN)->count(),
-            'IN_PROGRESS'          => Finding::where('status', Finding::STATUS_IN_PROGRESS)->count(),
-            'WAITING_VERIFICATION' => Finding::where('status', Finding::STATUS_WAITING_VERIFICATION)->count(),
-            'VERIFIED'             => Finding::where('status', Finding::STATUS_VERIFIED)->count(),
-            'CLOSED'               => Finding::where('status', Finding::STATUS_CLOSED)->count(),
+            'OPEN'                 => $baseFindingQuery()->where('status', Finding::STATUS_OPEN)->count(),
+            'IN_PROGRESS'          => $baseFindingQuery()->where('status', Finding::STATUS_IN_PROGRESS)->count(),
+            'WAITING_VERIFICATION' => $baseFindingQuery()->where('status', Finding::STATUS_WAITING_VERIFICATION)->count(),
+            'VERIFIED'             => $baseFindingQuery()->where('status', Finding::STATUS_VERIFIED)->count(),
+            'CLOSED'               => $baseFindingQuery()->where('status', Finding::STATUS_CLOSED)->count(),
         ];
 
-        $byCategory = \App\Models\AuditCategory::active()
+        $byCategory = AuditCategory::active()
             ->withCount('findings')
             ->get()
             ->map(fn ($cat) => [
@@ -47,9 +60,16 @@ class ReportController extends Controller
 
         $storeLosses = Store::withCount('audits')
             ->get()
-            ->map(function ($s) {
-                $totalLoss = Finding::whereHas('audit', fn ($q) => $q->where('store_id', $s->id))->sum('loss_amount');
-                $totalFindings = Finding::whereHas('audit', fn ($q) => $q->where('store_id', $s->id))->count();
+            ->map(function ($s) use ($categoryId) {
+                $findingQ = Finding::whereHas('audit', fn ($q) => $q->where('store_id', $s->id));
+                if ($categoryId && $categoryId !== 'all') {
+                    $findingQ->where(function ($sub) use ($categoryId) {
+                        $sub->where('category_id', $categoryId)
+                            ->orWhereHas('audit', fn ($aq) => $aq->where('category_id', $categoryId));
+                    });
+                }
+                $totalLoss = $findingQ->sum('loss_amount');
+                $totalFindings = $findingQ->count();
                 return [
                     'store_code'     => $s->code,
                     'store_name'     => $s->name,
@@ -62,37 +82,41 @@ class ReportController extends Controller
             ->sortByDesc('total_loss')
             ->values();
 
-        $totalFindings = Finding::count();
-        $closedFindings = Finding::where('status', Finding::STATUS_CLOSED)->count();
-        $closedOnTime = Finding::closedOnTime()->count();
-        $closedOverdue = Finding::closedOverdue()->count();
+        $totalFindings = $baseFindingQuery()->count();
+        $closedFindings = $baseFindingQuery()->where('status', Finding::STATUS_CLOSED)->count();
+        $closedOnTime = $baseFindingQuery()->closedOnTime()->count();
+        $closedOverdue = $baseFindingQuery()->closedOverdue()->count();
         $completionRate = $totalFindings > 0 ? round(($closedFindings / $totalFindings) * 100, 1) : 0;
 
+        $categories = AuditCategory::active()->orderBy('id')->get(['id', 'name']);
+
         return Inertia::render('Coordinator/Reports/Index', [
-            'by_severity'     => $bySeverity,
-            'by_status'       => $byStatus,
-            'by_category'     => $byCategory,
-            'store_losses'    => $storeLosses,
-            'total_loss'      => (float) Finding::sum('loss_amount'),
-            'total_findings'  => $totalFindings,
-            'completion_rate' => $completionRate,
-            'closed_on_time'  => $closedOnTime,
-            'closed_overdue'  => $closedOverdue,
+            'by_severity'       => $bySeverity,
+            'by_status'         => $byStatus,
+            'by_category'       => $byCategory,
+            'store_losses'      => $storeLosses,
+            'total_loss'        => (float) $baseFindingQuery()->sum('loss_amount'),
+            'total_findings'    => $totalFindings,
+            'completion_rate'   => $completionRate,
+            'closed_on_time'    => $closedOnTime,
+            'closed_overdue'    => $closedOverdue,
+            'categories'        => $categories,
+            'selected_category' => $categoryId ? (string) $categoryId : 'all',
         ]);
     }
 
-    public function exportFindings(): StreamedResponse
+    public function exportFindings(Request $request): StreamedResponse
     {
-        return $this->exportService->exportFindings();
+        return $this->exportService->exportFindings($request->query('category_id'));
     }
 
-    public function exportStores(): StreamedResponse
+    public function exportStores(Request $request): StreamedResponse
     {
-        return $this->exportService->exportStores();
+        return $this->exportService->exportStores($request->query('category_id'));
     }
 
-    public function exportSummary(): StreamedResponse
+    public function exportSummary(Request $request): StreamedResponse
     {
-        return $this->exportService->exportSummary();
+        return $this->exportService->exportSummary($request->query('category_id'));
     }
 }

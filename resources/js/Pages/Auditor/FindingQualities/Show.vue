@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -13,6 +14,18 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    routePrefix: {
+        type: String,
+        default: '',
+    },
+});
+
+const page = usePage();
+const currentPrefix = computed(() => {
+    if (props.routePrefix) return props.routePrefix;
+    if (typeof route === 'function' && route().current('coordinator.*')) return 'coordinator.';
+    if (typeof route === 'function' && route().current('auditor.*')) return 'auditor.';
+    return (page.props.auth?.user?.roles || []).includes('auditor') ? 'auditor.' : 'coordinator.';
 });
 
 const formatRupiah = (number) => {
@@ -30,7 +43,7 @@ const printReport = () => {
 
 const deleteQualityFinding = () => {
     if (confirm('Yakin ingin menghapus laporan Finding Quality ini?')) {
-        router.delete(route('auditor.finding-qualities.destroy', props.qualityFinding.id));
+        router.delete(route(`${currentPrefix.value}finding-qualities.destroy`, props.qualityFinding.id));
     }
 };
 </script>
@@ -43,7 +56,7 @@ const deleteQualityFinding = () => {
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
             <div>
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                    <Link :href="route('auditor.finding-qualities.index')" class="hover:text-blue-600">Finding Quality</Link>
+                    <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
                     <span>/</span>
                     <span class="text-gray-900 font-medium font-mono">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
                 </div>

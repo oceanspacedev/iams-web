@@ -131,8 +131,19 @@ const closeFinding = () => {
                 </h1>
             </div>
 
-            <div v-if="finding.can_close" class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
+                <Link
+                    :href="route('coordinator.finding-qualities.create', { finding_id: finding.id, audit_id: finding.audit.id })"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+                >
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Lapor Finding Quality</span>
+                </Link>
+
                 <button
+                    v-if="finding.can_close"
                     @click="closeFinding"
                     class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-2xs cursor-pointer"
                 >

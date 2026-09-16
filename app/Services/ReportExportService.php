@@ -12,7 +12,7 @@ class ReportExportService
     /**
      * Export all findings to true Excel (.xls) table format.
      */
-    public function exportFindings(): StreamedResponse
+    public function exportFindings(?string $categoryId = null): StreamedResponse
     {
         $filename = 'Laporan_Temuan_Audit_' . date('Y-m-d_His') . '.xls';
 
@@ -24,15 +24,24 @@ class ReportExportService
             'Expires'             => '0',
         ];
 
-        return response()->stream(function () {
-            $findings = Finding::with([
+        return response()->stream(function () use ($categoryId) {
+            $query = Finding::with([
                 'audit.store',
                 'audit.auditor',
                 'category',
                 'sop',
                 'severityReviewer',
                 'actionPlan',
-            ])->orderByDesc('id')->get();
+            ])->orderByDesc('id');
+
+            if ($categoryId && $categoryId !== 'all') {
+                $query->where(function ($sub) use ($categoryId) {
+                    $sub->where('category_id', $categoryId)
+                        ->orWhereHas('audit', fn ($aq) => $aq->where('category_id', $categoryId));
+                });
+            }
+
+            $findings = $query->get();
 
             echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
             echo '<head>';
@@ -59,7 +68,7 @@ class ReportExportService
             echo '<th>Tanggal Audit</th>';
             echo '<th>Kode Toko</th>';
             echo '<th>Nama Toko</th>';
-            echo '<th>Area / Wilayah</th>';
+            echo '<th>Wilayah / Area</th>';
             echo '<th>Auditor</th>';
             echo '<th>Kategori Audit</th>';
             echo '<th>SOP / SE Acuan</th>';
@@ -124,7 +133,7 @@ class ReportExportService
     /**
      * Export store loss summary to true Excel (.xls) table format.
      */
-    public function exportStores(): StreamedResponse
+    public function exportStores(?string $categoryId = null): StreamedResponse
     {
         $filename = 'Rekapitulasi_Kerugian_Toko_' . date('Y-m-d_His') . '.xls';
 
@@ -136,7 +145,7 @@ class ReportExportService
             'Expires'             => '0',
         ];
 
-        return response()->stream(function () {
+        return response()->stream(function () use ($categoryId) {
             $stores = Store::with(['audits.findings'])->get();
 
             echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
@@ -177,6 +186,11 @@ class ReportExportService
 
             foreach ($stores as $s) {
                 $allFindings = $s->audits->flatMap->findings;
+                if ($categoryId && $categoryId !== 'all') {
+                    $allFindings = $allFindings->filter(function ($f) use ($categoryId) {
+                        return $f->category_id == $categoryId || ($f->audit && $f->audit->category_id == $categoryId);
+                    });
+                }
                 $totalLoss = (float) $allFindings->sum('loss_amount');
                 $openCount = $allFindings->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS, Finding::STATUS_WAITING_VERIFICATION])->count();
                 $closedCount = $allFindings->whereIn('status', [Finding::STATUS_VERIFIED, Finding::STATUS_CLOSED])->count();
@@ -215,7 +229,7 @@ class ReportExportService
     /**
      * Export executive summary to true Excel (.xls) table format.
      */
-    public function exportSummary(): StreamedResponse
+    public function exportSummary(?string $categoryId = null): StreamedResponse
     {
         $filename = 'Ringkasan_Eksekutif_Audit_' . date('Y-m-d_His') . '.xls';
 
@@ -227,7 +241,18 @@ class ReportExportService
             'Expires'             => '0',
         ];
 
-        return response()->stream(function () {
+        return response()->stream(function () use ($categoryId) {
+            $baseFindingQuery = function () use ($categoryId) {
+                $q = Finding::query();
+                if ($categoryId && $categoryId !== 'all') {
+                    $q->where(function ($sub) use ($categoryId) {
+                        $sub->where('category_id', $categoryId)
+                            ->orWhereHas('audit', fn ($aq) => $aq->where('category_id', $categoryId));
+                    });
+                }
+                return $q;
+            };
+
             echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
             echo '<head>';
             echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
@@ -253,7 +278,7 @@ class ReportExportService
             foreach (['CRITICAL', 'MAJOR', 'MINOR', 'OBSERVATION'] as $sev) {
                 echo '<tr>';
                 echo '<td>' . $sev . '</td>';
-                echo '<td class="number">' . Finding::where('severity', $sev)->count() . '</td>';
+                echo '<td class="number">' . $baseFindingQuery()->where('severity', $sev)->count() . '</td>';
                 echo '</tr>';
             }
             echo '<tr><td colspan="2"></td></tr>';
@@ -270,7 +295,7 @@ class ReportExportService
             ] as $key => $label) {
                 echo '<tr>';
                 echo '<td>' . $label . '</td>';
-                echo '<td class="number">' . Finding::where('status', $key)->count() . '</td>';
+                echo '<td class="number">' . $baseFindingQuery()->where('status', $key)->count() . '</td>';
                 echo '</tr>';
             }
             echo '<tr><td colspan="2"></td></tr>';
@@ -291,7 +316,7 @@ class ReportExportService
             echo '<tr><td colspan="2" class="header-section">4. TOTAL KERUGIAN FINANSIAL (LOSS AMOUNT)</td></tr>';
             echo '<tr>';
             echo '<td>Total Kerugian Nasional (Rp)</td>';
-            echo '<td class="number" style="color: #991b1b; font-size: 11pt;">Rp ' . number_format((float) Finding::sum('loss_amount'), 0, ',', '.') . '</td>';
+            echo '<td class="number" style="color: #991b1b; font-size: 11pt;">Rp ' . number_format((float) $baseFindingQuery()->sum('loss_amount'), 0, ',', '.') . '</td>';
             echo '</tr>';
 
             echo '</table>';

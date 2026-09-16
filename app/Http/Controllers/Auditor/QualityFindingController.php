@@ -79,6 +79,7 @@ class QualityFindingController extends Controller
             'stats'           => $stats,
             'categories'      => QualityFinding::categories(),
             'selectedCategory'=> $request->query('category', ''),
+            'routePrefix'     => $user->isAuditor() ? 'auditor.' : 'coordinator.',
         ]);
     }
 
@@ -116,6 +117,7 @@ class QualityFindingController extends Controller
             'categories'       => QualityFinding::categories(),
             'preselectedAudit' => $request->query('audit_id'),
             'preselectedFinding' => $request->query('finding_id'),
+            'routePrefix'      => $user->isAuditor() ? 'auditor.' : 'coordinator.',
         ]);
     }
 
@@ -159,7 +161,9 @@ class QualityFindingController extends Controller
             'status'           => 'REPORTED',
         ]);
 
-        return redirect()->route('auditor.finding-qualities.show', $qualityFinding)
+        $routePrefix = $request->user()->isAuditor() ? 'auditor.' : 'coordinator.';
+
+        return redirect()->route($routePrefix . 'finding-qualities.show', $qualityFinding)
             ->with('success', 'Data saved! Report Finding Quality berhasil dibuat.');
     }
 
@@ -212,6 +216,7 @@ class QualityFindingController extends Controller
                 ],
             ],
             'categories' => QualityFinding::categories(),
+            'routePrefix' => request()->user()->isAuditor() ? 'auditor.' : 'coordinator.',
         ]);
     }
 
@@ -219,7 +224,9 @@ class QualityFindingController extends Controller
     {
         $findingQuality->delete();
 
-        return redirect()->route('auditor.finding-qualities.index')
+        $routePrefix = request()->user()->isAuditor() ? 'auditor.' : 'coordinator.';
+
+        return redirect()->route($routePrefix . 'finding-qualities.index')
             ->with('success', 'Report Finding Quality berhasil dihapus.');
     }
 }

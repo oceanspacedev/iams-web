@@ -101,6 +101,12 @@ const sendNotificationNow = (notif) => {
 
             <div class="flex items-center gap-2">
                 <Link
+                    :href="route('coordinator.finding-qualities.create', { audit_id: audit.id })"
+                    class="px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
+                >
+                    + Lapor Finding Quality
+                </Link>
+                <Link
                     :href="route('coordinator.audits.edit', audit.id)"
                     class="px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
                 >
