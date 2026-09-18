@@ -38,10 +38,9 @@ class FindingForm
                         Forms\Components\Select::make('severity')
                             ->label('Severity')
                             ->options([
-                                'CRITICAL'    => 'Critical',
-                                'MAJOR'       => 'Major',
-                                'MINOR'       => 'Minor',
-                                'OBSERVATION' => 'Observation',
+                                'MINOR'  => 'Minor',
+                                'MEDIUM' => 'Medium',
+                                'MAJOR'  => 'Major',
                             ])
                             ->required()
                             ->native(false),

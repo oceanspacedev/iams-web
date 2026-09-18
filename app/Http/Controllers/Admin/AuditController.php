@@ -350,7 +350,7 @@ class AuditController extends Controller
             'loss_amount'     => 'nullable|numeric|min:0',
             'auditor_opinion' => 'nullable|string',
             'recommendation'  => 'required|string',
-            'severity'        => 'required|in:CRITICAL,MAJOR,MINOR,OBSERVATION',
+            'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
             'status'          => 'required|in:OPEN,IN_PROGRESS,WAITING_VERIFICATION,VERIFIED,CLOSED',
         ]);
 

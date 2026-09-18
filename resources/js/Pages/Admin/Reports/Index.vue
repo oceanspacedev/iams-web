@@ -101,15 +101,16 @@ const calculatedCompletionRate = computed(() => {
 });
 
 const highRiskCount = computed(() => {
-    return (props.by_severity.CRITICAL || 0) + (props.by_severity.MAJOR || 0);
+    return (props.by_severity.MAJOR || 0) + (props.by_severity.CRITICAL || 0);
 });
 
 // Color definitions
 const severityColors = {
+    MAJOR: '#e11d48',
+    MEDIUM: '#f59e0b',
+    MINOR: '#10b981',
     CRITICAL: '#e11d48',
-    MAJOR: '#ea580c',
-    MINOR: '#2563eb',
-    OBSERVATION: '#64748b',
+    OBSERVATION: '#10b981',
 };
 
 const statusColors = {
@@ -317,7 +318,7 @@ const topLossStores = computed(() => {
             <div class="bg-gradient-to-br from-amber-50/80 via-white to-white p-5 rounded-xl border border-amber-200/90 border-t-4 border-t-amber-500 shadow-xs">
                 <div class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">RISIKO TINGGI</div>
                 <div class="text-2xl font-bold text-amber-700 mt-1.5">{{ highRiskCount }} Temuan</div>
-                <div class="text-xs text-amber-600 font-medium mt-1">Major & Critical</div>
+                <div class="text-xs text-amber-600 font-medium mt-1">Temuan Major</div>
             </div>
         </div>
 

@@ -53,10 +53,9 @@ class FindingsRelationManager extends RelationManager
                         Forms\Components\Select::make('severity')
                             ->label('Severity')
                             ->options([
-                                'CRITICAL'    => 'Critical',
-                                'MAJOR'       => 'Major',
-                                'MINOR'       => 'Minor',
-                                'OBSERVATION' => 'Observation',
+                                'MINOR'  => 'Minor',
+                                'MEDIUM' => 'Medium',
+                                'MAJOR'  => 'Major',
                             ])
                             ->required()
                             ->native(false),
@@ -91,11 +90,10 @@ class FindingsRelationManager extends RelationManager
                     ->label('Severity')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'CRITICAL'    => 'danger',
-                        'MAJOR'       => 'warning',
-                        'MINOR'       => 'info',
-                        'OBSERVATION' => 'gray',
-                        default       => 'gray',
+                        'MAJOR', 'CRITICAL'    => 'danger',
+                        'MEDIUM'               => 'warning',
+                        'MINOR', 'OBSERVATION' => 'success',
+                        default                => 'gray',
                     }),
                 TextColumn::make('status')
                     ->label('Status')
@@ -112,10 +110,9 @@ class FindingsRelationManager extends RelationManager
             ->filters([
                 SelectFilter::make('severity')
                     ->options([
-                        'CRITICAL'    => 'Critical',
-                        'MAJOR'       => 'Major',
-                        'MINOR'       => 'Minor',
-                        'OBSERVATION' => 'Observation',
+                        'MINOR'  => 'Minor',
+                        'MEDIUM' => 'Medium',
+                        'MAJOR'  => 'Major',
                     ]),
                 SelectFilter::make('status')
                     ->options([

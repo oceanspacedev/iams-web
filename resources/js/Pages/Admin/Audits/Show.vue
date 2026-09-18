@@ -391,10 +391,9 @@ const sendNotificationNow = (notif) => {
                                 required
                                 class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             >
-                                <option value="CRITICAL">CRITICAL</option>
-                                <option value="MAJOR">MAJOR</option>
-                                <option value="MINOR">MINOR</option>
-                                <option value="OBSERVATION">OBSERVATION</option>
+                                <option value="MINOR">Minor</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="MAJOR">Major</option>
                             </select>
                         </div>
 

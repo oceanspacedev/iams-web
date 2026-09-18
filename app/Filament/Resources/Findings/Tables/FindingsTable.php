@@ -39,11 +39,10 @@ class FindingsTable
                     ->label('Severity')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'CRITICAL'    => 'danger',
-                        'MAJOR'       => 'warning',
-                        'MINOR'       => 'info',
-                        'OBSERVATION' => 'gray',
-                        default       => 'gray',
+                        'MAJOR', 'CRITICAL'    => 'danger',
+                        'MEDIUM'               => 'warning',
+                        'MINOR', 'OBSERVATION' => 'success',
+                        default                => 'gray',
                     }),
                 TextColumn::make('status')
                     ->label('Status')
@@ -61,10 +60,9 @@ class FindingsTable
                 SelectFilter::make('severity')
                     ->label('Severity')
                     ->options([
-                        'CRITICAL'    => 'Critical',
-                        'MAJOR'       => 'Major',
-                        'MINOR'       => 'Minor',
-                        'OBSERVATION' => 'Observation',
+                        'MINOR'  => 'Minor',
+                        'MEDIUM' => 'Medium',
+                        'MAJOR'  => 'Major',
                     ]),
                 SelectFilter::make('status')
                     ->label('Status')

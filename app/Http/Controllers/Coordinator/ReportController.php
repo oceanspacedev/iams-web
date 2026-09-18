@@ -34,10 +34,9 @@ class ReportController extends Controller
         };
 
         $bySeverity = [
-            'CRITICAL'    => $baseFindingQuery()->where('severity', 'CRITICAL')->count(),
-            'MAJOR'       => $baseFindingQuery()->where('severity', 'MAJOR')->count(),
-            'MINOR'       => $baseFindingQuery()->where('severity', 'MINOR')->count(),
-            'OBSERVATION' => $baseFindingQuery()->where('severity', 'OBSERVATION')->count(),
+            'MAJOR'  => $baseFindingQuery()->whereIn('severity', ['MAJOR', 'CRITICAL'])->count(),
+            'MEDIUM' => $baseFindingQuery()->where('severity', 'MEDIUM')->count(),
+            'MINOR'  => $baseFindingQuery()->whereIn('severity', ['MINOR', 'OBSERVATION'])->count(),
         ];
 
         $byStatus = [
