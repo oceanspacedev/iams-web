@@ -108,7 +108,7 @@ const deleteStore = (store) => {
             </div>
 
             <div class="flex items-center flex-wrap gap-2 sm:gap-2.5">
-                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                <span class="text-xs text-gray-500 hidden sm:inline">
                     {{ filteredStores.length }} Unit
                 </span>
 
@@ -201,16 +201,17 @@ const deleteStore = (store) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ s.name }}</div>
-                            <div class="text-[10px] text-gray-500 font-mono mt-0.5">
+                            <div class="text-xs text-gray-500 mt-0.5">
                                 Kode: <strong class="text-gray-800">{{ s.code }}</strong>
                                 <span v-if="s.business_entity"> • {{ s.business_entity }}</span>
                             </div>
-                            <div v-if="s.address" class="text-[10px] text-gray-500 mt-1 line-clamp-2">
-                                📍 {{ s.address }}
+                            <div v-if="s.address" class="flex gap-1 text-xs text-gray-500 mt-1">
+                                <span class="shrink-0">📍</span>
+                                <span>{{ s.address }}</span>
                             </div>
                         </div>
                         <span
-                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border"
                             :class="s.status === 'active' ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                         >
                             <span class="w-1.5 h-1.5 rounded-full" :class="s.status === 'active' ? 'bg-emerald-600' : 'bg-gray-400'"></span>
@@ -218,29 +219,29 @@ const deleteStore = (store) => {
                         </span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                    <div class="flex items-center justify-between text-xs text-gray-600 pt-1.5 border-t border-gray-100">
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                             {{ s.type || 'TOKO' }}
                         </span>
-                        <span class="font-mono text-gray-500 text-[10px]">
+                        <span class="text-gray-500 text-xs">
                             {{ s.area || '—' }} <span v-if="s.regional">({{ s.regional }})</span>
                         </span>
                     </div>
 
                     <div class="pt-2 flex items-center justify-between border-t border-gray-100">
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                             {{ s.audits_count }} audit
                         </span>
                         <div class="flex items-center gap-2">
                             <Link
                                 :href="route('admin.stores.edit', s.id)"
-                                class="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-[11px]"
+                                class="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-xs"
                             >
                                 Edit
                             </Link>
                             <button
                                 @click="deleteStore(s)"
-                                class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px]"
+                                class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-xs"
                             >
                                 Hapus
                             </button>
@@ -252,10 +253,10 @@ const deleteStore = (store) => {
             <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3 whitespace-nowrap w-24">Kode</th>
-                            <th class="px-4 py-3 min-w-[200px]">Nama Unit & Badan Usaha</th>
+                            <th class="px-4 py-3 min-w-[280px]">Nama Unit & Badan Usaha</th>
                             <th class="px-4 py-3 whitespace-nowrap w-32">Tipe</th>
                             <th class="px-4 py-3 whitespace-nowrap w-44">Area / Regional</th>
                             <th class="px-4 py-3 whitespace-nowrap text-center w-28">Total Audit</th>
@@ -274,34 +275,35 @@ const deleteStore = (store) => {
                             :key="s.id"
                             class="hover:bg-slate-50/70 transition-colors"
                         >
-                            <td class="px-4 py-3 align-middle whitespace-nowrap font-mono font-bold text-gray-900">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap font-semibold text-gray-900">
                                 {{ s.code }}
                             </td>
                             <td class="px-4 py-3 align-middle">
                                 <div class="font-medium text-gray-900">{{ s.name }}</div>
-                                <div v-if="s.address" class="text-[11px] text-gray-500 line-clamp-1 mt-0.5" :title="s.address">
-                                    📍 {{ s.address }}
+                                <div v-if="s.address" class="flex gap-1 text-xs text-gray-500 mt-0.5">
+                                    <span class="shrink-0">📍</span>
+                                    <span>{{ s.address }}</span>
                                 </div>
-                                <div v-if="s.business_entity" class="text-[10px] text-slate-400 font-mono mt-0.5">
+                                <div v-if="s.business_entity" class="text-xs text-slate-500 mt-0.5">
                                     {{ s.business_entity }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 align-middle whitespace-nowrap">
-                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                                     {{ s.type || 'TOKO' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600">
                                 {{ s.area || '—' }} <span v-if="s.regional" class="text-gray-400">({{ s.regional }})</span>
                             </td>
                             <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
-                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                                     {{ s.audits_count }} audit
                                 </span>
                             </td>
                             <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
                                 <span
-                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border"
+                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border"
                                     :class="s.status === 'active' ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                                 >
                                     <span class="w-1.5 h-1.5 rounded-full" :class="s.status === 'active' ? 'bg-emerald-600' : 'bg-gray-400'"></span>
