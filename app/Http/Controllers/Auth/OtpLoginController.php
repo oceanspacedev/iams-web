@@ -98,7 +98,13 @@ class OtpLoginController extends Controller
         // Send via WhatsApp
         $sent = WhatsAppService::sendLoginOtp($user->phone, $otpCode, $user->name);
 
-        Log::info("Login OTP generated for user #{$user->id} ({$user->name}) phone: {$user->phone}, code: {$otpCode}, sent: " . ($sent ? 'YES' : 'NO'));
+        Log::info("Login OTP generated for user #{$user->id} ({$user->name}) phone: {$user->phone}, sent: " . ($sent ? 'YES' : 'NO'));
+
+        if (!$sent && !app()->environment('local')) {
+            return back()->withErrors([
+                'phone' => 'Kode OTP gagal dikirim ke WhatsApp. Silakan coba beberapa saat lagi atau masuk dengan Email & Kata Sandi.',
+            ])->withInput();
+        }
 
         $maskedPhone = $this->maskPhoneNumber($user->phone);
 

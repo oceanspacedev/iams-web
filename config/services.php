@@ -36,8 +36,8 @@ return [
     ],
 
     'waghub' => [
-        'url'   => env('WAGHUB_URL', 'https://waghub.mekayastudio.com'),
-        'token' => env('WAGHUB_TOKEN'),
+        'url'   => env('WAG_URL', 'https://waghub.mekayastudio.com'),
+        'token' => env('WAG_TOKEN'),
     ],
 
 ];
