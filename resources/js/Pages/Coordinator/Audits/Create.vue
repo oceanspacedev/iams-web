@@ -163,7 +163,7 @@ const submit = () => {
                             v-model="form.audit_number"
                             type="text"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                         />
                         <div v-if="form.errors.audit_number" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_number }}</div>
                     </div>
@@ -213,7 +213,7 @@ const submit = () => {
                             v-model="form.audit_time"
                             type="text"
                             placeholder="09:00"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                         />
                         <div v-if="form.errors.audit_time" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_time }}</div>
                     </div>

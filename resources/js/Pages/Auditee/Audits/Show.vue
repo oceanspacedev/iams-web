@@ -49,7 +49,7 @@ const formatRupiah = (number) => {
                 <div>
                     <div class="text-gray-500 font-medium">Toko</div>
                     <div class="text-gray-900 font-semibold mt-1">{{ audit.store.name }}</div>
-                    <div class="text-[11px] text-gray-500 font-mono">{{ audit.store.code }} ({{ audit.store.area || '-' }})</div>
+                    <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store.code }} ({{ audit.store.area || '-' }})</div>
                 </div>
 
                 <div>
@@ -95,7 +95,7 @@ const formatRupiah = (number) => {
             >
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 mb-3 border-b border-gray-100 text-xs">
                     <div class="flex items-center gap-3">
-                        <span class="font-mono font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
+                        <span class="tabular-nums font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
                         <span class="font-semibold text-gray-900">{{ finding.category }}</span>
                         <SeverityBadge :severity="finding.severity" />
                         <StatusBadge :status="finding.status" />

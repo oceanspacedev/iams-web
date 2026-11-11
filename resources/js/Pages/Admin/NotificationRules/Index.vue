@@ -140,7 +140,7 @@ const deleteRule = (rule) => {
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                <span class="text-xs text-gray-500 tabular-nums hidden sm:inline">
                     {{ rules.length }} Aturan
                 </span>
                 <button
@@ -187,7 +187,7 @@ const deleteRule = (rule) => {
                             {{ rule.days_before === 0 ? 'Hari H (0 Hari)' : rule.days_before + ' hari sebelum audit' }}
                         </span>
                         <div class="flex items-center gap-2">
-                            <span class="font-mono text-gray-500 text-[10px]">{{ rule.send_time }} WIB</span>
+                            <span class="tabular-nums text-gray-500 text-[10px]">{{ rule.send_time }} WIB</span>
                             <span
                                 class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border"
                                 :class="{
@@ -252,7 +252,7 @@ const deleteRule = (rule) => {
                                 <span v-if="rule.days_before === 0" class="font-medium text-blue-700">Hari H (0 Hari)</span>
                                 <span v-else>{{ rule.days_before }} hari sebelum audit</span>
                             </td>
-                            <td class="px-4 py-3 font-mono text-gray-800">
+                            <td class="px-4 py-3 tabular-nums text-gray-800">
                                 {{ rule.send_time }} WIB
                             </td>
                             <td class="px-4 py-3">
@@ -359,7 +359,7 @@ const deleteRule = (rule) => {
                                 type="text"
                                 placeholder="08:00"
                                 required
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                             />
                             <span class="text-[10px] text-gray-400 mt-0.5 block">Format: JJ:MM (24 Jam)</span>
                         </div>
@@ -386,7 +386,7 @@ const deleteRule = (rule) => {
                             >
                                 <option value="all">Semua (Toko & Auditor)</option>
                                 <option value="auditee">Auditee Toko</option>
-                                <option value="auditor">Auditor Lapangan</option>
+                                <option value="auditor">Staff Audit</option>
                             </select>
                         </div>
                     </div>

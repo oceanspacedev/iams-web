@@ -117,7 +117,7 @@ const submit = () => {
                             <span>Minor</span>
                             <span v-if="form.severity === 'MINOR'" class="text-emerald-700 text-[11px]">✓</span>
                         </div>
-                        <div class="text-[11px] text-emerald-700/90 font-mono mt-0.5 font-medium">3 - 7 hari</div>
+                        <div class="text-[11px] text-emerald-700/90 tabular-nums mt-0.5 font-medium">3 - 7 hari</div>
                     </button>
 
                     <!-- Medium Card -->
@@ -133,7 +133,7 @@ const submit = () => {
                             <span>Medium</span>
                             <span v-if="form.severity === 'MEDIUM'" class="text-amber-700 text-[11px]">✓</span>
                         </div>
-                        <div class="text-[11px] text-amber-700/90 font-mono mt-0.5 font-medium">8 - 14 hari</div>
+                        <div class="text-[11px] text-amber-700/90 tabular-nums mt-0.5 font-medium">8 - 14 hari</div>
                     </button>
 
                     <!-- Major Card -->
@@ -149,7 +149,7 @@ const submit = () => {
                             <span>Major</span>
                             <span v-if="form.severity === 'MAJOR'" class="text-rose-700 text-[11px]">✓</span>
                         </div>
-                        <div class="text-[11px] text-rose-700/90 font-mono mt-0.5 font-medium">15 - 30 hari</div>
+                        <div class="text-[11px] text-rose-700/90 tabular-nums mt-0.5 font-medium">15 - 30 hari</div>
                     </button>
                 </div>
 

@@ -8,7 +8,7 @@ Sistem Manajemen Audit Internal Retail berbasis Laravel 11, Inertia.js, Vue 3, T
 1. **Multi-Role Portals:**
    - **Administrator (`/admin` & Filament `/admin/filament`):** Manajemen user, master toko/cabang, master SOP & SE, master kategori audit, action plan monitor, dan rekapitulasi laporan.
    - **Koordinator Audit (`/coordinator`):** Review & penyesuaian tingkat *Severity* temuan, penguncian severity (*Severity Locking*), pemantauan jadwal audit, dan ekspor laporan.
-   - **Auditor Lapangan (`/auditor`):** Perencanaan audit, pembuatan temuan lapangan (*Findings*), kalkulasi nominal kerugian (*Loss Amount*), verifikasi bukti tindak lanjut (*Evidence Verification*).
+   - **Staff Audit (`/auditor`):** Perencanaan audit, pembuatan temuan lapangan (*Findings*), kalkulasi nominal kerugian (*Loss Amount*), verifikasi bukti tindak lanjut (*Evidence Verification*).
    - **Auditee / Store Team (`/auditee`):** Input rencana perbaikan (*Action Plan*), respon toko, pengunggahan foto bukti perbaikan (*Evidence Upload*).
 
 2. **WhatsApp Gateway Notification (WagHub API):**
@@ -79,5 +79,5 @@ npm run dev
 ## 🔑 Akun Demo (Password Default: `password`)
 - **Administrator:** `admin@auditflow.com`
 - **Koordinator Audit:** `kordinator@auditflow.com`
-- **Auditor Lapangan:** `auditor@auditflow.com`
+- **Staff Audit:** `auditor@auditflow.com`
 - **Store Team (Auditee):** `auditee@auditflow.com`

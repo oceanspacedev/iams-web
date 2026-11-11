@@ -109,7 +109,7 @@ const deleteFinding = (finding) => {
                 <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Monitoring dan pengawasan temuan audit dari seluruh unit cabang toko retail</p>
             </div>
             <div>
-                <span class="text-xs text-gray-500 font-mono">
+                <span class="text-xs text-gray-500 tabular-nums">
                     {{ filteredFindings.length }} Temuan terdaftar
                 </span>
             </div>
@@ -184,7 +184,7 @@ const deleteFinding = (finding) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ f.store }}</div>
-                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
                         </div>
                         <StatusBadge :status="f.status" />
                     </div>
@@ -194,7 +194,7 @@ const deleteFinding = (finding) => {
                             {{ f.category }}
                         </span>
                         <SeverityBadge :severity="f.severity" />
-                        <span v-if="f.loss_amount > 0" class="font-mono text-[11px] font-semibold text-red-700 ml-auto">
+                        <span v-if="f.loss_amount > 0" class="tabular-nums text-[11px] font-semibold text-red-700 ml-auto">
                             {{ formatRupiah(f.loss_amount) }}
                         </span>
                     </div>
@@ -205,7 +205,7 @@ const deleteFinding = (finding) => {
 
                     <div v-if="f.action_plan" class="p-2 bg-slate-50 rounded border border-gray-100 text-[11px] space-y-1">
                         <div class="text-gray-700 line-clamp-1"><span class="font-medium text-gray-500">Plan:</span> {{ f.action_plan }}</div>
-                        <div class="text-[10px] text-gray-400 font-mono">PIC: {{ f.pic || '—' }} | Target: {{ f.deadline || '—' }}</div>
+                        <div class="text-[10px] text-gray-400 tabular-nums">PIC: {{ f.pic || '—' }} | Target: {{ f.deadline || '—' }}</div>
                     </div>
 
                     <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
@@ -253,7 +253,7 @@ const deleteFinding = (finding) => {
                             <td class="px-4 py-3 align-top whitespace-nowrap">
                                 <Link
                                     :href="route('admin.audits.show', f.audit_id)"
-                                    class="font-mono font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                                    class="tabular-nums font-semibold text-slate-800 hover:text-blue-600 transition-colors"
                                 >
                                     {{ f.audit_number }}
                                 </Link>
@@ -271,14 +271,14 @@ const deleteFinding = (finding) => {
                                 <SeverityBadge :severity="f.severity" />
                             </td>
 
-                            <td class="px-4 py-3 align-top whitespace-nowrap font-medium text-gray-900 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-top whitespace-nowrap font-medium text-gray-900 tabular-nums text-[11px]">
                                 {{ formatRupiah(f.loss_amount) }}
                             </td>
 
                             <td class="px-4 py-3 align-top">
                                 <div v-if="f.action_plan" class="space-y-0.5">
                                     <div class="text-gray-900 text-xs line-clamp-2 font-normal">{{ f.action_plan }}</div>
-                                    <div class="text-[11px] text-gray-500 font-mono">PIC: {{ f.pic || '—' }} | Target: {{ f.deadline || '—' }}</div>
+                                    <div class="text-[11px] text-gray-500 tabular-nums">PIC: {{ f.pic || '—' }} | Target: {{ f.deadline || '—' }}</div>
                                 </div>
                                 <div v-else class="text-gray-400 font-normal italic text-xs">Belum diisi</div>
                             </td>

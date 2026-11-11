@@ -300,7 +300,7 @@ const topLossStores = computed(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-br from-rose-50/80 via-white to-white p-5 rounded-xl border border-rose-200/90 border-t-4 border-t-rose-500 shadow-xs">
                 <div class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">TOTAL KERUGIAN</div>
-                <div class="text-2xl font-bold text-rose-950 font-mono mt-1.5">{{ formatRupiah(total_loss) }}</div>
+                <div class="text-2xl font-bold text-rose-950 tabular-nums mt-1.5">{{ formatRupiah(total_loss) }}</div>
                 <div class="text-xs text-rose-600/80 mt-1">Akumulasi cabang CSA</div>
             </div>
 
@@ -340,7 +340,7 @@ const topLossStores = computed(() => {
                         </h2>
                         <p class="text-[11px] text-gray-400 mt-0.5">Proporsi tingkat keparahan risiko temuan audit</p>
                     </div>
-                    <span class="text-[11px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                    <span class="text-[11px] tabular-nums text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                         {{ totalFindingsCount }} Total
                     </span>
                 </div>
@@ -379,7 +379,7 @@ const topLossStores = computed(() => {
                                     <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
                                     <span class="font-medium text-gray-700 capitalize">{{ seg.key.toLowerCase() }}</span>
                                 </div>
-                                <div class="font-mono text-gray-900">
+                                <div class="tabular-nums text-gray-900">
                                     <span class="font-semibold">{{ seg.count }}</span>
                                     <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
                                 </div>
@@ -404,7 +404,7 @@ const topLossStores = computed(() => {
                         </h2>
                         <p class="text-[11px] text-gray-400 mt-0.5">Progres alur tindak lanjut dan penutupan temuan</p>
                     </div>
-                    <span class="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                    <span class="text-[11px] tabular-nums text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
                         {{ calculatedCompletionRate }}% Selesai
                     </span>
                 </div>
@@ -443,7 +443,7 @@ const topLossStores = computed(() => {
                                     <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
                                     <span class="font-medium text-gray-700">{{ seg.key.replace('_', ' ') }}</span>
                                 </div>
-                                <div class="font-mono text-gray-900">
+                                <div class="tabular-nums text-gray-900">
                                     <span class="font-semibold">{{ seg.count }}</span>
                                     <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
                                 </div>
@@ -471,7 +471,7 @@ const topLossStores = computed(() => {
                         </h2>
                         <p class="text-[11px] text-gray-400 mt-0.5">Perbandingan nominal kerugian toko dengan temuan audit tertinggi</p>
                     </div>
-                    <span class="text-[11px] font-mono font-bold text-gray-900">
+                    <span class="text-[11px] tabular-nums font-bold text-gray-900">
                         {{ formatRupiah(total_loss) }}
                     </span>
                 </div>
@@ -480,9 +480,9 @@ const topLossStores = computed(() => {
                     <div v-for="store in topLossStores" :key="store.store_code" class="space-y-1.5">
                         <div class="flex items-center justify-between text-[11px]">
                             <div class="font-medium text-gray-900 truncate mr-2">
-                                {{ store.store_name }} <span class="text-gray-400 font-mono text-[10px]">({{ store.store_code }})</span>
+                                {{ store.store_name }} <span class="text-gray-400 tabular-nums text-[10px]">({{ store.store_code }})</span>
                             </div>
-                            <div class="font-mono font-bold text-gray-900 shrink-0">
+                            <div class="tabular-nums font-bold text-gray-900 shrink-0">
                                 {{ formatRupiah(store.total_loss) }}
                             </div>
                         </div>
@@ -512,7 +512,7 @@ const topLossStores = computed(() => {
                         </h2>
                         <p class="text-[11px] text-gray-400 mt-0.5">Sebaran temuan pada 3 fokus bidang audit</p>
                     </div>
-                    <span class="text-[11px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                    <span class="text-[11px] tabular-nums text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                         {{ by_category.length }} Kategori
                     </span>
                 </div>
@@ -530,7 +530,7 @@ const topLossStores = computed(() => {
                                 <span v-if="selectedCategory === String(cat.id)" class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                                 {{ cat.name }}
                             </span>
-                            <span class="font-bold font-mono text-xs" :class="selectedCategory === String(cat.id) ? 'text-blue-800' : 'text-blue-700'">{{ cat.count }} Temuan</span>
+                            <span class="font-bold tabular-nums text-xs" :class="selectedCategory === String(cat.id) ? 'text-blue-800' : 'text-blue-700'">{{ cat.count }} Temuan</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                             <div
@@ -540,7 +540,7 @@ const topLossStores = computed(() => {
                         </div>
                         <div class="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
                             <span>Estimasi Kerugian:</span>
-                            <span class="font-mono font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span>
+                            <span class="tabular-nums font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span>
                         </div>
                     </div>
                 </div>
@@ -558,7 +558,7 @@ const topLossStores = computed(() => {
                     <p class="text-[10px] sm:text-[11px] text-gray-500">Peringkat kerugian retail berdasarkan hasil temuan audit</p>
                 </div>
                 <div class="text-[11px] sm:text-xs font-semibold text-gray-700">
-                    Total Loss: <span class="text-gray-900 font-bold text-xs sm:text-sm font-mono">{{ formatRupiah(total_loss) }}</span>
+                    Total Loss: <span class="text-gray-900 font-bold text-xs sm:text-sm tabular-nums">{{ formatRupiah(total_loss) }}</span>
                 </div>
             </div>
 
@@ -575,9 +575,9 @@ const topLossStores = computed(() => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ s.store_name }}</div>
-                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ s.store_code }} • Area: {{ s.area || '-' }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ s.store_code }} • Area: {{ s.area || '-' }}</div>
                         </div>
-                        <div class="font-mono font-bold text-xs text-gray-900 shrink-0">
+                        <div class="tabular-nums font-bold text-xs text-gray-900 shrink-0">
                             {{ formatRupiah(s.total_loss) }}
                         </div>
                     </div>
@@ -603,12 +603,12 @@ const topLossStores = computed(() => {
                     <tbody class="divide-y divide-gray-200">
                         <tr v-for="s in store_losses" :key="s.store_code" class="hover:bg-gray-50/70">
                             <td class="px-5 py-3.5 font-medium text-gray-900">
-                                {{ s.store_name }} <span class="text-gray-500 font-mono">({{ s.store_code }})</span>
+                                {{ s.store_name }} <span class="text-gray-500 tabular-nums">({{ s.store_code }})</span>
                             </td>
                             <td class="px-5 py-3.5 text-gray-700">{{ s.area || '-' }}</td>
                             <td class="px-5 py-3.5 text-gray-700">{{ s.total_audits }} kali</td>
                             <td class="px-5 py-3.5 font-semibold text-gray-900">{{ s.total_findings }} temuan</td>
-                            <td class="px-5 py-3.5 text-right font-bold font-mono text-gray-900">
+                            <td class="px-5 py-3.5 text-right font-bold tabular-nums text-gray-900">
                                 {{ formatRupiah(s.total_loss) }}
                             </td>
                         </tr>

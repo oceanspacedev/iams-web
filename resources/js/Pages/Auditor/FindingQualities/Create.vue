@@ -163,7 +163,7 @@ const submit = () => {
                     <select
                         v-model="form.finding_id"
                         required
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                     >
                         <option value="" disabled>-- Pilih Nomor Temuan Audit --</option>
                         <option v-for="f in findings" :key="f.id" :value="f.id">
@@ -221,7 +221,7 @@ const submit = () => {
                                     <div class="font-bold text-xs" :class="getCardTheme(key, form.quality_categories.includes(key)).title">
                                         {{ cat.label }}
                                     </div>
-                                    <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs" :class="getCardTheme(key, form.quality_categories.includes(key)).badge">
+                                    <span class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs" :class="getCardTheme(key, form.quality_categories.includes(key)).badge">
                                         {{ cat.code }}
                                     </span>
                                 </div>
@@ -261,7 +261,7 @@ const submit = () => {
                                 type="number"
                                 min="0"
                                 placeholder="0"
-                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                             />
                         </div>
                         <div v-if="form.errors.impact_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.impact_amount }}</div>

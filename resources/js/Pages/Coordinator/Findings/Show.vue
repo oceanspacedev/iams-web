@@ -120,9 +120,9 @@ const closeFinding = () => {
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                     <Link :href="route('coordinator.findings.index')" class="hover:text-blue-600">Review Severity</Link>
                     <span>/</span>
-                    <Link :href="route('coordinator.audits.show', finding.audit.id)" class="hover:text-blue-600 font-mono">{{ finding.audit.audit_number }}</Link>
+                    <Link :href="route('coordinator.audits.show', finding.audit.id)" class="hover:text-blue-600 tabular-nums">{{ finding.audit.audit_number }}</Link>
                     <span>/</span>
-                    <span class="text-gray-900 font-medium font-mono">Finding #{{ String(finding.id).padStart(4, '0') }}</span>
+                    <span class="text-gray-900 font-medium tabular-nums">Finding #{{ String(finding.id).padStart(4, '0') }}</span>
                 </div>
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
                     Finding #{{ String(finding.id).padStart(4, '0') }}
@@ -255,7 +255,7 @@ const closeFinding = () => {
                             </div>
                             <div>
                                 <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
+                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
                             </div>
                         </div>
 
@@ -331,7 +331,7 @@ const closeFinding = () => {
                                         : 'bg-emerald-50/70 border-emerald-200 text-emerald-800 hover:bg-emerald-100/60'"
                                 >
                                     <div class="text-[11px] font-semibold">Minor</div>
-                                    <div class="text-[10px] text-emerald-700/80 font-mono">3 - 7 hr</div>
+                                    <div class="text-[10px] text-emerald-700/80 tabular-nums">3 - 7 hr</div>
                                 </button>
                                 <button
                                     type="button"
@@ -342,7 +342,7 @@ const closeFinding = () => {
                                         : 'bg-amber-50/70 border-amber-200 text-amber-800 hover:bg-amber-100/60'"
                                 >
                                     <div class="text-[11px] font-semibold">Medium</div>
-                                    <div class="text-[10px] text-amber-700/80 font-mono">8 - 14 hr</div>
+                                    <div class="text-[10px] text-amber-700/80 tabular-nums">8 - 14 hr</div>
                                 </button>
                                 <button
                                     type="button"
@@ -353,7 +353,7 @@ const closeFinding = () => {
                                         : 'bg-rose-50/70 border-rose-200 text-rose-800 hover:bg-rose-100/60'"
                                 >
                                     <div class="text-[11px] font-semibold">Major</div>
-                                    <div class="text-[10px] text-rose-700/80 font-mono">15 - 30 hr</div>
+                                    <div class="text-[10px] text-rose-700/80 tabular-nums">15 - 30 hr</div>
                                 </button>
                             </div>
                         </div>
@@ -386,7 +386,7 @@ const closeFinding = () => {
 
                     <div>
                         <div class="text-gray-400">Nomor Audit:</div>
-                        <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
+                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
                     </div>
 
                     <div>
@@ -397,12 +397,12 @@ const closeFinding = () => {
                     <div>
                         <div class="text-gray-400">Auditor Pelapor:</div>
                         <div class="font-semibold text-gray-900 mt-0.5">{{ finding.auditor.name }}</div>
-                        <div v-if="finding.auditor.phone" class="text-[11px] text-gray-500 font-mono">{{ finding.auditor.phone }}</div>
+                        <div v-if="finding.auditor.phone" class="text-[11px] text-gray-500 tabular-nums">{{ finding.auditor.phone }}</div>
                     </div>
 
                     <div>
                         <div class="text-gray-400">Nominal Kerugian:</div>
-                        <div class="text-sm font-bold text-gray-900 font-mono mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        <div class="text-sm font-bold text-gray-900 tabular-nums mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
                     </div>
 
                     <div>

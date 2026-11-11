@@ -58,7 +58,7 @@ const deleteQualityFinding = () => {
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                     <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
                     <span>/</span>
-                    <span class="text-gray-900 font-medium font-mono">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
+                    <span class="text-gray-900 font-medium tabular-nums">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
                 </div>
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight">
                     Lembar Laporan Finding Quality
@@ -104,14 +104,14 @@ const deleteQualityFinding = () => {
                             <span v-else class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-800 border border-slate-300">
                                 {{ qualityFinding.categories_info?.label || qualityFinding.quality_category }}
                             </span>
-                            <span class="font-mono text-gray-500">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
+                            <span class="tabular-nums text-gray-500">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
                         </div>
                         <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">
                             {{ qualityFinding.title }}
                         </h2>
                     </div>
 
-                    <div class="text-left sm:text-right shrink-0 text-[11px] text-gray-500 font-mono space-y-0.5">
+                    <div class="text-left sm:text-right shrink-0 text-[11px] text-gray-500 tabular-nums space-y-0.5">
                         <div>Tanggal: {{ qualityFinding.created_at }}</div>
                         <div>Pelapor: <span class="font-medium text-gray-800 font-sans">{{ qualityFinding.reported_by }}</span></div>
                     </div>
@@ -120,7 +120,7 @@ const deleteQualityFinding = () => {
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-gray-200 text-xs">
                     <div>
                         <div class="text-gray-400 font-medium text-[11px]">Nomor Surat Tugas</div>
-                        <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ qualityFinding.audit.audit_number }}</div>
+                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ qualityFinding.audit.audit_number }}</div>
                     </div>
                     <div>
                         <div class="text-gray-400 font-medium text-[11px]">Unit / Toko</div>
@@ -128,7 +128,7 @@ const deleteQualityFinding = () => {
                     </div>
                     <div>
                         <div class="text-gray-400 font-medium text-[11px]">Nilai Dampak Finansial</div>
-                        <div class="font-mono font-bold text-gray-900 mt-0.5">
+                        <div class="tabular-nums font-bold text-gray-900 mt-0.5">
                             {{ formatRupiah(qualityFinding.impact_amount || qualityFinding.finding.loss_amount) }}
                         </div>
                     </div>
@@ -200,7 +200,7 @@ const deleteQualityFinding = () => {
                     <div>
                         <div class="text-gray-500 mb-12">Auditor Pelapor:</div>
                         <div class="font-semibold text-gray-900 border-t border-gray-300 pt-1.5">{{ qualityFinding.reported_by }}</div>
-                        <div class="text-[10px] text-gray-400">Auditor Lapangan</div>
+                        <div class="text-[10px] text-gray-400">Staff Audit</div>
                     </div>
                     <div>
                         <div class="text-gray-500 mb-12">Koordinator / Asmen:</div>

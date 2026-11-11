@@ -143,7 +143,7 @@ const broadcastAllReminders = () => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ ap.store }}</div>
-                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ ap.audit_number }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ ap.audit_number }}</div>
                         </div>
                         <StatusBadge :status="ap.is_overdue ? 'OVERDUE' : ap.status" />
                     </div>
@@ -160,7 +160,7 @@ const broadcastAllReminders = () => {
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
                         <span>PIC: <strong class="text-gray-800 font-medium">{{ ap.pic || '—' }}</strong></span>
-                        <span :class="ap.is_overdue ? 'text-red-600 font-semibold' : 'text-gray-500 font-mono'">
+                        <span :class="ap.is_overdue ? 'text-red-600 font-semibold' : 'text-gray-500 tabular-nums'">
                             Target: {{ ap.deadline || '—' }}
                         </span>
                     </div>
@@ -210,7 +210,7 @@ const broadcastAllReminders = () => {
                             class="hover:bg-gray-50/70"
                         >
                             <td class="px-4 py-3.5 align-top whitespace-nowrap">
-                                <div class="font-mono font-medium text-gray-900">
+                                <div class="tabular-nums font-medium text-gray-900">
                                     {{ ap.audit_number }}
                                 </div>
                                 <div class="text-[11px] text-gray-600 mt-0.5">{{ ap.store }}</div>

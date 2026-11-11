@@ -94,11 +94,11 @@ const deleteAudit = (audit) => {
         <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
                 <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Jadwal & Penugasan Audit</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Kelola dan jadwalkan pemeriksaan audit untuk auditor lapangan</p>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Kelola dan jadwalkan pemeriksaan audit untuk staff audit</p>
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                <span class="text-xs text-gray-500 tabular-nums hidden sm:inline">
                     {{ filteredAudits.length }} Audit terdaftar
                 </span>
                 <Link
@@ -170,7 +170,7 @@ const deleteAudit = (audit) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">{{ audit.store_code }}</div>
+                            <div class="text-[10px] text-gray-400 tabular-nums mt-0.5">{{ audit.store_code }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
@@ -178,7 +178,7 @@ const deleteAudit = (audit) => {
                     <div class="flex items-center justify-between gap-2">
                         <Link
                             :href="route('coordinator.audits.show', audit.id)"
-                            class="font-mono text-xs font-semibold text-blue-600 hover:underline"
+                            class="tabular-nums text-xs font-semibold text-blue-600 hover:underline"
                         >
                             {{ audit.audit_number }}
                         </Link>
@@ -197,7 +197,7 @@ const deleteAudit = (audit) => {
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
                         <span>Lead: <strong class="text-gray-800 font-medium">{{ audit.auditor }}</strong></span>
-                        <span class="font-mono text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
+                        <span class="tabular-nums text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
                     </div>
 
                     <div class="pt-2 flex items-center justify-between border-t border-gray-100">
@@ -236,7 +236,7 @@ const deleteAudit = (audit) => {
                             <th class="px-4 py-3 whitespace-nowrap w-44">No. Surat Tugas</th>
                             <th class="px-4 py-3 whitespace-nowrap w-44">Kategori Audit</th>
                             <th class="px-4 py-3 min-w-[200px]">Toko & Lokasi</th>
-                            <th class="px-4 py-3 whitespace-nowrap w-40">Auditor Lapangan</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-40">Staff Audit</th>
                             <th class="px-4 py-3 whitespace-nowrap w-32">Tanggal</th>
                             <th class="px-4 py-3 whitespace-nowrap text-center w-24">Temuan</th>
                             <th class="px-4 py-3 whitespace-nowrap text-center w-28">Status</th>
@@ -257,7 +257,7 @@ const deleteAudit = (audit) => {
                             <td class="px-4 py-3 align-middle whitespace-nowrap">
                                 <Link
                                     :href="route('coordinator.audits.show', audit.id)"
-                                    class="font-mono font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                                    class="tabular-nums font-semibold text-slate-800 hover:text-blue-600 transition-colors"
                                 >
                                     {{ audit.audit_number }}
                                 </Link>
@@ -280,14 +280,14 @@ const deleteAudit = (audit) => {
 
                             <td class="px-4 py-3 align-middle">
                                 <div class="font-medium text-gray-900">{{ audit.store }}</div>
-                                <div class="text-[11px] text-gray-500 font-mono">{{ audit.store_code }}</div>
+                                <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store_code }}</div>
                             </td>
 
                             <td class="px-4 py-3 align-middle whitespace-nowrap font-medium text-gray-800">
                                 {{ audit.auditor }}
                             </td>
 
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 tabular-nums text-[11px]">
                                 {{ audit.audit_date }}
                             </td>
 

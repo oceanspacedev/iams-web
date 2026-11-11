@@ -63,7 +63,7 @@ class AuditNotificationService
             $auditDateStr = $audit->audit_date->format('d M Y');
             $auditTimeStr = $audit->audit_time ?: '09:00';
             $locationStr  = $audit->location ?: ($audit->store ? "{$audit->store->name} ({$audit->store->code})" : 'Toko Ritel');
-            $auditorName  = $audit->auditor ? $audit->auditor->name : 'Auditor Lapangan';
+            $auditorName  = $audit->auditor ? $audit->auditor->name : 'Staff Audit';
             $titleStr     = $audit->title ?: 'Pemeriksaan Audit Toko';
             $ruleName     = $rule->name;
 

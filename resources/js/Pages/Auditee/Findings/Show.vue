@@ -478,7 +478,7 @@ const deleteEvidence = (evidenceId) => {
 
                     <div>
                         <div class="text-gray-500">Nomor Audit</div>
-                        <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
+                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
                     </div>
 
                     <div>

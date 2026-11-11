@@ -78,13 +78,13 @@ const filteredAudits = computed(() => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ audit.store_code }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5">{{ audit.store_code }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
 
                     <div class="flex items-center justify-between gap-2">
-                        <span class="font-mono text-xs font-semibold text-blue-600">
+                        <span class="tabular-nums text-xs font-semibold text-blue-600">
                             {{ audit.audit_number }}
                         </span>
                         <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
@@ -94,7 +94,7 @@ const filteredAudits = computed(() => {
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
                         <span>Auditor: <strong class="text-gray-800 font-medium">{{ audit.auditor }}</strong></span>
-                        <span class="font-mono text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
+                        <span class="tabular-nums text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
                     </div>
 
                     <div class="pt-2 flex justify-end border-t border-gray-100">
@@ -133,12 +133,12 @@ const filteredAudits = computed(() => {
                             :key="audit.id"
                             class="hover:bg-gray-50/70 transition-colors"
                         >
-                            <td class="px-5 py-3.5 font-mono font-medium text-gray-900">
+                            <td class="px-5 py-3.5 tabular-nums font-medium text-gray-900">
                                 {{ audit.audit_number }}
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="font-medium text-gray-900">{{ audit.store }}</div>
-                                <div class="text-[11px] text-gray-500 font-mono">{{ audit.store_code }}</div>
+                                <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store_code }}</div>
                             </td>
                             <td class="px-5 py-3.5 text-gray-700">
                                 {{ audit.auditor }}

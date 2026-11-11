@@ -59,7 +59,7 @@ const paginatedAudits = computed(() => {
                 <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Seluruh jadwal dan riwayat audit yang ditugaskan kepada Anda</p>
             </div>
             <div>
-                <span class="text-xs text-gray-500 font-mono">
+                <span class="text-xs text-gray-500 tabular-nums">
                     {{ filteredAudits.length }} Penugasan terdaftar
                 </span>
             </div>
@@ -114,7 +114,7 @@ const paginatedAudits = computed(() => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="text-[10px] text-gray-500 font-mono mt-0.5">{{ audit.store_area || audit.store_code }}</div>
+                            <div class="text-[10px] text-gray-500 tabular-nums mt-0.5">{{ audit.store_area || audit.store_code }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
@@ -122,7 +122,7 @@ const paginatedAudits = computed(() => {
                     <div class="flex items-center justify-between gap-2">
                         <Link
                             :href="route('auditor.audits.show', audit.id)"
-                            class="font-mono text-xs font-semibold text-blue-600 hover:underline"
+                            class="tabular-nums text-xs font-semibold text-blue-600 hover:underline"
                         >
                             {{ audit.audit_number }}
                         </Link>
@@ -140,7 +140,7 @@ const paginatedAudits = computed(() => {
                     </div>
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span>Tanggal: <strong class="text-gray-800 font-medium font-mono text-[10px]">{{ audit.audit_date }}</strong></span>
+                        <span>Tanggal: <strong class="text-gray-800 font-medium tabular-nums text-[10px]">{{ audit.audit_date }}</strong></span>
                         <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
                             {{ audit.findings_count }} temuan
                         </span>
@@ -185,7 +185,7 @@ const paginatedAudits = computed(() => {
                             <td class="px-4 py-3 align-middle whitespace-nowrap">
                                 <Link
                                     :href="route('auditor.audits.show', audit.id)"
-                                    class="font-mono font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                                    class="tabular-nums font-semibold text-slate-800 hover:text-blue-600 transition-colors"
                                 >
                                     {{ audit.audit_number }}
                                 </Link>
@@ -208,10 +208,10 @@ const paginatedAudits = computed(() => {
 
                             <td class="px-4 py-3 align-middle">
                                 <div class="font-medium text-gray-900">{{ audit.store }}</div>
-                                <div class="text-[11px] text-gray-500 font-mono">{{ audit.store_area || audit.store_code }}</div>
+                                <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store_area || audit.store_code }}</div>
                             </td>
 
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 tabular-nums text-[11px]">
                                 {{ audit.audit_date }}
                             </td>
 

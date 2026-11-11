@@ -22,7 +22,7 @@ const getRoleLabel = (role) => {
         case 'chief': return 'Chief Auditor (Head of Audit)';
         case 'asmen': return 'Asisten Manager (Asmen)';
         case 'coordinator': return 'Koordinator Audit';
-        case 'auditor': return 'Auditor Lapangan';
+        case 'auditor': return 'Staff Audit';
         default: return role || 'Pengguna';
     }
 };

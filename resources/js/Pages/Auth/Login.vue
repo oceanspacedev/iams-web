@@ -471,7 +471,7 @@ watch(() => props.otpSent, (newVal) => {
                                 <!-- Timer 5 Menit (300 Detik) & Kirim Ulang -->
                                 <div class="text-center text-[11px] text-slate-500 pt-0.5">
                                     <span v-if="countdown > 0">
-                                        Kode berlaku: <strong class="text-slate-800 font-mono">{{ formatTime(countdown) }}</strong>
+                                        Kode berlaku: <strong class="text-slate-800 tabular-nums">{{ formatTime(countdown) }}</strong>
                                     </span>
                                     <span v-else class="text-red-500 font-medium">
                                         Kode kedaluwarsa

@@ -122,7 +122,7 @@ const deleteSop = (sop) => {
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 font-mono hidden sm:inline">
+                <span class="text-xs text-gray-500 tabular-nums hidden sm:inline">
                     {{ sops.length }} SOP/SE terdaftar
                 </span>
                 <button
@@ -150,7 +150,7 @@ const deleteSop = (sop) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ sop.title }}</div>
-                            <div class="font-mono text-[10px] text-gray-500 mt-0.5 font-bold">{{ sop.code }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5 font-bold">{{ sop.code }}</div>
                         </div>
                         <span
                             class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
@@ -216,7 +216,7 @@ const deleteSop = (sop) => {
                             <td colspan="7" class="px-4 py-10 text-center text-gray-500">Belum ada master SOP/SE.</td>
                         </tr>
                         <tr v-for="sop in paginatedSops" :key="sop.id" class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-4 py-3 font-mono font-bold text-gray-900">{{ sop.code }}</td>
+                            <td class="px-4 py-3 tabular-nums font-bold text-gray-900">{{ sop.code }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ sop.title }}</td>
                             <td class="px-4 py-3 text-gray-600 max-w-xs truncate">{{ sop.description || '—' }}</td>
                             <td class="px-4 py-3">
@@ -291,7 +291,7 @@ const deleteSop = (sop) => {
                                 type="text"
                                 required
                                 placeholder="SOP-004"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                             />
                             <div v-if="form.errors.code" class="text-red-600 text-[11px] mt-1">{{ form.errors.code }}</div>
                         </div>

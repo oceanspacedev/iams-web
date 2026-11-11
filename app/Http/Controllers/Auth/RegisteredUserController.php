@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
                 ],
                 [
                     'value' => 'auditor',
-                    'label' => 'Auditor Lapangan',
+                    'label' => 'Staff Audit',
                 ],
             ],
         ]);

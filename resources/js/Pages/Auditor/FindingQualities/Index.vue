@@ -154,13 +154,13 @@ const getCategoryTheme = (key, isSelected) => {
             >
                 <div class="flex items-center justify-between mb-2">
                     <span
-                        class="font-mono text-[11px] font-bold px-2 py-0.5 rounded border"
+                        class="tabular-nums text-[11px] font-bold px-2 py-0.5 rounded border"
                         :class="getCategoryTheme(key, selectedCategory === key).code"
                     >
                         {{ cat.code }}
                     </span>
                     <span
-                        class="px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono shadow-2xs"
+                        class="px-2.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums shadow-2xs"
                         :class="getCategoryTheme(key, selectedCategory === key).badge"
                     >
                         {{ stats[key] || 0 }} Temuan
@@ -217,7 +217,7 @@ const getCategoryTheme = (key, isSelected) => {
                         <span v-else class="font-semibold text-gray-900 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
                             {{ categories[item.quality_category]?.label || item.quality_category }}
                         </span>
-                        <span class="font-mono text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                        <span class="tabular-nums text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
                             {{ item.audit.audit_number }}
                         </span>
                         <span class="text-gray-500">• {{ item.audit.store_name }} ({{ item.audit.store_code }})</span>
@@ -256,7 +256,7 @@ const getCategoryTheme = (key, isSelected) => {
                     <div class="border-t md:border-t-0 md:border-l md:border-gray-100 md:pl-5 space-y-2">
                         <div>
                             <div class="text-[11px] text-gray-500 font-medium">Nilai Dampak / Kerugian</div>
-                            <div class="text-sm font-semibold text-gray-900 font-mono mt-0.5">
+                            <div class="text-sm font-semibold text-gray-900 tabular-nums mt-0.5">
                                 {{ formatRupiah(item.impact_amount || item.finding.loss_amount) }}
                             </div>
                         </div>
@@ -270,7 +270,7 @@ const getCategoryTheme = (key, isSelected) => {
 
                         <div class="pt-2 border-t border-gray-100 text-[11px] text-gray-400 space-y-0.5">
                             <div>Pelapor: <span class="text-gray-700">{{ item.reported_by }}</span></div>
-                            <div>Tanggal: <span class="font-mono text-gray-600">{{ item.created_at }}</span></div>
+                            <div>Tanggal: <span class="tabular-nums text-gray-600">{{ item.created_at }}</span></div>
                         </div>
                     </div>
                 </div>

@@ -125,19 +125,19 @@ const deleteDoc = (docId) => {
         <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6 shadow-xs">
             <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4 pb-2 border-b border-gray-100 flex items-center justify-between">
                 <span>Informasi Surat Tugas Audit</span>
-                <span class="text-[11px] font-mono text-gray-400">ID: #{{ audit.id }}</span>
+                <span class="text-[11px] tabular-nums text-gray-400">ID: #{{ audit.id }}</span>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-xs">
                 <div>
                     <div class="text-gray-500 font-medium">Kategori Audit</div>
                     <div class="text-gray-900 font-semibold mt-1">{{ audit.category || 'Audit Umum' }}</div>
-                    <div class="text-[11px] text-gray-500 font-mono">{{ audit.title || 'Surat Tugas Audit' }}</div>
+                    <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.title || 'Surat Tugas Audit' }}</div>
                 </div>
 
                 <div>
                     <div class="text-gray-500 font-medium">Unit / Toko / Gudang</div>
                     <div class="text-gray-900 font-semibold mt-1">{{ audit.store.name }}</div>
-                    <div class="text-[11px] text-gray-500 font-mono">
+                    <div class="text-[11px] text-gray-500 tabular-nums">
                         {{ audit.store.code }} • {{ audit.store.business_entity || 'Unit Ritel' }}
                     </div>
                 </div>
@@ -219,7 +219,7 @@ const deleteDoc = (docId) => {
                                     {{ doc.document_type }}
                                 </span>
                                 <div class="font-semibold text-gray-900 text-xs">{{ doc.title }}</div>
-                                <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ doc.file_name }} ({{ doc.file_size }})</div>
+                                <div class="tabular-nums text-[10px] text-gray-500 mt-0.5">{{ doc.file_name }} ({{ doc.file_size }})</div>
                             </div>
                         </div>
 
@@ -274,13 +274,13 @@ const deleteDoc = (docId) => {
                                 <td class="px-3.5 py-2.5 font-medium text-gray-900 align-middle">
                                     {{ doc.title }}
                                 </td>
-                                <td class="px-3.5 py-2.5 text-gray-600 font-mono text-[11px] align-middle">
+                                <td class="px-3.5 py-2.5 text-gray-600 tabular-nums text-[11px] align-middle">
                                     {{ doc.file_name }} <span class="text-gray-400">({{ doc.file_size }})</span>
                                 </td>
                                 <td class="px-3.5 py-2.5 text-gray-600 align-middle">
                                     {{ doc.notes || '—' }}
                                 </td>
-                                <td class="px-3.5 py-2.5 text-gray-500 font-mono text-[11px] align-middle whitespace-nowrap">
+                                <td class="px-3.5 py-2.5 text-gray-500 tabular-nums text-[11px] align-middle whitespace-nowrap">
                                     {{ doc.created_at }}
                                 </td>
                                 <td class="px-3.5 py-2.5 text-right align-middle whitespace-nowrap space-x-1.5">
@@ -335,7 +335,7 @@ const deleteDoc = (docId) => {
                 <!-- Finding Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 mb-3 border-b border-gray-100">
                     <div class="flex items-center flex-wrap gap-2.5">
-                        <span class="text-xs font-mono font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
+                        <span class="text-xs tabular-nums font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
                         <span class="text-xs font-semibold text-gray-900">{{ finding.category }}</span>
                         <SeverityBadge :severity="finding.severity" :show-timeline="true" />
                         <StatusBadge :status="finding.status" />

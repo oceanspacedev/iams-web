@@ -63,7 +63,7 @@ class HandleInertiaRequests extends Middleware
                             'chief'       => 'Chief Auditor',
                             'asmen'       => 'Asisten Manager',
                             'coordinator' => 'Koordinator Audit',
-                            default       => 'Auditor Lapangan',
+                            default       => 'Staff Audit',
                         };
 
                         return [

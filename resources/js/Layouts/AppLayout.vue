@@ -750,7 +750,7 @@ const logout = () => {
                                             <div class="flex-1 min-w-0">
                                                 <div class="font-medium text-gray-900 truncate">{{ item.title }}</div>
                                                 <div class="text-[11px] text-gray-600 mt-0.5 leading-snug">{{ item.message }}</div>
-                                                <div class="text-[10px] text-gray-400 mt-1 font-mono">{{ item.time }}</div>
+                                                <div class="text-[10px] text-gray-400 mt-1 tabular-nums">{{ item.time }}</div>
                                             </div>
                                         </div>
                                     </Link>

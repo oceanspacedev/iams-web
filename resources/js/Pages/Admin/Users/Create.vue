@@ -105,7 +105,7 @@ const submit = () => {
                             <option value="chief">Chief Auditor (Head of Audit)</option>
                             <option value="asmen">Asisten Manager (Asmen)</option>
                             <option value="coordinator">Koordinator Audit</option>
-                            <option value="auditor">Auditor Lapangan</option>
+                            <option value="auditor">Staff Audit</option>
                         </select>
                         <div v-if="form.errors.role" class="text-red-600 text-[11px] mt-1">{{ form.errors.role }}</div>
                     </div>

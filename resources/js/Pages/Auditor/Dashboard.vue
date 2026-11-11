@@ -98,7 +98,7 @@ const props = defineProps({
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="font-mono text-[11px] text-gray-500 mt-0.5">{{ audit.audit_number }}</div>
+                            <div class="tabular-nums text-[11px] text-gray-500 mt-0.5">{{ audit.audit_number }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
@@ -143,7 +143,7 @@ const props = defineProps({
                             :key="audit.id"
                             class="hover:bg-gray-50/70 transition-colors"
                         >
-                            <td class="px-5 py-3 font-mono font-medium text-gray-900">
+                            <td class="px-5 py-3 tabular-nums font-medium text-gray-900">
                                 {{ audit.audit_number }}
                             </td>
                             <td class="px-5 py-3 font-medium text-gray-900">

@@ -38,7 +38,7 @@ const roleLabels = {
     chief: 'Chief Auditor',
     asmen: 'Asisten Manager',
     coordinator: 'Koordinator',
-    auditor: 'Auditor',
+    auditor: 'Staff Audit',
     auditee: 'Auditee Toko',
 };
 
@@ -299,26 +299,26 @@ const deleteUser = (user) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ u.name }}</div>
-                            <div class="text-[11px] text-gray-500 font-mono mt-0.5">{{ u.email }}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">{{ u.email }}</div>
                         </div>
 
                         <!-- Status Badge -->
                         <div>
                             <template v-if="u.approval_status === 'pending'">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Pending Review
                                 </span>
                             </template>
                             <template v-else-if="u.approval_status === 'rejected'">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                                <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
                                     Ditolak
                                 </span>
                             </template>
                             <template v-else>
                                 <button
                                     @click="toggleActive(u)"
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border"
                                     :class="u.is_active ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                                 >
                                     <span class="w-1.5 h-1.5 rounded-full" :class="u.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
@@ -329,14 +329,14 @@ const deleteUser = (user) => {
                     </div>
 
                     <!-- Role & Phone Details -->
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1 border-t border-gray-100">
+                    <div class="flex items-center justify-between text-xs text-gray-600 pt-1 border-t border-gray-100">
                         <div>
                             <span class="text-gray-400">Jabatan: </span>
                             <span class="font-medium text-slate-800">
                                 {{ u.approval_status === 'pending' ? getRoleLabel(u.requested_role) : getRoleLabel(u.role) }}
                             </span>
                         </div>
-                        <div class="font-mono text-[11px] text-gray-700">
+                        <div class="text-xs text-gray-700">
                             {{ u.phone || '—' }}
                         </div>
                     </div>
@@ -346,13 +346,13 @@ const deleteUser = (user) => {
                         <template v-if="u.approval_status === 'pending'">
                             <button
                                 @click="openApproveModal(u)"
-                                class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[11px] shadow-2xs transition cursor-pointer"
+                                class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs transition cursor-pointer"
                             >
                                 Setujui
                             </button>
                             <button
                                 @click="openRejectModal(u)"
-                                class="px-3 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-[11px] transition cursor-pointer"
+                                class="px-3 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-xs transition cursor-pointer"
                             >
                                 Tolak
                             </button>
@@ -360,13 +360,13 @@ const deleteUser = (user) => {
                         <template v-else>
                             <Link
                                 :href="route('admin.users.edit', u.id)"
-                                class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] transition cursor-pointer"
+                                class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition cursor-pointer"
                             >
                                 Edit
                             </Link>
                             <button
                                 @click="deleteUser(u)"
-                                class="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px] transition cursor-pointer"
+                                class="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-xs transition cursor-pointer"
                             >
                                 Hapus
                             </button>
@@ -378,7 +378,7 @@ const deleteUser = (user) => {
             <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3 whitespace-nowrap">Nama Lengkap</th>
                             <th class="px-4 py-3 whitespace-nowrap">Email</th>
@@ -401,27 +401,27 @@ const deleteUser = (user) => {
                         >
                             <td class="px-4 py-3 align-middle font-medium text-gray-900">
                                 <div>{{ u.name }}</div>
-                                <div v-if="u.created_at" class="text-[10px] text-gray-400 font-normal">
+                                <div v-if="u.created_at" class="text-xs text-gray-400 font-normal">
                                     Daftar: {{ u.created_at }}
                                 </div>
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 text-xs">
                                 {{ u.email }}
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-700 font-mono text-[11px]">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-700 text-xs">
                                 {{ u.phone || '—' }}
                             </td>
                             <td class="px-4 py-3 align-middle whitespace-nowrap">
                                 <template v-if="u.approval_status === 'pending'">
-                                    <div class="text-[11px] text-amber-800 font-medium">
+                                    <div class="text-xs text-amber-800 font-medium">
                                         Pengajuan: <span class="font-semibold underline">{{ getRoleLabel(u.requested_role) }}</span>
                                     </div>
-                                    <div v-if="u.stores !== '—'" class="text-[10px] text-gray-500">
+                                    <div v-if="u.stores !== '—'" class="text-xs text-gray-500">
                                         Toko: {{ u.stores }}
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                                         {{ getRoleLabel(u.role) }}
                                     </span>
                                 </template>
@@ -429,14 +429,14 @@ const deleteUser = (user) => {
                             <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
                                 <!-- PENDING APPROVAL BADGE -->
                                 <template v-if="u.approval_status === 'pending'">
-                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                         Pending Review
                                     </span>
                                 </template>
                                 <!-- REJECTED BADGE -->
                                 <template v-else-if="u.approval_status === 'rejected'">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
                                         Ditolak
                                     </span>
                                 </template>
@@ -444,7 +444,7 @@ const deleteUser = (user) => {
                                 <template v-else>
                                     <button
                                         @click="toggleActive(u)"
-                                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer"
+                                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors border cursor-pointer"
                                         :class="u.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100' : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'"
                                         title="Klik untuk mengubah status aktif"
                                     >
@@ -458,13 +458,13 @@ const deleteUser = (user) => {
                                 <div v-if="u.approval_status === 'pending'" class="inline-flex items-center gap-2">
                                     <button
                                         @click="openApproveModal(u)"
-                                        class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[11px] shadow-2xs transition cursor-pointer"
+                                        class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs transition cursor-pointer"
                                     >
                                         Setujui
                                     </button>
                                     <button
                                         @click="openRejectModal(u)"
-                                        class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-[11px] transition cursor-pointer"
+                                        class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-xs transition cursor-pointer"
                                     >
                                         Tolak
                                     </button>
@@ -518,7 +518,7 @@ const deleteUser = (user) => {
 
                 <div class="p-3 bg-slate-50 border border-slate-200 rounded text-slate-700 space-y-1">
                     <div>Nama: <strong class="text-slate-900">{{ approveModal.user?.name }}</strong></div>
-                    <div>WhatsApp: <span class="font-mono">{{ approveModal.user?.phone }}</span></div>
+                    <div>WhatsApp: <span>{{ approveModal.user?.phone }}</span></div>
                     <div>Pengajuan: <span class="text-blue-700 font-medium">{{ getRoleLabel(approveModal.user?.requested_role) }}</span></div>
                 </div>
 

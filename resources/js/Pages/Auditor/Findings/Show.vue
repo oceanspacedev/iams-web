@@ -89,7 +89,7 @@ const deleteFinding = () => {
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                     <Link :href="route('auditor.audits.index')" class="hover:text-blue-600">My Audits</Link>
                     <span>/</span>
-                    <Link :href="route('auditor.audits.show', finding.audit.id)" class="hover:text-blue-600 font-mono">{{ finding.audit.audit_number }}</Link>
+                    <Link :href="route('auditor.audits.show', finding.audit.id)" class="hover:text-blue-600 tabular-nums">{{ finding.audit.audit_number }}</Link>
                     <span>/</span>
                     <span class="text-gray-900 font-medium">Finding #{{ String(finding.id).padStart(4, '0') }}</span>
                 </div>
@@ -210,7 +210,7 @@ const deleteFinding = () => {
                                 <input
                                     v-model="actionPlanForm.deadline"
                                     type="date"
-                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
                                 />
                             </div>
                         </div>
@@ -258,7 +258,7 @@ const deleteFinding = () => {
                             </div>
                             <div>
                                 <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
+                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
                             </div>
                         </div>
 
@@ -278,7 +278,7 @@ const deleteFinding = () => {
 
                     <div>
                         <span class="text-gray-400 font-medium">Nomor Surat Tugas:</span>
-                        <div class="font-mono font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
+                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
                     </div>
 
                     <div>
@@ -288,7 +288,7 @@ const deleteFinding = () => {
 
                     <div>
                         <span class="text-gray-400 font-medium">Nominal Kerugian:</span>
-                        <div class="font-mono font-bold text-gray-900 text-sm mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        <div class="tabular-nums font-bold text-gray-900 text-sm mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
                     </div>
 
                     <div>

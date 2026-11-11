@@ -48,7 +48,7 @@ const submit = () => {
                             v-model="form.code"
                             type="text"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 uppercase font-mono"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 uppercase tabular-nums"
                         />
                         <div v-if="form.errors.code" class="text-red-600 text-[11px] mt-1">{{ form.errors.code }}</div>
                     </div>

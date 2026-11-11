@@ -160,7 +160,7 @@ const sendNotificationNow = (notif) => {
                     <div>
                         <div class="text-gray-500 font-medium">Toko Sasaran</div>
                         <div class="text-gray-900 font-semibold mt-1">{{ audit.store.name }}</div>
-                        <div class="text-[11px] text-gray-500 font-mono">{{ audit.store.code }} ({{ audit.store.area || '-' }})</div>
+                        <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store.code }} ({{ audit.store.area || '-' }})</div>
                     </div>
 
                     <div>
@@ -212,7 +212,7 @@ const sendNotificationNow = (notif) => {
                                     <span>{{ notif.rule_name }}</span>
                                     <span class="text-[10px] text-gray-400 font-normal uppercase">({{ notif.channel }})</span>
                                 </div>
-                                <div class="text-[11px] text-gray-500 font-mono mt-0.5">
+                                <div class="text-[11px] text-gray-500 tabular-nums mt-0.5">
                                     {{ notif.scheduled_at }}
                                 </div>
                                 <div v-if="notif.sent_at" class="text-[10px] text-emerald-600 mt-0.5">
@@ -283,7 +283,7 @@ const sendNotificationNow = (notif) => {
             >
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100">
                     <div class="flex items-center gap-3">
-                        <span class="font-mono font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
+                        <span class="tabular-nums font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
                         <span class="font-semibold text-gray-900">{{ finding.category }}</span>
                         <SeverityBadge :severity="finding.severity" />
                         <StatusBadge :status="finding.status" />

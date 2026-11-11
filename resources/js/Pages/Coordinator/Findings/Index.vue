@@ -75,7 +75,7 @@ const paginatedFindings = computed(() => {
                 <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity</p>
             </div>
             <div>
-                <span class="text-xs text-gray-500 font-mono">
+                <span class="text-xs text-gray-500 tabular-nums">
                     {{ filteredFindings.length }} Temuan terdaftar
                 </span>
             </div>
@@ -139,7 +139,7 @@ const paginatedFindings = computed(() => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ f.store }}</div>
-                            <div class="font-mono text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ f.audit_number }}</div>
                         </div>
                         <StatusBadge :status="f.status" />
                     </div>
@@ -169,7 +169,7 @@ const paginatedFindings = computed(() => {
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
                         <span>Auditor: <strong class="text-gray-800 font-medium">{{ f.auditor }}</strong></span>
-                        <span v-if="f.loss_amount" class="font-mono text-[11px] font-semibold text-slate-700">
+                        <span v-if="f.loss_amount" class="tabular-nums text-[11px] font-semibold text-slate-700">
                             {{ formatRupiah(f.loss_amount) }}
                         </span>
                     </div>
@@ -211,7 +211,7 @@ const paginatedFindings = computed(() => {
                             class="hover:bg-slate-50/70 transition-colors"
                         >
                             <td class="px-4 py-3 align-top whitespace-nowrap">
-                                <div class="font-mono font-semibold text-slate-800">{{ f.audit_number }}</div>
+                                <div class="tabular-nums font-semibold text-slate-800">{{ f.audit_number }}</div>
                                 <div class="text-xs text-gray-900 font-medium mt-0.5">{{ f.store }}</div>
                             </td>
 
@@ -224,7 +224,7 @@ const paginatedFindings = computed(() => {
                                     {{ f.category }}
                                 </div>
                                 <div class="text-gray-900 leading-relaxed font-normal line-clamp-3">{{ f.finding }}</div>
-                                <div v-if="f.loss_amount" class="text-[11px] text-slate-600 font-mono mt-1 font-medium">
+                                <div v-if="f.loss_amount" class="text-[11px] text-slate-600 tabular-nums mt-1 font-medium">
                                     Loss: {{ formatRupiah(f.loss_amount) }}
                                 </div>
                             </td>

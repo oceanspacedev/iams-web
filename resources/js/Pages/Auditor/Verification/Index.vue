@@ -96,7 +96,7 @@ const approveEvidence = (evidenceId) => {
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="font-semibold text-gray-900 text-xs">{{ e.store }}</div>
-                            <div class="font-mono text-[10px] text-gray-500 mt-0.5">{{ e.audit }}</div>
+                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5">{{ e.audit }}</div>
                         </div>
                     </div>
 
@@ -166,7 +166,7 @@ const approveEvidence = (evidenceId) => {
                             class="hover:bg-gray-50/70 transition-colors"
                         >
                             <td class="px-5 py-3.5">
-                                <div class="font-mono font-semibold text-gray-900">{{ e.audit }}</div>
+                                <div class="tabular-nums font-semibold text-gray-900">{{ e.audit }}</div>
                                 <div class="text-[11px] text-gray-500 font-medium">{{ e.store }}</div>
                             </td>
                             <td class="px-5 py-3.5">

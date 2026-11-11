@@ -71,7 +71,7 @@ const submit = () => {
                         <input
                             v-model="form.phone"
                             type="text"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-mono"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                         <div v-if="form.errors.phone" class="text-red-600 text-[11px] mt-1">{{ form.errors.phone }}</div>
                     </div>
@@ -100,7 +100,7 @@ const submit = () => {
                             <option value="chief">Chief Auditor (Head of Audit)</option>
                             <option value="asmen">Asisten Manager (Asmen)</option>
                             <option value="coordinator">Koordinator Audit</option>
-                            <option value="auditor">Auditor Lapangan</option>
+                            <option value="auditor">Staff Audit</option>
                         </select>
                         <div v-if="form.errors.role" class="text-red-600 text-[11px] mt-1">{{ form.errors.role }}</div>
                     </div>

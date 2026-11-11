@@ -249,7 +249,7 @@ const confirmFactoryReset = () => {
                         type="text"
                         v-model="confirmText"
                         placeholder="RESET"
-                        class="w-full text-xs rounded border-gray-300 focus:border-red-500 focus:ring-red-500 uppercase font-mono"
+                        class="w-full text-xs rounded border-gray-300 focus:border-red-500 focus:ring-red-500 uppercase tabular-nums"
                         :disabled="isFactoryResetting"
                     />
                 </div>

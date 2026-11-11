@@ -128,7 +128,7 @@ const formatRupiah = (number) => {
                         <div class="flex items-start justify-between gap-2">
                             <div>
                                 <div class="font-semibold text-gray-900 text-xs">{{ a.store }}</div>
-                                <div class="font-mono text-[11px] text-blue-600 font-medium mt-0.5">{{ a.audit_number }}</div>
+                                <div class="tabular-nums text-[11px] text-blue-600 font-medium mt-0.5">{{ a.audit_number }}</div>
                             </div>
                             <StatusBadge :status="a.status" />
                         </div>
@@ -154,7 +154,7 @@ const formatRupiah = (number) => {
                                 <td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada data audit.</td>
                             </tr>
                             <tr v-for="a in recent_audits" :key="a.id" class="hover:bg-gray-50/70">
-                                <td class="px-4 py-2.5 font-mono font-medium text-blue-600 hover:underline">
+                                <td class="px-4 py-2.5 tabular-nums font-medium text-blue-600 hover:underline">
                                     <Link :href="route('coordinator.audits.show', a.id)">{{ a.audit_number }}</Link>
                                 </td>
                                 <td class="px-4 py-2.5 font-medium text-gray-900">{{ a.store }}</td>
