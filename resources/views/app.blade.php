@@ -14,6 +14,13 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <!-- Theme: apply saved light/dark choice before first paint -->
+        <script>
+            try {
+                if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+            } catch (e) {}
+        </script>
+
         <!-- Scripts -->
         @routes
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])

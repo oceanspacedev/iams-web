@@ -34,7 +34,7 @@ const submit = () => {
             <div class="flex flex-col md:flex-row">
                 
                 <!-- LEFT PANEL -->
-                <div class="w-full md:w-[340px] bg-slate-900 text-white p-8 flex flex-col justify-between shrink-0">
+                <div class="theme-static w-full md:w-[340px] bg-slate-900 text-white p-8 flex flex-col justify-between shrink-0">
                     <div>
                         <div class="flex items-center gap-3 mb-8">
                             <ApplicationLogo size="w-10 h-10" />

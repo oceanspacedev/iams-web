@@ -181,7 +181,7 @@ watch(() => props.otpSent, (newVal) => {
             <div class="flex flex-col md:flex-row">
                 
                 <!-- LEFT PANEL: Dark Corporate Branding (Preserved & Optimized) -->
-                <div class="w-full md:w-[320px] lg:w-[340px] bg-slate-900 text-white p-6 sm:p-7 flex flex-col justify-between shrink-0">
+                <div class="theme-static w-full md:w-[320px] lg:w-[340px] bg-slate-900 text-white p-6 sm:p-7 flex flex-col justify-between shrink-0">
                     <div>
                         <div class="flex items-center gap-2.5 mb-6">
                             <ApplicationLogo size="w-9 h-9" />

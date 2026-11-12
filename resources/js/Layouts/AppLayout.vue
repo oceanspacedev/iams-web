@@ -106,6 +106,19 @@ onUnmounted(() => {
     if (removeFinishListener) removeFinishListener();
 });
 
+// Light / dark theme: `dark` class on <html>, saved in localStorage (applied early in app.blade.php)
+const isDark = ref(document.documentElement.classList.contains('dark'));
+
+const toggleTheme = () => {
+    isDark.value = !isDark.value;
+    document.documentElement.classList.toggle('dark', isDark.value);
+    try {
+        localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
+    } catch (e) {
+        // Storage unavailable: the choice just won't persist.
+    }
+};
+
 const toggleSidebar = () => {
     isCollapsed.value = !isCollapsed.value;
     localStorage.setItem('sidebar_collapsed', isCollapsed.value);
@@ -117,10 +130,10 @@ const logout = () => {
 </script>
 
 <template>
-    <div class="h-screen bg-[#F9FAFB] text-gray-900 flex font-sans antialiased overflow-hidden">
+    <div class="h-screen bg-[#F9FAFB] dark:bg-gray-950 text-gray-900 flex font-sans antialiased overflow-hidden">
         <!-- ================= DESKTOP SIDEBAR ================= -->
         <aside
-            class="hidden md:flex flex-col h-screen bg-[#111827] text-gray-300 border-r border-gray-800 shrink-0 transition-all duration-300 ease-in-out z-30"
+            class="theme-static hidden md:flex flex-col h-screen bg-[#111827] text-gray-300 border-r border-gray-800 shrink-0 transition-all duration-300 ease-in-out z-30"
             :class="isCollapsed ? 'w-[68px]' : 'w-64'"
         >
             <!-- Brand & Toggle Header -->
@@ -591,7 +604,7 @@ const logout = () => {
             ></div>
 
             <!-- Mobile Drawer Menu -->
-            <aside class="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#111827] text-gray-300 border-r border-gray-800 shadow-2xl z-10">
+            <aside class="theme-static relative flex flex-col w-72 max-w-[80vw] h-full bg-[#111827] text-gray-300 border-r border-gray-800 shadow-2xl z-10">
                 <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-[#0B0F17]">
                     <div class="flex items-center gap-2.5">
                         <ApplicationLogo size="w-7 h-7" />
@@ -699,6 +712,22 @@ const logout = () => {
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Light / Dark Toggle -->
+                    <button
+                        @click="toggleTheme"
+                        type="button"
+                        :title="isDark ? 'Mode Terang' : 'Mode Gelap'"
+                        :aria-label="isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'"
+                        class="w-9 h-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                    >
+                        <svg v-if="isDark" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+
                     <!-- Notification Bell -->
                     <div id="notification-dropdown" class="relative">
                         <button
