@@ -169,8 +169,10 @@ const paginatedFindings = computed(() => {
 
                     <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
                         <span>Auditor: <strong class="text-gray-800 font-medium">{{ f.auditor }}</strong></span>
-                        <span v-if="f.loss_amount" class="tabular-nums text-[11px] font-semibold text-slate-700">
-                            {{ formatRupiah(f.loss_amount) }}
+                        <span v-if="f.loss_amount > 0 || f.surplus_amount > 0" class="tabular-nums text-[11px] font-semibold text-slate-700 text-right">
+                            <span v-if="f.loss_amount > 0">NBH {{ formatRupiah(f.loss_amount) }}</span>
+                            <span v-if="f.loss_amount > 0 && f.surplus_amount > 0" class="text-gray-300"> · </span>
+                            <span v-if="f.surplus_amount > 0">NBL {{ formatRupiah(f.surplus_amount) }}</span>
                         </span>
                     </div>
 
@@ -224,8 +226,10 @@ const paginatedFindings = computed(() => {
                                     {{ f.category }}
                                 </div>
                                 <div class="text-gray-900 leading-relaxed font-normal line-clamp-3">{{ f.finding }}</div>
-                                <div v-if="f.loss_amount" class="text-[11px] text-slate-600 tabular-nums mt-1 font-medium">
-                                    Loss: {{ formatRupiah(f.loss_amount) }}
+                                <div v-if="f.loss_amount > 0 || f.surplus_amount > 0" class="text-[11px] text-slate-600 tabular-nums mt-1 font-medium">
+                                    <span v-if="f.loss_amount > 0">NBH: {{ formatRupiah(f.loss_amount) }}</span>
+                                    <span v-if="f.loss_amount > 0 && f.surplus_amount > 0" class="text-gray-300"> · </span>
+                                    <span v-if="f.surplus_amount > 0">NBL: {{ formatRupiah(f.surplus_amount) }}</span>
                                 </div>
                             </td>
 

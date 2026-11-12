@@ -26,6 +26,10 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    total_surplus: {
+        type: Number,
+        default: 0,
+    },
     total_findings: {
         type: Number,
         default: 0,
@@ -128,6 +132,14 @@ const statusColors = {
     CLOSED: '#10b981',
 };
 
+const statusLabels = {
+    OPEN: 'Open',
+    IN_PROGRESS: 'In Progress',
+    WAITING_VERIFICATION: 'Waiting Verification',
+    VERIFIED: 'Verified',
+    CLOSED: 'Closed',
+};
+
 // SVG Donut Calculations for Severity
 const severitySegments = computed(() => {
     const total = Object.values(props.by_severity).reduce((a, b) => a + b, 0);
@@ -192,8 +204,8 @@ const topLossStores = computed(() => {
         <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
-                <p class="text-xs text-gray-500 mt-1">Distribusi severity risiko temuan, efektivitas tindak lanjut, dan visualisasi grafik audit CSA</p>
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
+                <p class="text-xs text-gray-500 mt-1">Ringkasan temuan, NBH/NBL, dan progres tindak lanjut audit.</p>
                 <div v-if="selectedCategory !== 'all'" class="mt-2 flex items-center gap-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
                         <span>Filter aktif: <strong>{{ categories.find(c => String(c.id) === selectedCategory)?.name || selectedCategory }}</strong></span>
@@ -296,60 +308,51 @@ const topLossStores = computed(() => {
             </div>
         </div>
 
-        <!-- 4 Key Metrics Overview Cards (Berwarna Berbeda & Elegan) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-gradient-to-br from-rose-50/80 via-white to-white p-5 rounded-xl border border-rose-200/90 border-t-4 border-t-rose-500 shadow-xs">
-                <div class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">TOTAL KERUGIAN</div>
-                <div class="text-2xl font-bold text-rose-950 tabular-nums mt-1.5">{{ formatRupiah(total_loss) }}</div>
-                <div class="text-xs text-rose-600/80 mt-1">Akumulasi cabang CSA</div>
+        <!-- Key Metrics: flat tinted cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
+            <div class="rounded-lg border border-rose-100 bg-rose-50/70 p-4">
+                <div class="text-xs font-medium text-rose-700">Total NBH</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_loss) }}</div>
+                <div class="mt-1 text-[11px] text-rose-700/70">Nilai Barang Hilang</div>
             </div>
 
-            <div class="bg-gradient-to-br from-sky-50/80 via-white to-white p-5 rounded-xl border border-sky-200/90 border-t-4 border-t-sky-500 shadow-xs">
-                <div class="text-[11px] font-bold text-sky-700 uppercase tracking-wider">TOTAL TEMUAN</div>
-                <div class="text-2xl font-bold text-sky-950 mt-1.5">{{ totalFindingsCount }} Temuan</div>
-                <div class="text-xs text-sky-600/80 mt-1">Dari hasil pemeriksaan</div>
+            <div class="rounded-lg border border-indigo-100 bg-indigo-50/70 p-4">
+                <div class="text-xs font-medium text-indigo-700">Total NBL</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_surplus) }}</div>
+                <div class="mt-1 text-[11px] text-indigo-700/70">Nilai Barang Lebih</div>
             </div>
 
-            <div class="bg-gradient-to-br from-emerald-50/80 via-white to-white p-5 rounded-xl border border-emerald-200/90 border-t-4 border-t-emerald-500 shadow-xs">
-                <div class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">TINGKAT CLOSED</div>
-                <div class="text-2xl font-bold text-emerald-700 mt-1.5">{{ calculatedCompletionRate }}%</div>
-                <div class="text-xs text-gray-400 mt-1 flex flex-wrap items-center gap-1.5">
-                    <span><b class="text-gray-700">{{ by_status.CLOSED || 0 }}</b> All</span>
-                    <span class="text-gray-300">•</span>
-                    <span class="text-emerald-700 font-medium"><b>{{ closed_on_time || 0 }}</b> On Time</span>
-                    <span class="text-gray-300">•</span>
-                    <span class="text-rose-600 font-medium"><b>{{ closed_overdue || 0 }}</b> Overdue</span>
-                </div>
+            <div class="rounded-lg border border-sky-100 bg-sky-50/70 p-4">
+                <div class="text-xs font-medium text-sky-700">Total Temuan</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ totalFindingsCount }}</div>
+                <div class="mt-1 text-[11px] text-sky-700/70 tabular-nums">{{ by_status.OPEN || 0 }} masih open</div>
             </div>
 
-            <div class="bg-gradient-to-br from-amber-50/80 via-white to-white p-5 rounded-xl border border-amber-200/90 border-t-4 border-t-amber-500 shadow-xs">
-                <div class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">RISIKO TINGGI</div>
-                <div class="text-2xl font-bold text-amber-700 mt-1.5">{{ highRiskCount }} Temuan</div>
-                <div class="text-xs text-amber-600 font-medium mt-1">Temuan Major</div>
+            <div class="rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
+                <div class="text-xs font-medium text-emerald-700">Tingkat Closed</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ calculatedCompletionRate }}%</div>
+                <div class="mt-1 text-[11px] text-emerald-700/70 tabular-nums">{{ closed_on_time || 0 }} on time · {{ closed_overdue || 0 }} overdue</div>
+            </div>
+
+            <div class="rounded-lg border border-amber-100 bg-amber-50/70 p-4">
+                <div class="text-xs font-medium text-amber-700">Risiko Tinggi</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ highRiskCount }}</div>
+                <div class="mt-1 text-[11px] text-amber-700/70">Temuan major</div>
             </div>
         </div>
 
-        <!-- Visual Charts Row 1: Donut & Progress Diagrams -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Diagram 1: Distribusi Severity Temuan -->
-            <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-xs text-xs">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-                    <div>
-                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                            Distribusi Severity Temuan
-                        </h2>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Proporsi tingkat keparahan risiko temuan audit</p>
-                    </div>
-                    <span class="text-[11px] tabular-nums text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                        {{ totalFindingsCount }} Total
-                    </span>
+        <!-- Severity & Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 text-xs">
+            <section class="bg-white rounded-lg border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-sm font-semibold text-gray-900">Severity Temuan</h2>
+                    <span class="text-[11px] text-gray-500 tabular-nums">{{ totalFindingsCount }} total</span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center gap-6">
-                    <!-- SVG Donut Chart -->
-                    <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                <div class="flex flex-col sm:flex-row items-center gap-8">
+                    <div class="relative w-32 h-32 shrink-0">
                         <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
-                            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="11" />
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-100" />
                             <circle
                                 v-for="seg in severitySegments"
                                 :key="seg.key"
@@ -359,61 +362,42 @@ const topLossStores = computed(() => {
                                 r="38"
                                 fill="none"
                                 :stroke="seg.color"
-                                stroke-width="11"
+                                stroke-width="10"
                                 :stroke-dasharray="seg.dasharray"
                                 :stroke-dashoffset="seg.dashoffset"
                                 class="transition-all duration-500"
                             />
                         </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                            <span class="text-xl font-bold text-gray-900 leading-tight">{{ totalFindingsCount }}</span>
-                            <span class="text-[10px] uppercase font-semibold tracking-wider text-gray-400">Temuan</span>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-xl font-semibold text-gray-900 tabular-nums leading-none">{{ totalFindingsCount }}</span>
+                            <span class="text-[10px] text-gray-400 mt-1">temuan</span>
                         </div>
                     </div>
 
-                    <!-- Progress Bar Breakdown -->
-                    <div class="flex-1 w-full space-y-3">
-                        <div v-for="seg in severitySegments" :key="seg.key" class="space-y-1">
-                            <div class="flex items-center justify-between text-[11px]">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
-                                    <span class="font-medium text-gray-700 capitalize">{{ seg.key.toLowerCase() }}</span>
-                                </div>
-                                <div class="tabular-nums text-gray-900">
-                                    <span class="font-semibold">{{ seg.count }}</span>
-                                    <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
-                                </div>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                <div
-                                    class="h-full rounded-full transition-all duration-500"
-                                    :style="{ width: `${seg.percent}%`, backgroundColor: seg.color }"
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
+                    <ul class="flex-1 w-full divide-y divide-gray-100">
+                        <li v-for="seg in severitySegments" :key="seg.key" class="flex items-center justify-between py-2">
+                            <span class="flex items-center gap-2 text-gray-700">
+                                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                <span class="capitalize">{{ seg.key.toLowerCase() }}</span>
+                            </span>
+                            <span class="tabular-nums font-medium text-gray-900">
+                                {{ seg.count }}<span class="ml-2 font-normal text-gray-400">{{ seg.percent }}%</span>
+                            </span>
+                        </li>
+                    </ul>
                 </div>
-            </div>
+            </section>
 
-            <!-- Diagram 2: Distribusi Status Penyelesaian -->
-            <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-xs text-xs">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-                    <div>
-                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                            Distribusi Status Penyelesaian
-                        </h2>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Progres alur tindak lanjut dan penutupan temuan</p>
-                    </div>
-                    <span class="text-[11px] tabular-nums text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
-                        {{ calculatedCompletionRate }}% Selesai
-                    </span>
+            <section class="bg-white rounded-lg border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-sm font-semibold text-gray-900">Status Penyelesaian</h2>
+                    <span class="text-[11px] text-gray-500 tabular-nums">{{ calculatedCompletionRate }}% selesai</span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center gap-6">
-                    <!-- SVG Donut Chart -->
-                    <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                <div class="flex flex-col sm:flex-row items-center gap-8">
+                    <div class="relative w-32 h-32 shrink-0">
                         <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
-                            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="11" />
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-100" />
                             <circle
                                 v-for="seg in statusSegments"
                                 :key="seg.key"
@@ -423,198 +407,155 @@ const topLossStores = computed(() => {
                                 r="38"
                                 fill="none"
                                 :stroke="seg.color"
-                                stroke-width="11"
+                                stroke-width="10"
                                 :stroke-dasharray="seg.dasharray"
                                 :stroke-dashoffset="seg.dashoffset"
                                 class="transition-all duration-500"
                             />
                         </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                            <span class="text-xl font-bold text-emerald-700 leading-tight">{{ calculatedCompletionRate }}%</span>
-                            <span class="text-[10px] uppercase font-semibold tracking-wider text-gray-400">Ditutup</span>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-xl font-semibold text-gray-900 tabular-nums leading-none">{{ calculatedCompletionRate }}%</span>
+                            <span class="text-[10px] text-gray-400 mt-1">closed</span>
                         </div>
                     </div>
 
-                    <!-- Progress Bar Breakdown -->
-                    <div class="flex-1 w-full space-y-2.5">
-                        <div v-for="seg in statusSegments" :key="seg.key" class="space-y-1">
-                            <div class="flex items-center justify-between text-[11px]">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
-                                    <span class="font-medium text-gray-700">{{ seg.key.replace('_', ' ') }}</span>
-                                </div>
-                                <div class="tabular-nums text-gray-900">
-                                    <span class="font-semibold">{{ seg.count }}</span>
-                                    <span class="text-gray-400 text-[10px] ml-1">({{ seg.percent }}%)</span>
-                                </div>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                <div
-                                    class="h-full rounded-full transition-all duration-500"
-                                    :style="{ width: `${seg.percent}%`, backgroundColor: seg.color }"
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
+                    <ul class="flex-1 w-full divide-y divide-gray-100">
+                        <li v-for="seg in statusSegments" :key="seg.key" class="flex items-center justify-between py-2">
+                            <span class="flex items-center gap-2 text-gray-700">
+                                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                {{ statusLabels[seg.key] || seg.key }}
+                            </span>
+                            <span class="tabular-nums font-medium text-gray-900">
+                                {{ seg.count }}<span class="ml-2 font-normal text-gray-400">{{ seg.percent }}%</span>
+                            </span>
+                        </li>
+                    </ul>
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Visual Charts Row 2: Perbandingan Kerugian per Cabang & Kategori Audit -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 text-xs">
-            <!-- Diagram 3: Grafik Kerugian Cabang Terbesar (7 cols) -->
-            <div class="lg:col-span-7 bg-white rounded-lg border border-gray-200 p-5 shadow-xs">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-                    <div>
-                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                            Grafik Kerugian Finansial per Cabang
-                        </h2>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Perbandingan nominal kerugian toko dengan temuan audit tertinggi</p>
-                    </div>
-                    <span class="text-[11px] tabular-nums font-bold text-gray-900">
-                        {{ formatRupiah(total_loss) }}
-                    </span>
+        <!-- NBH per Cabang & Kategori Audit -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 text-xs">
+            <section class="lg:col-span-7 bg-white rounded-lg border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-sm font-semibold text-gray-900">NBH per Cabang</h2>
+                    <span class="text-[11px] text-gray-500">Top 5</span>
                 </div>
 
-                <div v-if="topLossStores.length > 0" class="space-y-3.5">
-                    <div v-for="store in topLossStores" :key="store.store_code" class="space-y-1.5">
-                        <div class="flex items-center justify-between text-[11px]">
-                            <div class="font-medium text-gray-900 truncate mr-2">
-                                {{ store.store_name }} <span class="text-gray-400 tabular-nums text-[10px]">({{ store.store_code }})</span>
-                            </div>
-                            <div class="tabular-nums font-bold text-gray-900 shrink-0">
-                                {{ formatRupiah(store.total_loss) }}
-                            </div>
+                <div v-if="topLossStores.length > 0" class="space-y-4">
+                    <div v-for="store in topLossStores" :key="store.store_code">
+                        <div class="flex items-center justify-between gap-3 mb-1.5">
+                            <span class="font-medium text-gray-900 truncate">
+                                {{ store.store_name }} <span class="font-normal text-gray-400 tabular-nums">{{ store.store_code }}</span>
+                            </span>
+                            <span class="tabular-nums font-semibold text-gray-900 shrink-0">{{ formatRupiah(store.total_loss) }}</span>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex items-center">
+                        <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                             <div
-                                class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+                                class="h-full rounded-full bg-rose-400 transition-all duration-500"
                                 :style="{ width: `${Math.max(5, (store.total_loss / maxStoreLoss) * 100)}%` }"
                             ></div>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-gray-400">
-                            <span>Area: {{ store.area || 'Retail' }}</span>
-                            <span>{{ store.total_findings }} temuan dari {{ store.total_audits }} audit</span>
-                        </div>
                     </div>
                 </div>
-                <div v-else class="py-8 text-center text-gray-400 italic">
-                    Belum ada data kerugian finansial cabang.
+                <div v-else class="py-8 text-center text-gray-400">
+                    Belum ada data NBH.
                 </div>
-            </div>
+            </section>
 
-            <!-- Diagram 4: Distribusi Kategori Audit (5 cols) -->
-            <div class="lg:col-span-5 bg-white rounded-lg border border-gray-200 p-5 shadow-xs">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-                    <div>
-                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                            Kategori Audit (CSA)
-                        </h2>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Sebaran temuan pada 3 fokus bidang audit</p>
-                    </div>
-                    <span class="text-[11px] tabular-nums text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                        {{ by_category.length }} Kategori
-                    </span>
+            <section class="lg:col-span-5 bg-white rounded-lg border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-sm font-semibold text-gray-900">Kategori Audit</h2>
                 </div>
 
-                <div v-if="by_category.length > 0" class="space-y-3">
-                    <div
+                <div v-if="by_category.length > 0" class="space-y-2.5">
+                    <button
                         v-for="cat in by_category"
                         :key="cat.id"
+                        type="button"
                         @click="setCategory(cat.id)"
-                        class="p-3 rounded-lg border transition-all cursor-pointer select-none space-y-2"
-                        :class="selectedCategory === String(cat.id) ? 'border-blue-500 bg-blue-50/70 ring-1 ring-blue-400 shadow-2xs' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-100/60'"
+                        class="w-full text-left p-3 rounded-lg border transition-colors cursor-pointer select-none"
+                        :class="selectedCategory === String(cat.id) ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'"
                     >
-                        <div class="flex items-center justify-between">
-                            <span class="font-semibold text-xs flex items-center gap-1.5" :class="selectedCategory === String(cat.id) ? 'text-blue-900 font-bold' : 'text-gray-900'">
-                                <span v-if="selectedCategory === String(cat.id)" class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                                {{ cat.name }}
-                            </span>
-                            <span class="font-bold tabular-nums text-xs" :class="selectedCategory === String(cat.id) ? 'text-blue-800' : 'text-blue-700'">{{ cat.count }} Temuan</span>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="font-medium text-gray-900">{{ cat.name }}</span>
+                            <span class="tabular-nums text-gray-500 shrink-0"><span class="font-semibold text-gray-900">{{ cat.count }}</span> temuan</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="mt-2 w-full bg-gray-100 rounded-full h-1 overflow-hidden">
                             <div
-                                class="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                class="h-full rounded-full bg-blue-500 transition-all duration-500"
                                 :style="{ width: `${totalFindingsCount > 0 ? (cat.count / totalFindingsCount) * 100 : 0}%` }"
                             ></div>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
-                            <span>Estimasi Kerugian:</span>
-                            <span class="tabular-nums font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span>
+                        <div class="mt-2 flex flex-wrap gap-x-4 text-[11px] text-gray-500 tabular-nums">
+                            <span>NBH <span class="font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span></span>
+                            <span>NBL <span class="font-medium text-gray-800">{{ formatRupiah(cat.total_surplus) }}</span></span>
                         </div>
-                    </div>
+                    </button>
                 </div>
-                <div v-else class="py-8 text-center text-gray-400 italic">
-                    Belum ada data kategori audit.
+                <div v-else class="py-8 text-center text-gray-400">
+                    Belum ada data kategori.
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Store Loss Ranking Table / List -->
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs text-xs">
-            <div class="p-3 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 bg-gray-50/50">
-                <div>
-                    <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Rekapitulasi Temuan & Kerugian per Cabang</h2>
-                    <p class="text-[10px] sm:text-[11px] text-gray-500">Peringkat kerugian retail berdasarkan hasil temuan audit</p>
-                </div>
-                <div class="text-[11px] sm:text-xs font-semibold text-gray-700">
-                    Total Loss: <span class="text-gray-900 font-bold text-xs sm:text-sm tabular-nums">{{ formatRupiah(total_loss) }}</span>
+        <!-- Rekap per Cabang -->
+        <section class="bg-white rounded-lg border border-gray-200 overflow-hidden text-xs">
+            <div class="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 class="text-sm font-semibold text-gray-900">Rekap per Cabang</h2>
+                <div class="flex flex-wrap items-center gap-x-4 text-[11px] text-gray-500 tabular-nums">
+                    <span>NBH <span class="font-semibold text-gray-900">{{ formatRupiah(total_loss) }}</span></span>
+                    <span>NBL <span class="font-semibold text-gray-900">{{ formatRupiah(total_surplus) }}</span></span>
                 </div>
             </div>
 
-            <!-- 1. Mobile List View (No horizontal scrolling) -->
+            <!-- Mobile list -->
             <div class="block md:hidden divide-y divide-gray-100">
-                <div v-if="store_losses.length === 0" class="p-5 text-center text-gray-400 text-xs">
-                    Belum ada data rekapitulasi cabang.
+                <div v-if="store_losses.length === 0" class="p-5 text-center text-gray-400">
+                    Belum ada data cabang.
                 </div>
-                <div
-                    v-for="s in store_losses"
-                    :key="'m-sl-coord-' + s.store_code"
-                    class="p-3.5 space-y-2 hover:bg-gray-50 transition-colors"
-                >
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ s.store_name }}</div>
-                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ s.store_code }} • Area: {{ s.area || '-' }}</div>
+                <div v-for="s in store_losses" :key="'m-sl-' + s.store_code" class="px-4 py-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="font-medium text-gray-900">{{ s.store_name }}</div>
+                            <div class="text-[11px] text-gray-400 tabular-nums mt-0.5">{{ s.store_code }} · {{ s.area || '-' }}</div>
                         </div>
-                        <div class="tabular-nums font-bold text-xs text-gray-900 shrink-0">
-                            {{ formatRupiah(s.total_loss) }}
+                        <div class="text-right tabular-nums shrink-0">
+                            <div class="font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</div>
+                            <div class="text-[11px] text-gray-500">NBL {{ formatRupiah(s.total_surplus) }}</div>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span>Total Audit: <strong class="text-gray-700 font-medium">{{ s.total_audits }} kali</strong></span>
-                        <span class="font-semibold text-slate-800">{{ s.total_findings }} temuan</span>
-                    </div>
+                    <div class="mt-1.5 text-[11px] text-gray-500 tabular-nums">{{ s.total_audits }} audit · {{ s.total_findings }} temuan</div>
                 </div>
             </div>
 
-            <!-- 2. Desktop Table View -->
+            <!-- Desktop table -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3">Kode & Nama Toko</th>
-                            <th class="px-5 py-3">Wilayah / Area</th>
-                            <th class="px-5 py-3">Total Audit</th>
-                            <th class="px-5 py-3">Total Temuan</th>
-                            <th class="px-5 py-3 text-right">Akumulasi Kerugian</th>
+                            <th class="px-5 py-3 font-medium">Toko</th>
+                            <th class="px-5 py-3 font-medium">Area</th>
+                            <th class="px-5 py-3 font-medium text-right">Audit</th>
+                            <th class="px-5 py-3 font-medium text-right">Temuan</th>
+                            <th class="px-5 py-3 font-medium text-right">NBH</th>
+                            <th class="px-5 py-3 font-medium text-right">NBL</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-100">
                         <tr v-for="s in store_losses" :key="s.store_code" class="hover:bg-gray-50/70">
-                            <td class="px-5 py-3.5 font-medium text-gray-900">
-                                {{ s.store_name }} <span class="text-gray-500 tabular-nums">({{ s.store_code }})</span>
+                            <td class="px-5 py-3 font-medium text-gray-900">
+                                {{ s.store_name }} <span class="font-normal text-gray-400 tabular-nums">{{ s.store_code }}</span>
                             </td>
-                            <td class="px-5 py-3.5 text-gray-700">{{ s.area || '-' }}</td>
-                            <td class="px-5 py-3.5 text-gray-700">{{ s.total_audits }} kali</td>
-                            <td class="px-5 py-3.5 font-semibold text-gray-900">{{ s.total_findings }} temuan</td>
-                            <td class="px-5 py-3.5 text-right font-bold tabular-nums text-gray-900">
-                                {{ formatRupiah(s.total_loss) }}
-                            </td>
+                            <td class="px-5 py-3 text-gray-600">{{ s.area || '-' }}</td>
+                            <td class="px-5 py-3 text-right tabular-nums text-gray-600">{{ s.total_audits }}</td>
+                            <td class="px-5 py-3 text-right tabular-nums font-medium text-gray-900">{{ s.total_findings }}</td>
+                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</td>
+                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_surplus) }}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </AppLayout>
 </template>

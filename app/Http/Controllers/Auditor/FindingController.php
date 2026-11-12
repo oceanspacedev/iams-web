@@ -36,6 +36,7 @@ class FindingController extends Controller
             'sop_id'          => 'nullable|exists:sops,id',
             'finding'         => 'required|string',
             'loss_amount'     => 'nullable|numeric|min:0',
+            'surplus_amount'  => 'nullable|numeric|min:0',
             'auditor_opinion' => 'nullable|string',
             'recommendation'  => 'required|string',
             'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
@@ -109,6 +110,7 @@ class FindingController extends Controller
                 'sop'                  => $finding->sop?->only(['code', 'title']),
                 'finding'              => $finding->finding,
                 'loss_amount'          => $finding->loss_amount,
+                'surplus_amount'       => $finding->surplus_amount,
                 'severity'             => $finding->severity,
                 'severity_status'      => $finding->severity_status,
                 'severity_reviewed_by' => $finding->severityReviewer?->name,
@@ -155,6 +157,7 @@ class FindingController extends Controller
             'sop_id'          => 'nullable|exists:sops,id',
             'finding'         => 'required|string',
             'loss_amount'     => 'nullable|numeric|min:0',
+            'surplus_amount'  => 'nullable|numeric|min:0',
             'auditor_opinion' => 'nullable|string',
             'recommendation'  => 'required|string',
         ];

@@ -46,9 +46,11 @@ class ReportController extends Controller
         $byCategory = AuditCategory::withCount('findings')
             ->get()
             ->map(fn ($cat) => [
-                'id'    => $cat->id,
-                'name'  => $cat->name,
-                'count' => $cat->findings_count,
+                'id'            => $cat->id,
+                'name'          => $cat->name,
+                'count'         => $cat->findings_count,
+                'total_loss'    => (float) $cat->findings()->sum('loss_amount'),
+                'total_surplus' => (float) $cat->findings()->sum('surplus_amount'),
             ]);
 
         // 3. Loss amount by Store
@@ -63,6 +65,7 @@ class ReportController extends Controller
                     });
                 }
                 $totalLoss = $findingQ->sum('loss_amount');
+                $totalSurplus = $findingQ->sum('surplus_amount');
                 $totalFindings = $findingQ->count();
                 return [
                     'store_code'     => $store->code,
@@ -71,6 +74,7 @@ class ReportController extends Controller
                     'total_audits'   => $store->audits->count(),
                     'total_findings' => $totalFindings,
                     'total_loss'     => (float) $totalLoss,
+                    'total_surplus'  => (float) $totalSurplus,
                 ];
             })
             ->sortByDesc('total_loss')
@@ -99,6 +103,7 @@ class ReportController extends Controller
             'store_losses'      => $storeLosses,
             'by_status'         => $byStatus,
             'total_loss'        => (float) ($baseFindingQuery()->sum('loss_amount') ?? 0),
+            'total_surplus'     => (float) ($baseFindingQuery()->sum('surplus_amount') ?? 0),
             'total_findings'    => $totalFindings,
             'completion_rate'   => $completionRate,
             'closed_on_time'    => $closedOnTime,

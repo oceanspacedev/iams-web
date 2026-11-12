@@ -57,7 +57,12 @@ class FindingForm
                             ->required()
                             ->native(false),
                         Forms\Components\TextInput::make('loss_amount')
-                            ->label('Nominal Kerugian (Rp)')
+                            ->label('NBH - Nilai Barang Hilang (Rp)')
+                            ->numeric()
+                            ->nullable()
+                            ->prefix('Rp'),
+                        Forms\Components\TextInput::make('surplus_amount')
+                            ->label('NBL - Nilai Barang Lebih (Rp)')
                             ->numeric()
                             ->nullable()
                             ->prefix('Rp'),

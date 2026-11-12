@@ -44,6 +44,7 @@ class FindingController extends Controller
                 'sop'             => $finding->sop?->only(['code', 'title']),
                 'finding'         => $finding->finding,
                 'loss_amount'     => $finding->loss_amount,
+                'surplus_amount'  => $finding->surplus_amount,
                 'severity'        => $finding->severity,
                 'status'          => $finding->status,
                 'auditor_opinion' => $finding->auditor_opinion,

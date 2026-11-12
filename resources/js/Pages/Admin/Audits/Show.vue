@@ -28,6 +28,7 @@ const findingForm = useForm({
     sop_id: '',
     finding: '',
     loss_amount: '',
+    surplus_amount: '',
     auditor_opinion: '',
     recommendation: '',
     severity: 'MINOR',
@@ -314,8 +315,9 @@ const sendNotificationNow = (notif) => {
                     <span>{{ finding.sop.code }} - {{ finding.sop.title }}</span>
                 </div>
 
-                <div v-if="finding.loss_amount > 0" class="pt-1 text-[11px] text-red-600 font-semibold">
-                    Estimasi Kerugian: {{ formatRupiah(finding.loss_amount) }}
+                <div v-if="finding.loss_amount > 0 || finding.surplus_amount > 0" class="pt-1 flex flex-wrap gap-x-4 text-[11px] font-semibold">
+                    <span v-if="finding.loss_amount > 0" class="text-red-600">NBH: {{ formatRupiah(finding.loss_amount) }}</span>
+                    <span v-if="finding.surplus_amount > 0" class="text-blue-700">NBL: {{ formatRupiah(finding.surplus_amount) }}</span>
                 </div>
             </div>
         </div>
@@ -383,7 +385,7 @@ const sendNotificationNow = (notif) => {
                         ></textarea>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block font-medium text-gray-700 mb-1">Tingkat Severity</label>
                             <select
@@ -398,12 +400,25 @@ const sendNotificationNow = (notif) => {
                         </div>
 
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">Estimasi Kerugian (Rp)</label>
+                            <label class="block font-medium text-gray-700 mb-1">NBH (Rp)</label>
                             <input
                                 v-model.number="findingForm.loss_amount"
                                 type="number"
                                 min="0"
                                 placeholder="0"
+                                title="Nilai Barang Hilang"
+                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1">NBL (Rp)</label>
+                            <input
+                                v-model.number="findingForm.surplus_amount"
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                title="Nilai Barang Lebih"
                                 class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             />
                         </div>

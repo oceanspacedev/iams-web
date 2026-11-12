@@ -59,9 +59,9 @@ class ReportExportService
             echo '<body>';
 
             echo '<table>';
-            echo '<tr><td colspan="23" class="title">LAPORAN REKAPITULASI TEMUAN AUDIT RETAIL</td></tr>';
-            echo '<tr><td colspan="23" style="color: #6b7280;">Waktu Ekspor: ' . date('d/m/Y H:i:s') . '</td></tr>';
-            echo '<tr><td colspan="23"></td></tr>';
+            echo '<tr><td colspan="24" class="title">LAPORAN REKAPITULASI TEMUAN AUDIT RETAIL</td></tr>';
+            echo '<tr><td colspan="24" style="color: #6b7280;">Waktu Ekspor: ' . date('d/m/Y H:i:s') . '</td></tr>';
+            echo '<tr><td colspan="24"></td></tr>';
             echo '<tr>';
             echo '<th>No</th>';
             echo '<th>Nomor Audit</th>';
@@ -76,7 +76,8 @@ class ReportExportService
             echo '<th>Status Review Severity</th>';
             echo '<th>Direview Oleh</th>';
             echo '<th>Catatan Review Koordinator</th>';
-            echo '<th>Nominal Kerugian (Rp)</th>';
+            echo '<th>NBH - Nilai Barang Hilang (Rp)</th>';
+            echo '<th>NBL - Nilai Barang Lebih (Rp)</th>';
             echo '<th>Uraian Temuan</th>';
             echo '<th>Opini Auditor</th>';
             echo '<th>Rekomendasi</th>';
@@ -112,6 +113,7 @@ class ReportExportService
                 echo '<td>' . htmlspecialchars($reviewer) . '</td>';
                 echo '<td>' . htmlspecialchars($f->severity_notes ?? '-') . '</td>';
                 echo '<td class="number">' . number_format((float) $f->loss_amount, 0, ',', '.') . '</td>';
+                echo '<td class="number">' . number_format((float) $f->surplus_amount, 0, ',', '.') . '</td>';
                 echo '<td>' . nl2br(htmlspecialchars($f->finding)) . '</td>';
                 echo '<td>' . nl2br(htmlspecialchars($f->auditor_opinion ?? '-')) . '</td>';
                 echo '<td>' . nl2br(htmlspecialchars($f->recommendation ?? '-')) . '</td>';
@@ -135,7 +137,7 @@ class ReportExportService
      */
     public function exportStores(?string $categoryId = null): StreamedResponse
     {
-        $filename = 'Rekapitulasi_Kerugian_Toko_' . date('Y-m-d_His') . '.xls';
+        $filename = 'Rekapitulasi_NBH_NBL_Toko_' . date('Y-m-d_His') . '.xls';
 
         $headers = [
             'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
@@ -164,9 +166,9 @@ class ReportExportService
             echo '<body>';
 
             echo '<table>';
-            echo '<tr><td colspan="9" class="title">REKAPITULASI KERUGIAN & HASIL AUDIT PER CABANG TOKO</td></tr>';
-            echo '<tr><td colspan="9" style="color: #6b7280;">Waktu Ekspor: ' . date('d/m/Y H:i:s') . '</td></tr>';
-            echo '<tr><td colspan="9"></td></tr>';
+            echo '<tr><td colspan="10" class="title">REKAPITULASI NBH, NBL & HASIL AUDIT PER CABANG TOKO</td></tr>';
+            echo '<tr><td colspan="10" style="color: #6b7280;">Waktu Ekspor: ' . date('d/m/Y H:i:s') . '</td></tr>';
+            echo '<tr><td colspan="10"></td></tr>';
             echo '<tr>';
             echo '<th>No</th>';
             echo '<th>Kode Toko</th>';
@@ -176,11 +178,13 @@ class ReportExportService
             echo '<th>Total Temuan</th>';
             echo '<th>Temuan Open / In Progress</th>';
             echo '<th>Temuan Closed / Selesai</th>';
-            echo '<th>Total Akumulasi Kerugian (Rp)</th>';
+            echo '<th>Total Akumulasi NBH (Rp)</th>';
+            echo '<th>Total Akumulasi NBL (Rp)</th>';
             echo '</tr>';
 
             $no = 1;
             $grandTotalLoss = 0;
+            $grandTotalSurplus = 0;
             $grandTotalAudits = 0;
             $grandTotalFindings = 0;
 
@@ -192,10 +196,12 @@ class ReportExportService
                     });
                 }
                 $totalLoss = (float) $allFindings->sum('loss_amount');
+                $totalSurplus = (float) $allFindings->sum('surplus_amount');
                 $openCount = $allFindings->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS, Finding::STATUS_WAITING_VERIFICATION])->count();
                 $closedCount = $allFindings->whereIn('status', [Finding::STATUS_VERIFIED, Finding::STATUS_CLOSED])->count();
 
                 $grandTotalLoss += $totalLoss;
+                $grandTotalSurplus += $totalSurplus;
                 $grandTotalAudits += $s->audits->count();
                 $grandTotalFindings += $allFindings->count();
 
@@ -209,6 +215,7 @@ class ReportExportService
                 echo '<td class="center">' . $openCount . '</td>';
                 echo '<td class="center">' . $closedCount . '</td>';
                 echo '<td class="number font-bold">' . number_format($totalLoss, 0, ',', '.') . '</td>';
+                echo '<td class="number font-bold">' . number_format($totalSurplus, 0, ',', '.') . '</td>';
                 echo '</tr>';
             }
 
@@ -218,6 +225,7 @@ class ReportExportService
             echo '<td class="center">' . $grandTotalFindings . '</td>';
             echo '<td colspan="2"></td>';
             echo '<td class="number" style="color: #991b1b;">' . number_format($grandTotalLoss, 0, ',', '.') . '</td>';
+            echo '<td class="number" style="color: #1E3A8A;">' . number_format($grandTotalSurplus, 0, ',', '.') . '</td>';
             echo '</tr>';
 
             echo '</table>';
@@ -322,11 +330,15 @@ class ReportExportService
             }
             echo '<tr><td colspan="2"></td></tr>';
 
-            // 4. Total Loss
-            echo '<tr><td colspan="2" class="header-section">4. TOTAL KERUGIAN FINANSIAL (LOSS AMOUNT)</td></tr>';
+            // 4. Total NBH & NBL
+            echo '<tr><td colspan="2" class="header-section">4. TOTAL NBH (NILAI BARANG HILANG) & NBL (NILAI BARANG LEBIH)</td></tr>';
             echo '<tr>';
-            echo '<td>Total Kerugian Nasional (Rp)</td>';
+            echo '<td>Total NBH Nasional (Rp)</td>';
             echo '<td class="number" style="color: #991b1b; font-size: 11pt;">Rp ' . number_format((float) $baseFindingQuery()->sum('loss_amount'), 0, ',', '.') . '</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td>Total NBL Nasional (Rp)</td>';
+            echo '<td class="number" style="color: #1E3A8A; font-size: 11pt;">Rp ' . number_format((float) $baseFindingQuery()->sum('surplus_amount'), 0, ',', '.') . '</td>';
             echo '</tr>';
 
             echo '</table>';

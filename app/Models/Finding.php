@@ -18,6 +18,7 @@ class Finding extends Model
         'sop_id',
         'finding',
         'loss_amount',
+        'surplus_amount',
         'auditor_opinion',
         'recommendation',
         'severity',
@@ -31,6 +32,7 @@ class Finding extends Model
 
     protected $casts = [
         'loss_amount'          => 'decimal:2',
+        'surplus_amount'       => 'decimal:2',
         'severity'             => 'string',
         'severity_status'      => 'string',
         'is_severity_locked'   => 'boolean',

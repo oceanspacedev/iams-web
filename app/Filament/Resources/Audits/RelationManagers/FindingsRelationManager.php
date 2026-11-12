@@ -46,7 +46,12 @@ class FindingsRelationManager extends RelationManager
                             ->rows(3)
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('loss_amount')
-                            ->label('Nominal Kerugian (Rp)')
+                            ->label('NBH - Nilai Barang Hilang (Rp)')
+                            ->numeric()
+                            ->nullable()
+                            ->prefix('Rp'),
+                        Forms\Components\TextInput::make('surplus_amount')
+                            ->label('NBL - Nilai Barang Lebih (Rp)')
                             ->numeric()
                             ->nullable()
                             ->prefix('Rp'),
@@ -83,7 +88,11 @@ class FindingsRelationManager extends RelationManager
                     ->label('Temuan')
                     ->limit(60),
                 TextColumn::make('loss_amount')
-                    ->label('Kerugian')
+                    ->label('NBH')
+                    ->money('IDR')
+                    ->placeholder('—'),
+                TextColumn::make('surplus_amount')
+                    ->label('NBL')
                     ->money('IDR')
                     ->placeholder('—'),
                 TextColumn::make('severity')

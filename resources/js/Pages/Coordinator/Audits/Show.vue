@@ -292,8 +292,9 @@ const sendNotificationNow = (notif) => {
                     <span>{{ finding.sop.code }} - {{ finding.sop.title }}</span>
                 </div>
 
-                <div v-if="finding.loss_amount > 0" class="pt-1 text-[11px] text-red-600 font-semibold">
-                    Estimasi Kerugian: {{ formatRupiah(finding.loss_amount) }}
+                <div v-if="finding.loss_amount > 0 || finding.surplus_amount > 0" class="pt-1 flex flex-wrap gap-x-4 text-[11px] font-semibold">
+                    <span v-if="finding.loss_amount > 0" class="text-red-600">NBH: {{ formatRupiah(finding.loss_amount) }}</span>
+                    <span v-if="finding.surplus_amount > 0" class="text-blue-700">NBL: {{ formatRupiah(finding.surplus_amount) }}</span>
                 </div>
             </div>
         </div>

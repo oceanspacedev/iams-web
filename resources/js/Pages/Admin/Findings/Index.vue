@@ -194,8 +194,10 @@ const deleteFinding = (finding) => {
                             {{ f.category }}
                         </span>
                         <SeverityBadge :severity="f.severity" />
-                        <span v-if="f.loss_amount > 0" class="tabular-nums text-[11px] font-semibold text-red-700 ml-auto">
-                            {{ formatRupiah(f.loss_amount) }}
+                        <span v-if="f.loss_amount > 0 || f.surplus_amount > 0" class="tabular-nums text-[11px] font-semibold ml-auto text-right">
+                            <span v-if="f.loss_amount > 0" class="text-red-700">NBH {{ formatRupiah(f.loss_amount) }}</span>
+                            <span v-if="f.loss_amount > 0 && f.surplus_amount > 0" class="text-gray-300"> · </span>
+                            <span v-if="f.surplus_amount > 0" class="text-blue-700">NBL {{ formatRupiah(f.surplus_amount) }}</span>
                         </span>
                     </div>
 
@@ -233,7 +235,8 @@ const deleteFinding = (finding) => {
                             <th class="px-4 py-3 whitespace-nowrap w-44">No. Audit & Toko</th>
                             <th class="px-4 py-3 min-w-[240px]">Kategori & Temuan</th>
                             <th class="px-4 py-3 whitespace-nowrap text-center w-28">Severity</th>
-                            <th class="px-4 py-3 whitespace-nowrap w-36">Nominal Kerugian</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-32">NBH</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-32">NBL</th>
                             <th class="px-4 py-3 min-w-[220px]">Komitmen Tindak Lanjut</th>
                             <th class="px-4 py-3 whitespace-nowrap text-center w-28">Status</th>
                             <th class="px-4 py-3 whitespace-nowrap text-right w-32">Aksi</th>
@@ -241,7 +244,7 @@ const deleteFinding = (finding) => {
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
                         <tr v-if="filteredFindings.length === 0">
-                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">
+                            <td colspan="8" class="px-4 py-10 text-center text-gray-500">
                                 Tidak ada data temuan yang sesuai filter.
                             </td>
                         </tr>
@@ -273,6 +276,10 @@ const deleteFinding = (finding) => {
 
                             <td class="px-4 py-3 align-top whitespace-nowrap font-medium text-gray-900 tabular-nums text-[11px]">
                                 {{ formatRupiah(f.loss_amount) }}
+                            </td>
+
+                            <td class="px-4 py-3 align-top whitespace-nowrap font-medium text-gray-900 tabular-nums text-[11px]">
+                                {{ formatRupiah(f.surplus_amount) }}
                             </td>
 
                             <td class="px-4 py-3 align-top">

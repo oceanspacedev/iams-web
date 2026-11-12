@@ -50,7 +50,7 @@ const formatRupiah = (number) => {
         </div>
 
         <!-- Metrics Overview Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
             <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
                 <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Audits</div>
                 <div class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ stats.total_audits }}</div>
@@ -94,14 +94,21 @@ const formatRupiah = (number) => {
                 </div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200 col-span-2 sm:col-span-1">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Kerugian</div>
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200" title="Nilai Barang Hilang">
+                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBH</div>
                 <div class="text-xs sm:text-sm font-bold text-gray-900 mt-1 sm:mt-2 truncate">{{ formatRupiah(stats.total_loss_amount) }}</div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Nilai Barang Hilang</div>
+            </div>
+
+            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200" title="Nilai Barang Lebih">
+                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBL</div>
+                <div class="text-xs sm:text-sm font-bold text-gray-900 mt-1 sm:mt-2 truncate">{{ formatRupiah(stats.total_surplus_amount) }}</div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Nilai Barang Lebih</div>
             </div>
         </div>
 
         <!-- 2 Column Tables: Recent Audits & Recent Findings -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+        <div class="grid grid-cols-1 2xl:grid-cols-2 gap-5 sm:gap-6">
             <!-- Recent Audits Table / List -->
             <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-2xs">
                 <div class="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex items-center justify-between">
@@ -159,7 +166,7 @@ const formatRupiah = (number) => {
                                 </td>
                                 <td class="px-4 py-2.5 font-medium text-gray-900">{{ a.store }}</td>
                                 <td class="px-4 py-2.5 text-gray-600">{{ a.auditor }}</td>
-                                <td class="px-4 py-2.5"><StatusBadge :status="a.status" /></td>
+                                <td class="px-4 py-2.5 whitespace-nowrap"><StatusBadge :status="a.status" /></td>
                             </tr>
                         </tbody>
                     </table>
@@ -198,7 +205,11 @@ const formatRupiah = (number) => {
                         </div>
                         <div class="mt-2 flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-100">
                             <SeverityBadge :severity="f.severity" />
-                            <span class="font-semibold text-gray-800 text-[11px]">{{ formatRupiah(f.loss_amount) }}</span>
+                            <span class="font-semibold text-gray-800 text-[11px] text-right">
+                                NBH {{ formatRupiah(f.loss_amount) }}
+                                <span class="text-gray-300">·</span>
+                                NBL {{ formatRupiah(f.surplus_amount) }}
+                            </span>
                         </div>
                     </Link>
                 </div>
@@ -210,13 +221,14 @@ const formatRupiah = (number) => {
                             <tr>
                                 <th class="px-4 py-2.5">Toko & Kategori</th>
                                 <th class="px-4 py-2.5">Severity</th>
-                                <th class="px-4 py-2.5">Kerugian</th>
+                                <th class="px-4 py-2.5">NBH</th>
+                                <th class="px-4 py-2.5">NBL</th>
                                 <th class="px-4 py-2.5">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             <tr v-if="recent_findings.length === 0">
-                                <td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada temuan audit.</td>
+                                <td colspan="5" class="px-4 py-6 text-center text-gray-500">Belum ada temuan audit.</td>
                             </tr>
                             <tr v-for="f in recent_findings" :key="f.id" class="hover:bg-gray-50/70">
                                 <td class="px-4 py-2.5">
@@ -225,9 +237,10 @@ const formatRupiah = (number) => {
                                     </Link>
                                     <div class="text-[10px] text-gray-500">{{ f.category }}</div>
                                 </td>
-                                <td class="px-4 py-2.5"><SeverityBadge :severity="f.severity" /></td>
-                                <td class="px-4 py-2.5 font-medium text-gray-800">{{ formatRupiah(f.loss_amount) }}</td>
-                                <td class="px-4 py-2.5"><StatusBadge :status="f.status" /></td>
+                                <td class="px-4 py-2.5 whitespace-nowrap"><SeverityBadge :severity="f.severity" /></td>
+                                <td class="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{{ formatRupiah(f.loss_amount) }}</td>
+                                <td class="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{{ formatRupiah(f.surplus_amount) }}</td>
+                                <td class="px-4 py-2.5 whitespace-nowrap"><StatusBadge :status="f.status" /></td>
                             </tr>
                         </tbody>
                     </table>

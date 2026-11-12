@@ -486,9 +486,15 @@ const deleteEvidence = (evidenceId) => {
                         <div class="font-semibold text-gray-900 mt-0.5">{{ finding.store.name }} ({{ finding.store.code }})</div>
                     </div>
 
-                    <div>
-                        <div class="text-gray-500">Nominal Kerugian</div>
-                        <div class="text-base font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="text-gray-500">NBH (Nilai Barang Hilang)</div>
+                            <div class="text-base font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">NBL (Nilai Barang Lebih)</div>
+                            <div class="text-base font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.surplus_amount) }}</div>
+                        </div>
                     </div>
 
                     <div>

@@ -400,9 +400,15 @@ const closeFinding = () => {
                         <div v-if="finding.auditor.phone" class="text-[11px] text-gray-500 tabular-nums">{{ finding.auditor.phone }}</div>
                     </div>
 
-                    <div>
-                        <div class="text-gray-400">Nominal Kerugian:</div>
-                        <div class="text-sm font-bold text-gray-900 tabular-nums mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="text-gray-400">NBH (Nilai Barang Hilang):</div>
+                            <div class="text-sm font-bold text-gray-900 tabular-nums mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">NBL (Nilai Barang Lebih):</div>
+                            <div class="text-sm font-bold text-gray-900 tabular-nums mt-0.5">{{ formatRupiah(finding.surplus_amount) }}</div>
+                        </div>
                     </div>
 
                     <div>

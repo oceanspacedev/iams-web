@@ -286,9 +286,15 @@ const deleteFinding = () => {
                         <div class="font-semibold text-gray-900 mt-0.5">{{ finding.store.name }} ({{ finding.store.code }})</div>
                     </div>
 
-                    <div>
-                        <span class="text-gray-400 font-medium">Nominal Kerugian:</span>
-                        <div class="tabular-nums font-bold text-gray-900 text-sm mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-gray-400 font-medium">NBH (Nilai Barang Hilang):</span>
+                            <div class="tabular-nums font-bold text-gray-900 text-sm mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-medium">NBL (Nilai Barang Lebih):</span>
+                            <div class="tabular-nums font-bold text-gray-900 text-sm mt-0.5">{{ formatRupiah(finding.surplus_amount) }}</div>
+                        </div>
                     </div>
 
                     <div>

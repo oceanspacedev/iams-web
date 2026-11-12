@@ -22,6 +22,7 @@ const form = useForm({
     sop_id: '',
     finding: '',
     loss_amount: '',
+    surplus_amount: '',
     auditor_opinion: '',
     recommendation: '',
     severity: 'MINOR',
@@ -153,22 +154,40 @@ const submit = () => {
                     </button>
                 </div>
 
-                <!-- Row 2: Loss amount -->
-                <div class="max-w-xs">
-                    <label class="block font-medium text-gray-700 mb-1.5">
-                        Nominal Kerugian (Rp)
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
-                        <input
-                            v-model="form.loss_amount"
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
+                <!-- Row 2: NBH (Nilai Barang Hilang) & NBL (Nilai Barang Lebih) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1.5">
+                            NBH - Nilai Barang Hilang (Rp)
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
+                            <input
+                                v-model="form.loss_amount"
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div v-if="form.errors.loss_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.loss_amount }}</div>
                     </div>
-                    <div v-if="form.errors.loss_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.loss_amount }}</div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1.5">
+                            NBL - Nilai Barang Lebih (Rp)
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
+                            <input
+                                v-model="form.surplus_amount"
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div v-if="form.errors.surplus_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.surplus_amount }}</div>
+                    </div>
                 </div>
 
                 <!-- Row 3: Finding Description -->

@@ -27,6 +27,7 @@ class DashboardController extends Controller
         $closedOverdue = Finding::closedOverdue()->count();
         $overdueFindings = Finding::overdue()->count();
         $totalLossAmount = Finding::sum('loss_amount') ?? 0;
+        $totalSurplusAmount = Finding::sum('surplus_amount') ?? 0;
 
         $recentAudits = Audit::with(['store', 'auditor'])
             ->withCount('findings')
@@ -53,8 +54,9 @@ class DashboardController extends Controller
                 'store'        => $f->audit?->store?->name ?? '—',
                 'category'     => $f->category?->name ?? '—',
                 'finding'      => \Str::limit($f->finding, 50),
-                'loss_amount'  => $f->loss_amount,
-                'severity'     => $f->severity,
+                'loss_amount'    => $f->loss_amount,
+                'surplus_amount' => $f->surplus_amount,
+                'severity'       => $f->severity,
                 'status'       => $f->status,
             ]);
 
@@ -71,6 +73,7 @@ class DashboardController extends Controller
                 'closed_overdue'       => $closedOverdue,
                 'overdue_findings'     => $overdueFindings,
                 'total_loss_amount'    => $totalLossAmount,
+                'total_surplus_amount' => $totalSurplusAmount,
             ],
             'recent_audits'   => $recentAudits,
             'recent_findings' => $recentFindings,

@@ -388,9 +388,15 @@ const deleteDoc = (docId) => {
 
                     <!-- Right Column: Meta, Loss, SOP, Action Plan Status -->
                     <div class="border-t md:border-t-0 md:border-l md:border-gray-100 md:pl-6 space-y-3">
-                        <div>
-                            <div class="text-gray-500 font-medium">Nominal Kerugian</div>
-                            <div class="text-sm font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-gray-500 font-medium">NBH (Nilai Barang Hilang)</div>
+                                <div class="text-sm font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 font-medium">NBL (Nilai Barang Lebih)</div>
+                                <div class="text-sm font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.surplus_amount) }}</div>
+                            </div>
                         </div>
 
                         <div>

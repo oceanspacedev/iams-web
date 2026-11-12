@@ -31,7 +31,12 @@ class FindingsTable
                     ->label('Temuan')
                     ->limit(50),
                 TextColumn::make('loss_amount')
-                    ->label('Kerugian')
+                    ->label('NBH')
+                    ->money('IDR')
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('surplus_amount')
+                    ->label('NBL')
                     ->money('IDR')
                     ->placeholder('—')
                     ->sortable(),

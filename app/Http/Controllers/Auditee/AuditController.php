@@ -65,6 +65,7 @@ class AuditController extends Controller
                     'sop'           => $f->sop?->only(['code', 'title']),
                     'finding'       => $f->finding,
                     'loss_amount'   => $f->loss_amount,
+                    'surplus_amount' => $f->surplus_amount,
                     'severity'      => $f->severity,
                     'status'        => $f->status,
                     'opinion'       => $f->auditor_opinion,

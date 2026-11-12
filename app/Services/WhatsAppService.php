@@ -126,6 +126,7 @@ class WhatsAppService
         foreach ($store->auditees as $auditee) {
             if (!empty($auditee->phone)) {
                 $loss = $finding->loss_amount > 0 ? "Rp " . number_format($finding->loss_amount, 0, ',', '.') : "-";
+                $surplus = $finding->surplus_amount > 0 ? "Rp " . number_format($finding->surplus_amount, 0, ',', '.') : "-";
 
                 $msg = "⚠️ *TEMUAN AUDIT BARU (FINDING)*\n\n"
                     . "Halo *{$auditee->name}* ({$store->name}),\n"
@@ -133,7 +134,8 @@ class WhatsAppService
                     . "• *No. Audit:* {$finding->audit->audit_number}\n"
                     . "• *Kategori:* {$finding->category->name}\n"
                     . "• *Severity:* [{$finding->severity}]\n"
-                    . "• *Estimasi Kerugian:* {$loss}\n"
+                    . "• *NBH (Nilai Barang Hilang):* {$loss}\n"
+                    . "• *NBL (Nilai Barang Lebih):* {$surplus}\n"
                     . "• *Temuan:* {$finding->finding}\n"
                     . "• *Rekomendasi:* {$finding->recommendation}\n\n"
                     . "Mohon segera mengisi *Action Plan & Target Deadline* di portal Toko.\n"
