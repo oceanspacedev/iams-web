@@ -2,6 +2,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { qualityCategoryColor } from '@/Utils/qualityCategoryColors';
 
 const props = defineProps({
     findings: {
@@ -79,54 +80,7 @@ watch(
     }
 );
 
-const getCardTheme = (key, isChecked) => {
-    const themes = {
-        impact_50m: {
-            container: isChecked
-                ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500 shadow-xs border-t-4 border-t-emerald-600'
-                : 'border-emerald-200/90 bg-emerald-50/30 hover:border-emerald-400 hover:bg-emerald-50/60 border-t-4 border-t-emerald-500/70',
-            checkbox: 'text-emerald-600 focus:ring-emerald-500',
-            badge: isChecked ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 border border-emerald-300',
-            title: 'text-emerald-950',
-            desc: 'text-emerald-800/90',
-        },
-        fraud_risk: {
-            container: isChecked
-                ? 'border-rose-600 bg-rose-50/80 ring-2 ring-rose-500 shadow-xs border-t-4 border-t-rose-600'
-                : 'border-rose-200/90 bg-rose-50/30 hover:border-rose-400 hover:bg-rose-50/60 border-t-4 border-t-rose-500/70',
-            checkbox: 'text-rose-600 focus:ring-rose-500',
-            badge: isChecked ? 'bg-rose-700 text-white' : 'bg-rose-100 text-rose-800 border border-rose-300',
-            title: 'text-rose-950',
-            desc: 'text-rose-800/90',
-        },
-        system_control: {
-            container: isChecked
-                ? 'border-indigo-600 bg-indigo-50/80 ring-2 ring-indigo-500 shadow-xs border-t-4 border-t-indigo-600'
-                : 'border-indigo-200/90 bg-indigo-50/30 hover:border-indigo-400 hover:bg-indigo-50/60 border-t-4 border-t-indigo-500/70',
-            checkbox: 'text-indigo-600 focus:ring-indigo-500',
-            badge: isChecked ? 'bg-indigo-700 text-white' : 'bg-indigo-100 text-indigo-800 border border-indigo-300',
-            title: 'text-indigo-950',
-            desc: 'text-indigo-800/90',
-        },
-        org_structure: {
-            container: isChecked
-                ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-500 shadow-xs border-t-4 border-t-amber-600'
-                : 'border-amber-200/90 bg-amber-50/30 hover:border-amber-400 hover:bg-amber-50/60 border-t-4 border-t-amber-500/70',
-            checkbox: 'text-amber-600 focus:ring-amber-500',
-            badge: isChecked ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-800 border border-amber-300',
-            title: 'text-amber-950',
-            desc: 'text-amber-800/90',
-        },
-    };
-
-    return themes[key] || {
-        container: isChecked ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-600' : 'border-gray-200 hover:border-gray-300 bg-white',
-        checkbox: 'text-blue-600 focus:ring-blue-500',
-        badge: 'bg-slate-100 text-slate-800',
-        title: 'text-gray-900',
-        desc: 'text-gray-500',
-    };
-};
+const categoryColor = qualityCategoryColor;
 
 const selectedFindingObj = computed(() => {
     return props.findings.find(f => f.id === Number(form.finding_id));
@@ -203,29 +157,22 @@ const submit = () => {
                             v-for="(cat, key) in categories"
                             :key="key"
                             @click="toggleCategory(key)"
-                            class="p-4 rounded-xl border cursor-pointer transition-all flex items-start gap-3.5 select-none"
-                            :class="getCardTheme(key, form.quality_categories.includes(key)).container"
+                            class="p-4 rounded-lg border cursor-pointer transition-colors flex items-start gap-3 select-none"
+                            :class="form.quality_categories.includes(key) ? categoryColor(key).selected : categoryColor(key).card"
                         >
-                            <div class="flex items-center h-5 mt-0.5">
-                                <input
-                                    type="checkbox"
-                                    :value="key"
-                                    :checked="form.quality_categories.includes(key)"
-                                    @click.stop="toggleCategory(key)"
-                                    class="h-4 w-4 rounded border-gray-300 cursor-pointer"
-                                    :class="getCardTheme(key, form.quality_categories.includes(key)).checkbox"
-                                />
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="font-bold text-xs" :class="getCardTheme(key, form.quality_categories.includes(key)).title">
-                                        {{ cat.label }}
-                                    </div>
-                                    <span class="tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs" :class="getCardTheme(key, form.quality_categories.includes(key)).badge">
-                                        {{ cat.code }}
-                                    </span>
+                            <input
+                                type="checkbox"
+                                :value="key"
+                                :checked="form.quality_categories.includes(key)"
+                                @click.stop="toggleCategory(key)"
+                                class="mt-0.5 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                                :class="categoryColor(key).checkbox"
+                            />
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-xs" :class="categoryColor(key).label">
+                                    {{ cat.label }}
                                 </div>
-                                <p class="text-[11px] leading-relaxed" :class="getCardTheme(key, form.quality_categories.includes(key)).desc">
+                                <p class="mt-1 text-[11px] leading-relaxed" :class="categoryColor(key).desc">
                                     {{ cat.description }}
                                 </p>
                             </div>

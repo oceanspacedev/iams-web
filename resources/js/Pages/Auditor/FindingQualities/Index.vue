@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Pagination from '@/Components/Pagination.vue';
+import { qualityCategoryColor } from '@/Utils/qualityCategoryColors';
 
 const props = defineProps({
     qualityFindings: {
@@ -64,59 +65,7 @@ const paginatedQualityFindings = computed(() => {
     const start = (currentPage.value - 1) * 10;
     return props.qualityFindings.slice(start, start + 10);
 });
-const getCategoryTheme = (key, isSelected) => {
-    const themes = {
-        impact_50m: {
-            card: isSelected
-                ? 'bg-emerald-700 text-white border-emerald-800 shadow-md ring-2 ring-emerald-500'
-                : 'bg-emerald-50/70 text-emerald-950 border-emerald-200 hover:border-emerald-400 hover:bg-emerald-100/60 shadow-2xs',
-            code: isSelected ? 'text-emerald-100 bg-emerald-800/80 border-emerald-600' : 'text-emerald-700 bg-emerald-100/80 border-emerald-200',
-            badge: isSelected ? 'bg-white text-emerald-900 font-bold' : 'bg-emerald-600 text-white',
-            title: isSelected ? 'text-white' : 'text-emerald-950',
-            desc: isSelected ? 'text-emerald-100' : 'text-emerald-800/90',
-            borderTop: 'border-t-4 border-t-emerald-500',
-        },
-        fraud_risk: {
-            card: isSelected
-                ? 'bg-rose-700 text-white border-rose-800 shadow-md ring-2 ring-rose-500'
-                : 'bg-rose-50/70 text-rose-950 border-rose-200 hover:border-rose-400 hover:bg-rose-100/60 shadow-2xs',
-            code: isSelected ? 'text-rose-100 bg-rose-800/80 border-rose-600' : 'text-rose-700 bg-rose-100/80 border-rose-200',
-            badge: isSelected ? 'bg-white text-rose-900 font-bold' : 'bg-rose-600 text-white',
-            title: isSelected ? 'text-white' : 'text-rose-950',
-            desc: isSelected ? 'text-rose-100' : 'text-rose-800/90',
-            borderTop: 'border-t-4 border-t-rose-500',
-        },
-        system_control: {
-            card: isSelected
-                ? 'bg-indigo-700 text-white border-indigo-800 shadow-md ring-2 ring-indigo-500'
-                : 'bg-indigo-50/70 text-indigo-950 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-100/60 shadow-2xs',
-            code: isSelected ? 'text-indigo-100 bg-indigo-800/80 border-indigo-600' : 'text-indigo-700 bg-indigo-100/80 border-indigo-200',
-            badge: isSelected ? 'bg-white text-indigo-900 font-bold' : 'bg-indigo-600 text-white',
-            title: isSelected ? 'text-white' : 'text-indigo-950',
-            desc: isSelected ? 'text-indigo-100' : 'text-indigo-800/90',
-            borderTop: 'border-t-4 border-t-indigo-500',
-        },
-        org_structure: {
-            card: isSelected
-                ? 'bg-amber-700 text-white border-amber-800 shadow-md ring-2 ring-amber-500'
-                : 'bg-amber-50/70 text-amber-950 border-amber-200 hover:border-amber-400 hover:bg-amber-100/60 shadow-2xs',
-            code: isSelected ? 'text-amber-100 bg-amber-800/80 border-amber-600' : 'text-amber-700 bg-amber-100/80 border-amber-200',
-            badge: isSelected ? 'bg-white text-amber-900 font-bold' : 'bg-amber-600 text-white',
-            title: isSelected ? 'text-white' : 'text-amber-950',
-            desc: isSelected ? 'text-amber-100' : 'text-amber-800/90',
-            borderTop: 'border-t-4 border-t-amber-500',
-        },
-    };
-
-    return themes[key] || {
-        card: isSelected ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-gray-800 border-gray-200',
-        code: 'text-slate-600 bg-slate-100 border-slate-200',
-        badge: 'bg-slate-800 text-white',
-        title: isSelected ? 'text-white' : 'text-gray-900',
-        desc: isSelected ? 'text-slate-300' : 'text-gray-500',
-        borderTop: 'border-t-4 border-t-slate-400',
-    };
-};
+const categoryColor = qualityCategoryColor;
 </script>
 
 <template>
@@ -140,44 +89,26 @@ const getCategoryTheme = (key, isSelected) => {
             </Link>
         </div>
 
-        <!-- 4 Pilar KPI Cards (Berwarna Berbeda & Elegan) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- 4 Kategori Finding Quality (klik untuk filter) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <button
                 v-for="(cat, key) in categories"
                 :key="key"
+                type="button"
                 @click="filterByCategory(key)"
-                class="text-left p-4 rounded-xl border transition-all text-xs cursor-pointer select-none relative overflow-hidden"
-                :class="[
-                    getCategoryTheme(key, selectedCategory === key).card,
-                    getCategoryTheme(key, selectedCategory === key).borderTop
-                ]"
+                class="flex flex-col text-left p-4 rounded-lg border transition-colors text-xs cursor-pointer select-none"
+                :class="selectedCategory === key ? categoryColor(key).selected : categoryColor(key).card"
             >
-                <div class="flex items-center justify-between mb-2">
-                    <span
-                        class="tabular-nums text-[11px] font-bold px-2 py-0.5 rounded border"
-                        :class="getCategoryTheme(key, selectedCategory === key).code"
-                    >
-                        {{ cat.code }}
-                    </span>
-                    <span
-                        class="px-2.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums shadow-2xs"
-                        :class="getCategoryTheme(key, selectedCategory === key).badge"
-                    >
-                        {{ stats[key] || 0 }} Temuan
-                    </span>
-                </div>
-                <div
-                    class="font-bold text-sm leading-snug mb-1"
-                    :class="getCategoryTheme(key, selectedCategory === key).title"
-                >
+                <div class="font-medium truncate" :class="categoryColor(key).label" :title="cat.label || cat.title">
                     {{ cat.label || cat.title }}
                 </div>
-                <div
-                    class="text-[11px] leading-relaxed line-clamp-3"
-                    :class="getCategoryTheme(key, selectedCategory === key).desc"
-                >
-                    {{ cat.description }}
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ stats[key] || 0 }}</span>
+                    <span class="text-gray-500">temuan</span>
                 </div>
+                <p class="mt-1 text-[11px] leading-relaxed line-clamp-2" :class="categoryColor(key).desc" :title="cat.description">
+                    {{ cat.description }}
+                </p>
             </button>
         </div>
 
@@ -209,12 +140,14 @@ const getCategoryTheme = (key, isSelected) => {
                             <span
                                 v-for="catKey in item.quality_categories"
                                 :key="catKey"
-                                class="font-semibold text-gray-900 px-2 py-0.5 rounded bg-slate-100 border border-slate-200"
+                                class="inline-flex items-center gap-1.5 font-medium text-gray-800 px-2 py-0.5 rounded border border-gray-200"
                             >
+                                <span class="w-1.5 h-1.5 rounded-full" :class="categoryColor(catKey).dot"></span>
                                 {{ categories[catKey]?.label || catKey }}
                             </span>
                         </template>
-                        <span v-else class="font-semibold text-gray-900 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                        <span v-else class="inline-flex items-center gap-1.5 font-medium text-gray-800 px-2 py-0.5 rounded border border-gray-200">
+                            <span class="w-1.5 h-1.5 rounded-full" :class="categoryColor(item.quality_category).dot"></span>
                             {{ categories[item.quality_category]?.label || item.quality_category }}
                         </span>
                         <span class="tabular-nums text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
