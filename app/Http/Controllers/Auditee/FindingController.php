@@ -58,7 +58,7 @@ class FindingController extends Controller
                     'rejection_reason'    => $e->rejection_reason,
                     'uploaded_by'         => $e->uploader->name,
                     'verified_by'         => $e->verifier?->name,
-                    'uploaded_at'         => $e->created_at->format('d M Y H:i'),
+                    'uploaded_at'         => $e->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                     'file_url'            => $e->file_url,
                     'can_delete'          => $e->uploaded_by === $request->user()->id && in_array($e->verification_status, ['PENDING', 'REJECTED']),
                 ]),

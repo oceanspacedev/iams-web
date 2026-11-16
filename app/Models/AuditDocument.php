@@ -39,24 +39,39 @@ class AuditDocument extends Model
 
     public function getFileUrlAttribute(): string
     {
+        if (empty($this->file_path)) {
+            return '';
+        }
+
         if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
             return $this->file_path;
         }
 
-        $disk = config('filesystems.default');
+        $disk = config('filesystems.default', 'local');
 
-        if ($disk === 's3' || Storage::disk('s3')->exists($this->file_path)) {
+        // Check S3 only if disk is explicitly configured as s3 or safely handled
+        if ($disk === 's3') {
             try {
-                return Storage::disk('s3')->temporaryUrl($this->file_path, now()->addDays(7));
+                if (Storage::disk('s3')->exists($this->file_path)) {
+                    return Storage::disk('s3')->temporaryUrl($this->file_path, now()->addDays(7));
+                }
             } catch (\Throwable $e) {
-                return Storage::disk('s3')->url($this->file_path);
+                try {
+                    return Storage::disk('s3')->url($this->file_path);
+                } catch (\Throwable $e2) {}
             }
         }
 
-        if (Storage::disk('public')->exists($this->file_path)) {
-            return Storage::disk('public')->url($this->file_path);
-        }
+        try {
+            if (Storage::disk('public')->exists($this->file_path)) {
+                return Storage::disk('public')->url($this->file_path);
+            }
+        } catch (\Throwable $e) {}
 
-        return Storage::disk($disk)->url($this->file_path);
+        try {
+            return Storage::disk($disk)->url($this->file_path);
+        } catch (\Throwable $e) {
+            return Storage::url($this->file_path);
+        }
     }
 }

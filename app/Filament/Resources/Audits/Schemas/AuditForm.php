@@ -33,7 +33,7 @@ class AuditForm
                         Forms\Components\Select::make('auditor_id')
                             ->label('Auditor')
                             ->options(
-                                User::whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
+                                User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
                                     ->where('is_active', true)
                                     ->pluck('name', 'id')
                             )

@@ -91,7 +91,7 @@ class AuditController extends Controller
         return Inertia::render('Admin/Audits/Create', [
             'stores'          => Store::active()->orderBy('name')->get(['id', 'name', 'code', 'business_entity', 'type', 'address', 'area']),
             'categories'      => AuditCategory::active()->orderBy('name')->get(['id', 'name']),
-            'auditors'        => User::whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
+            'auditors'        => User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'email']),
@@ -206,14 +206,14 @@ class AuditController extends Controller
                     'file_url'      => $d->file_url,
                     'notes'         => $d->notes,
                     'uploaded_by'   => $d->uploader->name,
-                    'created_at'    => $d->created_at->format('d M Y H:i'),
+                    'created_at'    => $d->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                 ]),
                 'notifications' => $audit->notifications->sortBy('scheduled_at')->values()->map(fn ($n) => [
                     'id'           => $n->id,
                     'rule_name'    => $n->rule->name,
                     'days_before'  => $n->rule->days_before,
-                    'scheduled_at' => $n->scheduled_at->format('d M Y H:i'),
-                    'sent_at'      => $n->sent_at?->format('d M Y H:i'),
+                    'scheduled_at' => $n->scheduled_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
+                    'sent_at'      => $n->sent_at?->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ($n->sent_at ? ' WIB' : ''),
                     'channel'      => $n->channel,
                     'recipient'    => $n->recipient,
                     'status'       => $n->status,
@@ -250,7 +250,7 @@ class AuditController extends Controller
             $stores->prepend($audit->store);
         }
 
-        $auditors = User::whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
+        $auditors = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);

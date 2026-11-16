@@ -62,24 +62,38 @@ class Evidence extends Model
 
     public function getFileUrlAttribute(): string
     {
+        if (empty($this->file)) {
+            return '';
+        }
+
         if (str_starts_with($this->file, 'http://') || str_starts_with($this->file, 'https://')) {
             return $this->file;
         }
 
-        $disk = config('filesystems.default');
+        $disk = config('filesystems.default', 'local');
 
-        if ($disk === 's3' || Storage::disk('s3')->exists($this->file)) {
+        if ($disk === 's3') {
             try {
-                return Storage::disk('s3')->temporaryUrl($this->file, now()->addDays(7));
+                if (Storage::disk('s3')->exists($this->file)) {
+                    return Storage::disk('s3')->temporaryUrl($this->file, now()->addDays(7));
+                }
             } catch (\Throwable $e) {
-                return Storage::disk('s3')->url($this->file);
+                try {
+                    return Storage::disk('s3')->url($this->file);
+                } catch (\Throwable $e2) {}
             }
         }
 
-        if (Storage::disk('public')->exists($this->file)) {
-            return Storage::disk('public')->url($this->file);
-        }
+        try {
+            if (Storage::disk('public')->exists($this->file)) {
+                return Storage::disk('public')->url($this->file);
+            }
+        } catch (\Throwable $e) {}
 
-        return Storage::disk($disk)->url($this->file);
+        try {
+            return Storage::disk($disk)->url($this->file);
+        } catch (\Throwable $e) {
+            return Storage::url($this->file);
+        }
     }
 }

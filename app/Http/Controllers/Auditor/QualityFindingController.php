@@ -47,7 +47,7 @@ class QualityFindingController extends Controller
             'auditor_notes'           => $qf->auditor_notes,
             'status'                  => $qf->status,
             'reported_by'             => $qf->reporter->name,
-            'created_at'              => $qf->created_at->format('d M Y H:i'),
+            'created_at'              => $qf->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
             'finding'                 => [
                 'id'          => $qf->finding->id,
                 'category'    => $qf->finding->category->name,
@@ -192,7 +192,7 @@ class QualityFindingController extends Controller
                 'auditor_notes'           => $findingQuality->auditor_notes,
                 'status'                  => $findingQuality->status,
                 'reported_by'             => $findingQuality->reporter->name,
-                'created_at'              => $findingQuality->created_at->format('d M Y H:i'),
+                'created_at'              => $findingQuality->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                 'categories_info'         => QualityFinding::categories()[$findingQuality->quality_categories[0] ?? ''] ?? [],
                 'finding'          => [
                     'id'               => $findingQuality->finding->id,

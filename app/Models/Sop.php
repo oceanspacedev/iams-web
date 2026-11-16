@@ -44,21 +44,31 @@ class Sop extends Model
             return $this->document;
         }
 
-        $disk = config('filesystems.default');
+        $disk = config('filesystems.default', 'local');
 
-        if ($disk === 's3' || Storage::disk('s3')->exists($this->document)) {
+        if ($disk === 's3') {
             try {
-                return Storage::disk('s3')->temporaryUrl($this->document, now()->addDays(7));
+                if (Storage::disk('s3')->exists($this->document)) {
+                    return Storage::disk('s3')->temporaryUrl($this->document, now()->addDays(7));
+                }
             } catch (\Throwable $e) {
-                return Storage::disk('s3')->url($this->document);
+                try {
+                    return Storage::disk('s3')->url($this->document);
+                } catch (\Throwable $e2) {}
             }
         }
 
-        if (Storage::disk('public')->exists($this->document)) {
-            return Storage::disk('public')->url($this->document);
-        }
+        try {
+            if (Storage::disk('public')->exists($this->document)) {
+                return Storage::disk('public')->url($this->document);
+            }
+        } catch (\Throwable $e) {}
 
-        return Storage::disk($disk)->url($this->document);
+        try {
+            return Storage::disk($disk)->url($this->document);
+        } catch (\Throwable $e) {
+            return Storage::url($this->document);
+        }
     }
 
     // Scopes

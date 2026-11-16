@@ -83,7 +83,7 @@ class AuditController extends Controller
                     'file_url'      => $d->file_url,
                     'notes'         => $d->notes,
                     'uploaded_by'   => $d->uploader->name,
-                    'created_at'    => $d->created_at->format('d M Y H:i'),
+                    'created_at'    => $d->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                 ]),
                 'findings'     => $audit->findings->map(fn ($f) => [
                     'id'            => $f->id,
@@ -102,7 +102,7 @@ class AuditController extends Controller
                         'description'         => $e->description,
                         'verification_status' => $e->verification_status,
                         'uploaded_by'         => $e->uploader->name,
-                        'uploaded_at'         => $e->created_at->format('d M Y H:i'),
+                        'uploaded_at'         => $e->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                         'file_url'            => $e->file_url,
                     ]),
                 ]),
