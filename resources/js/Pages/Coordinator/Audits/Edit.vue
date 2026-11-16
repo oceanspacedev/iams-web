@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -23,13 +24,17 @@ const props = defineProps({
 
 const useCustomStore = ref(false);
 
+const initialAuditorIds = Array.isArray(props.audit.auditor_ids) && props.audit.auditor_ids.length > 0
+    ? [...props.audit.auditor_ids]
+    : (props.audit.auditor_id ? [props.audit.auditor_id] : []);
+
 const form = useForm({
     audit_number: props.audit.audit_number,
     title: props.audit.title || '',
     category_id: props.audit.category_id || (props.categories.length > 0 ? props.categories[0].id : ''),
     store_id: props.audit.store_id,
     custom_store_name: '',
-    auditor_ids: props.audit.auditor_ids || [props.audit.auditor_id],
+    auditor_ids: initialAuditorIds,
     audit_date: props.audit.audit_date,
     audit_time: props.audit.audit_time || '09:00',
     location: props.audit.location || '',
@@ -43,7 +48,7 @@ const selectedStore = computed(() => {
 });
 
 const availableAuditors = computed(() => {
-    return props.auditors.filter(a => !form.auditor_ids.includes(a.id));
+    return props.auditors.filter(a => !form.auditor_ids.some(id => Number(id) === Number(a.id)));
 });
 
 const addAuditor = (event) => {
@@ -54,21 +59,21 @@ const addAuditor = (event) => {
         event.target.value = '';
         return;
     }
-    if (!form.auditor_ids.includes(val)) {
+    if (!form.auditor_ids.some(id => Number(id) === val)) {
         form.auditor_ids.push(val);
     }
     event.target.value = '';
 };
 
 const removeAuditor = (auditorId) => {
-    const index = form.auditor_ids.indexOf(auditorId);
+    const index = form.auditor_ids.findIndex(id => Number(id) === Number(auditorId));
     if (index > -1) {
         form.auditor_ids.splice(index, 1);
     }
 };
 
 const getAuditor = (auditorId) => {
-    return props.auditors.find(a => a.id === auditorId);
+    return props.auditors.find(a => Number(a.id) === Number(auditorId));
 };
 
 const toggleAuditor = (auditorId) => {
@@ -115,7 +120,9 @@ const submit = () => {
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                 <Link :href="route('coordinator.audits.index')" class="hover:text-blue-600">Audits</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">{{ audit.audit_number }}</span>
+                <Link :href="route('coordinator.audits.show', audit.id)" class="hover:text-blue-600">{{ audit.audit_number }}</Link>
+                <span>/</span>
+                <span class="text-gray-900 font-medium">Edit</span>
             </div>
             <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Pelaksanaan Audit</h1>
             <p class="text-xs text-gray-500 mt-1">Perbarui kategori audit, data unit toko/badan usaha, dan tim auditor bertugas.</p>
@@ -335,7 +342,7 @@ const submit = () => {
 
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route('coordinator.audits.index')"
+                        :href="route('coordinator.audits.show', audit.id)"
                         class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal

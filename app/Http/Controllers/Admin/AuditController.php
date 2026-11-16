@@ -239,10 +239,26 @@ class AuditController extends Controller
 
     public function edit(Audit $audit): Response
     {
-        $audit->load('auditors');
+        $audit->load('auditors', 'store');
         $selectedAuditorIds = $audit->auditors->pluck('id')->toArray();
         if (empty($selectedAuditorIds) && $audit->auditor_id) {
             $selectedAuditorIds = [$audit->auditor_id];
+        }
+
+        $stores = Store::active()->orderBy('name')->get(['id', 'name', 'code', 'business_entity', 'type', 'address', 'area']);
+        if ($audit->store_id && !$stores->contains('id', $audit->store_id) && $audit->store) {
+            $stores->prepend($audit->store);
+        }
+
+        $auditors = User::whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        $missingAuditorIds = array_diff($selectedAuditorIds, $auditors->pluck('id')->toArray());
+        if (!empty($missingAuditorIds)) {
+            $extraAuditors = User::whereIn('id', $missingAuditorIds)->get(['id', 'name', 'email']);
+            $auditors = $auditors->concat($extraAuditors);
         }
 
         return Inertia::render('Admin/Audits/Edit', [
@@ -261,11 +277,8 @@ class AuditController extends Controller
                 'notes'        => $audit->notes,
             ],
             'categories' => AuditCategory::active()->orderBy('name')->get(['id', 'name']),
-            'stores'     => Store::active()->orderBy('name')->get(['id', 'name', 'code', 'business_entity', 'type', 'address', 'area']),
-            'auditors'   => User::whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'email']),
+            'stores'     => $stores,
+            'auditors'   => $auditors,
         ]);
     }
 
