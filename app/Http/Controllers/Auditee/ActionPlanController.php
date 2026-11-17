@@ -17,7 +17,7 @@ class ActionPlanController extends Controller
             'action_plan' => 'required|string',
             'response'    => 'required|string',
             'pic'         => 'required|string|max:255',
-            'deadline'    => 'required|date',
+            'deadline'    => $finding->severity === Finding::SEVERITY_CONTINUOUS ? 'nullable|date' : 'required|date',
         ]);
 
         $finding->actionPlan()->updateOrCreate(

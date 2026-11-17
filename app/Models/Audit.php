@@ -27,7 +27,7 @@ class Audit extends Model
     ];
 
     protected $casts = [
-        'audit_date' => 'date',
+        'audit_date' => 'date:Y-m-d',
         'status'     => 'string',
     ];
 

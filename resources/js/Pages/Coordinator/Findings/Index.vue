@@ -118,6 +118,7 @@ const paginatedFindings = computed(() => {
                         <option value="MINOR">Minor</option>
                         <option value="MEDIUM">Medium</option>
                         <option value="MAJOR">Major</option>
+                        <option value="CONTINUOUS">Continuous</option>
                     </select>
                 </div>
             </div>

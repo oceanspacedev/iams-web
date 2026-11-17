@@ -23,13 +23,22 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
-const formatDate = (dateString) => {
-    if (!dateString) return '—';
+const formatDate = (dateString, fallback = '—') => {
+    if (!dateString) return fallback;
+    if (typeof dateString === 'string') {
+        const match = dateString.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(month, 10) - 1;
+            return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+        }
+    }
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
     return new Intl.DateTimeFormat('id-ID', {
-        day: '2-digit',
-        month: 'long',
+        day: 'numeric',
+        month: 'short',
         year: 'numeric',
     }).format(date);
 };
@@ -255,7 +264,7 @@ const deleteEvidence = (evidenceId) => {
 
                             <div>
                                 <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline) }}</div>
+                                <div class="font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</div>
                             </div>
                         </div>
                     </div>
@@ -310,12 +319,13 @@ const deleteEvidence = (evidenceId) => {
 
                             <div>
                                 <label class="block font-medium text-gray-700 mb-1.5">
-                                    Target Deadline <span class="text-red-500">*</span>
+                                    Target Deadline <span v-if="finding.severity !== 'CONTINUOUS'" class="text-red-500">*</span>
+                                    <span v-else class="text-purple-600 font-normal text-[11px]">(Opsional - Dalam Monitoring)</span>
                                 </label>
                                 <input
                                     v-model="actionPlanForm.deadline"
                                     type="date"
-                                    required
+                                    :required="finding.severity !== 'CONTINUOUS'"
                                     :disabled="!finding.can_edit_action_plan"
                                     class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
                                 />

@@ -113,6 +113,7 @@ const severityColors = {
     MAJOR: '#e11d48',
     MEDIUM: '#f59e0b',
     MINOR: '#10b981',
+    CONTINUOUS: '#8b5cf6',
     CRITICAL: '#e11d48',
     OBSERVATION: '#10b981',
 };

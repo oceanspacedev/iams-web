@@ -98,13 +98,14 @@ const submit = () => {
                             <option value="MINOR">Minor (Timeline SLA: 3 - 7 hari)</option>
                             <option value="MEDIUM">Medium (Timeline SLA: 8 - 14 hari)</option>
                             <option value="MAJOR">Major (Timeline SLA: 15 - 30 hari)</option>
+                            <option value="CONTINUOUS">Continuous (Dalam Monitoring)</option>
                         </select>
                         <div v-if="form.errors.severity" class="text-red-600 text-[11px] mt-1">{{ form.errors.severity }}</div>
                     </div>
                 </div>
 
                 <!-- Severity SLA Info Guide -->
-                <div class="bg-gray-50/80 border border-gray-200 rounded-lg p-3 grid grid-cols-3 gap-3 text-center text-xs">
+                <div class="bg-gray-50/80 border border-gray-200 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
                     <!-- Minor Card -->
                     <button
                         type="button"
@@ -151,6 +152,22 @@ const submit = () => {
                             <span v-if="form.severity === 'MAJOR'" class="text-rose-700 text-[11px]">✓</span>
                         </div>
                         <div class="text-[11px] text-rose-700/90 tabular-nums mt-0.5 font-medium">15 - 30 hari</div>
+                    </button>
+
+                    <!-- Continuous Card -->
+                    <button
+                        type="button"
+                        @click="form.severity = 'CONTINUOUS'"
+                        class="p-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
+                        :class="form.severity === 'CONTINUOUS'
+                            ? 'bg-purple-100 border-purple-500 ring-2 ring-purple-400 text-purple-950 font-bold shadow-xs'
+                            : 'bg-purple-50/70 border-purple-200 text-purple-800 hover:bg-purple-100/60 hover:border-purple-300'"
+                    >
+                        <div class="text-xs font-semibold flex items-center justify-center gap-1">
+                            <span>Continuous</span>
+                            <span v-if="form.severity === 'CONTINUOUS'" class="text-purple-700 text-[11px]">✓</span>
+                        </div>
+                        <div class="text-[11px] text-purple-700/90 mt-0.5 font-medium">Monitoring</div>
                     </button>
                 </div>
 

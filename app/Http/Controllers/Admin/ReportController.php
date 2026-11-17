@@ -37,9 +37,10 @@ class ReportController extends Controller
 
         // 1. Finding counts by Severity
         $bySeverity = [
-            'MAJOR'  => $baseFindingQuery()->whereIn('severity', ['MAJOR', 'CRITICAL'])->count(),
-            'MEDIUM' => $baseFindingQuery()->where('severity', 'MEDIUM')->count(),
-            'MINOR'  => $baseFindingQuery()->whereIn('severity', ['MINOR', 'OBSERVATION'])->count(),
+            'MAJOR'      => $baseFindingQuery()->whereIn('severity', ['MAJOR', 'CRITICAL'])->count(),
+            'MEDIUM'     => $baseFindingQuery()->where('severity', 'MEDIUM')->count(),
+            'MINOR'      => $baseFindingQuery()->whereIn('severity', ['MINOR', 'OBSERVATION'])->count(),
+            'CONTINUOUS' => $baseFindingQuery()->where('severity', 'CONTINUOUS')->count(),
         ];
 
         // 2. Finding counts by Category
@@ -90,10 +91,12 @@ class ReportController extends Controller
         ];
 
         $totalFindings = $baseFindingQuery()->count();
+        $targetFindings = (clone $baseFindingQuery())->where('severity', '!=', Finding::SEVERITY_CONTINUOUS)->count();
+        $closedTargetFindings = (clone $baseFindingQuery())->where('severity', '!=', Finding::SEVERITY_CONTINUOUS)->where('status', 'CLOSED')->count();
         $closedFindings = $baseFindingQuery()->where('status', 'CLOSED')->count();
         $closedOnTime = $baseFindingQuery()->closedOnTime()->count();
         $closedOverdue = $baseFindingQuery()->closedOverdue()->count();
-        $completionRate = $totalFindings > 0 ? round(($closedFindings / $totalFindings) * 100, 1) : 0;
+        $completionRate = $targetFindings > 0 ? round(($closedTargetFindings / $targetFindings) * 100, 1) : 0;
 
         $categories = AuditCategory::active()->orderBy('id')->get(['id', 'name']);
 

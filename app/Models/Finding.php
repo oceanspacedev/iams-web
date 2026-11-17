@@ -47,9 +47,10 @@ class Finding extends Model
     const STATUS_VERIFIED             = 'VERIFIED';
     const STATUS_CLOSED               = 'CLOSED';
 
-    const SEVERITY_MINOR  = 'MINOR';
-    const SEVERITY_MEDIUM = 'MEDIUM';
-    const SEVERITY_MAJOR  = 'MAJOR';
+    const SEVERITY_MINOR      = 'MINOR';
+    const SEVERITY_MEDIUM     = 'MEDIUM';
+    const SEVERITY_MAJOR      = 'MAJOR';
+    const SEVERITY_CONTINUOUS = 'CONTINUOUS';
 
     // Legacy fallback
     const SEVERITY_CRITICAL    = 'CRITICAL';
@@ -75,6 +76,12 @@ class Finding extends Model
                 'label'    => 'Major',
                 'timeline' => '15 - 30 hari',
                 'badge'    => 'bg-rose-100 text-rose-800 border-rose-300',
+            ],
+            self::SEVERITY_CONTINUOUS => [
+                'id'       => self::SEVERITY_CONTINUOUS,
+                'label'    => 'Continuous',
+                'timeline' => 'Dalam Monitoring',
+                'badge'    => 'bg-purple-100 text-purple-800 border-purple-300',
             ],
         ];
     }
@@ -138,17 +145,19 @@ class Finding extends Model
 
     public function scopeOverdue($query)
     {
-        return $query->whereHas('actionPlan', function ($q) {
-            $q->where('deadline', '<', now()->toDateString())
-              ->where('status', '!=', 'COMPLETED');
-        })->whereNotIn('status', [self::STATUS_VERIFIED, self::STATUS_CLOSED]);
+        return $query->where('severity', '!=', self::SEVERITY_CONTINUOUS)
+            ->whereHas('actionPlan', function ($q) {
+                $q->where('deadline', '<', now()->toDateString())
+                  ->where('status', '!=', 'COMPLETED');
+            })->whereNotIn('status', [self::STATUS_VERIFIED, self::STATUS_CLOSED]);
     }
 
     public function scopeClosedOnTime($query)
     {
         return $query->where('status', self::STATUS_CLOSED)
             ->where(function ($q) {
-                $q->whereDoesntHave('actionPlan')
+                $q->where('severity', self::SEVERITY_CONTINUOUS)
+                  ->orWhereDoesntHave('actionPlan')
                   ->orWhereHas('actionPlan', function ($ap) {
                       $ap->whereNull('deadline')
                          ->orWhereRaw('DATE(findings.updated_at) <= action_plans.deadline');
@@ -159,6 +168,7 @@ class Finding extends Model
     public function scopeClosedOverdue($query)
     {
         return $query->where('status', self::STATUS_CLOSED)
+            ->where('severity', '!=', self::SEVERITY_CONTINUOUS)
             ->whereHas('actionPlan', function ($ap) {
                 $ap->whereNotNull('deadline')
                    ->whereRaw('DATE(findings.updated_at) > action_plans.deadline');
@@ -166,6 +176,11 @@ class Finding extends Model
     }
 
     // Helpers
+    public function isContinuous(): bool
+    {
+        return $this->severity === self::SEVERITY_CONTINUOUS;
+    }
+
     public function isCloseable(): bool
     {
         return $this->status !== self::STATUS_CLOSED;

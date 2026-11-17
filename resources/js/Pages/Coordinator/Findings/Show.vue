@@ -21,6 +21,26 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
+const formatDate = (dateString, fallback = '—') => {
+    if (!dateString) return fallback;
+    if (typeof dateString === 'string') {
+        const match = dateString.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(month, 10) - 1;
+            return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+        }
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
+};
+
 import { ref } from 'vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
 
@@ -255,7 +275,7 @@ const closeFinding = () => {
                             </div>
                             <div>
                                 <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
+                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</div>
                             </div>
                         </div>
 
@@ -318,10 +338,11 @@ const closeFinding = () => {
                                 <option value="MINOR">Minor (Timeline SLA: 3 - 7 hari)</option>
                                 <option value="MEDIUM">Medium (Timeline SLA: 8 - 14 hari)</option>
                                 <option value="MAJOR">Major (Timeline SLA: 15 - 30 hari)</option>
+                                <option value="CONTINUOUS">Continuous (Dalam Monitoring)</option>
                             </select>
 
                             <!-- Severity SLA Quick Select Cards -->
-                            <div class="grid grid-cols-3 gap-1.5 text-center text-xs">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center text-xs">
                                 <button
                                     type="button"
                                     @click="severityForm.severity = 'MINOR'"
@@ -354,6 +375,17 @@ const closeFinding = () => {
                                 >
                                     <div class="text-[11px] font-semibold">Major</div>
                                     <div class="text-[10px] text-rose-700/80 tabular-nums">15 - 30 hr</div>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="severityForm.severity = 'CONTINUOUS'"
+                                    class="p-1.5 rounded border text-center transition-all cursor-pointer select-none"
+                                    :class="severityForm.severity === 'CONTINUOUS'
+                                        ? 'bg-purple-100 border-purple-500 ring-1 ring-purple-400 text-purple-950 font-bold shadow-xs'
+                                        : 'bg-purple-50/70 border-purple-200 text-purple-800 hover:bg-purple-100/60'"
+                                >
+                                    <div class="text-[11px] font-semibold">Continuous</div>
+                                    <div class="text-[10px] text-purple-700/80">Monitoring</div>
                                 </button>
                             </div>
                         </div>

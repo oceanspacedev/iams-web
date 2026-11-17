@@ -39,7 +39,7 @@ class FindingController extends Controller
             'surplus_amount'  => 'nullable|numeric|min:0',
             'auditor_opinion' => 'nullable|string',
             'recommendation'  => 'required|string',
-            'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
+            'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS',
         ]);
 
         $finding = $audit->findings()->create([
@@ -164,7 +164,7 @@ class FindingController extends Controller
 
         // Only validate severity if it has not been locked by Coordinator
         if (!$finding->is_severity_locked) {
-            $rules['severity'] = 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION';
+            $rules['severity'] = 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS';
         }
 
         $validated = $request->validate($rules);

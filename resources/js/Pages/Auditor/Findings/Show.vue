@@ -23,12 +23,32 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
+const formatDate = (dateString, fallback = '—') => {
+    if (!dateString) return fallback;
+    if (typeof dateString === 'string') {
+        const match = dateString.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(month, 10) - 1;
+            return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+        }
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
+};
+
 // State for editing action plan
 const editingActionPlan = ref(!props.finding.action_plan?.action_plan);
 const actionPlanForm = useForm({
     action_plan: props.finding.action_plan?.action_plan || '',
     pic: props.finding.action_plan?.pic || '',
-    deadline: props.finding.action_plan?.deadline || '',
+    deadline: props.finding.action_plan?.deadline ? String(props.finding.action_plan.deadline).substring(0, 10) : '',
     notes: props.finding.action_plan?.response || '',
 });
 
@@ -258,7 +278,7 @@ const deleteFinding = () => {
                             </div>
                             <div>
                                 <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.deadline || '—' }}</div>
+                                <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</div>
                             </div>
                         </div>
 

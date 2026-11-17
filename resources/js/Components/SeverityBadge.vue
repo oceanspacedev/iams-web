@@ -27,6 +27,12 @@ const config = computed(() => {
                 timeline: '8 - 14 hari',
                 style: 'bg-amber-50 text-amber-800 border-amber-200 font-medium',
             };
+        case 'CONTINUOUS':
+            return {
+                label: 'Continuous',
+                timeline: 'Dalam Monitoring',
+                style: 'bg-purple-50 text-purple-700 border-purple-200 font-medium',
+            };
         case 'MINOR':
         case 'OBSERVATION':
             return {

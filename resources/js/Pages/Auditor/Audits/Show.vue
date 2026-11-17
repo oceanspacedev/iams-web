@@ -21,6 +21,26 @@ const formatRupiah = (number) => {
     }).format(number);
 };
 
+const formatDate = (dateString, fallback = '—') => {
+    if (!dateString) return fallback;
+    if (typeof dateString === 'string') {
+        const match = dateString.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(month, 10) - 1;
+            return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+        }
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
+};
+
 // Delete finding state
 const deleteModalOpen = ref(false);
 const selectedFindingToDelete = ref(null);
@@ -408,7 +428,7 @@ const deleteDoc = (docId) => {
                             <div class="text-gray-500 font-medium mb-1">Tindak Lanjut Unit / PIC</div>
                             <div v-if="finding.action_plan?.action_plan" class="space-y-1">
                                 <div class="text-gray-900 font-medium">{{ finding.action_plan.action_plan }}</div>
-                                <div class="text-[11px] text-gray-500">PIC: <span class="font-medium text-gray-700">{{ finding.action_plan.pic || '-' }}</span> | Deadline: <span class="font-medium text-gray-700">{{ finding.action_plan.deadline || '-' }}</span></div>
+                                <div class="text-[11px] text-gray-500">PIC: <span class="font-medium text-gray-700">{{ finding.action_plan.pic || '-' }}</span> | Deadline: <span class="font-medium text-gray-700">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</span></div>
                             </div>
                             <div v-else class="text-gray-400 italic">Belum diisi</div>
                         </div>

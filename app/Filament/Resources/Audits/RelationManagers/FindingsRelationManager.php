@@ -58,9 +58,10 @@ class FindingsRelationManager extends RelationManager
                         Forms\Components\Select::make('severity')
                             ->label('Severity')
                             ->options([
-                                'MINOR'  => 'Minor',
-                                'MEDIUM' => 'Medium',
-                                'MAJOR'  => 'Major',
+                                'MINOR'      => 'Minor',
+                                'MEDIUM'     => 'Medium',
+                                'MAJOR'      => 'Major',
+                                'CONTINUOUS' => 'Continuous (Dalam Monitoring)',
                             ])
                             ->required()
                             ->native(false),

@@ -284,15 +284,17 @@ class ReportExportService
             echo '<tr><td colspan="2" class="header-section">1. DISTRIBUSI SEVERITY TEMUAN</td></tr>';
             echo '<tr><th>Tingkat Severity</th><th>Jumlah Temuan</th></tr>';
             $exportSeverities = [
-                'MAJOR'  => 'Major',
-                'MEDIUM' => 'Medium',
-                'MINOR'  => 'Minor',
+                'MAJOR'      => 'Major (15 - 30 hari)',
+                'MEDIUM'     => 'Medium (8 - 14 hari)',
+                'MINOR'      => 'Minor (3 - 7 hari)',
+                'CONTINUOUS' => 'Continuous (Dalam Monitoring)',
             ];
             foreach ($exportSeverities as $sevKey => $sevLabel) {
                 $count = match ($sevKey) {
-                    'MAJOR'  => $baseFindingQuery()->whereIn('severity', ['MAJOR', 'CRITICAL'])->count(),
-                    'MEDIUM' => $baseFindingQuery()->where('severity', 'MEDIUM')->count(),
-                    'MINOR'  => $baseFindingQuery()->whereIn('severity', ['MINOR', 'OBSERVATION'])->count(),
+                    'MAJOR'      => $baseFindingQuery()->whereIn('severity', ['MAJOR', 'CRITICAL'])->count(),
+                    'MEDIUM'     => $baseFindingQuery()->where('severity', 'MEDIUM')->count(),
+                    'MINOR'      => $baseFindingQuery()->whereIn('severity', ['MINOR', 'OBSERVATION'])->count(),
+                    'CONTINUOUS' => $baseFindingQuery()->where('severity', 'CONTINUOUS')->count(),
                 };
                 echo '<tr>';
                 echo '<td>' . $sevLabel . '</td>';

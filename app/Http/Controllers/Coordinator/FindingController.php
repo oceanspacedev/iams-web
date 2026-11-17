@@ -135,7 +135,7 @@ class FindingController extends Controller
     public function reviewSeverity(Request $request, Finding $finding): RedirectResponse
     {
         $validated = $request->validate([
-            'severity'       => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION',
+            'severity'       => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS',
             'severity_notes' => 'nullable|string|max:500',
             'recommendation' => 'nullable|string|max:2000',
         ]);

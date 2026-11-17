@@ -19,6 +19,26 @@ const formatRupiah = (number) => {
         minimumFractionDigits: 0,
     }).format(number);
 };
+
+const formatDate = (dateString, fallback = '—') => {
+    if (!dateString) return fallback;
+    if (typeof dateString === 'string') {
+        const match = dateString.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(month, 10) - 1;
+            return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+        }
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
+};
 </script>
 
 <template>
@@ -143,7 +163,7 @@ const formatRupiah = (number) => {
                             <div class="text-gray-500 font-medium mb-1">Status Action Plan</div>
                             <div v-if="finding.action_plan?.action_plan" class="text-gray-800">
                                 <span class="font-medium text-emerald-700">Sudah diisi</span>
-                                <div class="text-[11px] text-gray-500 mt-0.5">PIC: {{ finding.action_plan.pic || '-' }} | Deadline: {{ finding.action_plan.deadline || '-' }}</div>
+                                <div class="text-[11px] text-gray-500 mt-0.5">PIC: {{ finding.action_plan.pic || '-' }} | Deadline: {{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</div>
                             </div>
                             <div v-else class="text-amber-700 font-medium">
                                 Belum diisi
