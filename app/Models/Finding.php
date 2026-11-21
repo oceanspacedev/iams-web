@@ -89,7 +89,7 @@ class Finding extends Model
     // Relationships
     public function audit(): BelongsTo
     {
-        return $this->belongsTo(Audit::class);
+        return $this->belongsTo(Audit::class)->withTrashed();
     }
 
     public function severityReviewer(): BelongsTo
@@ -104,7 +104,7 @@ class Finding extends Model
 
     public function sop(): BelongsTo
     {
-        return $this->belongsTo(Sop::class, 'sop_id');
+        return $this->belongsTo(Sop::class, 'sop_id')->withTrashed();
     }
 
     public function actionPlan(): HasOne

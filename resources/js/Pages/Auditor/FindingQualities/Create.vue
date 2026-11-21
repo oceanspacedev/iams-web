@@ -77,7 +77,8 @@ watch(
                 form.impact_amount = found.loss_amount;
             }
         }
-    }
+    },
+    { immediate: true }
 );
 
 const categoryColor = qualityCategoryColor;
@@ -97,7 +98,7 @@ const submit = () => {
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
+                <Link :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
                 <span>/</span>
                 <span class="text-gray-900 font-medium">Buat Laporan Baru</span>
             </div>
@@ -277,7 +278,7 @@ const submit = () => {
                 <!-- Buttons -->
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route(`${currentPrefix}finding-qualities.index`)"
+                        :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.index`)"
                         class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         Batal
