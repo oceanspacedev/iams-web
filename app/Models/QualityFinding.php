@@ -107,12 +107,12 @@ class QualityFinding extends Model
 
     public function finding(): BelongsTo
     {
-        return $this->belongsTo(Finding::class);
+        return $this->belongsTo(Finding::class)->withTrashed();
     }
 
     public function audit(): BelongsTo
     {
-        return $this->belongsTo(Audit::class);
+        return $this->belongsTo(Audit::class)->withTrashed();
     }
 
     public function reporter(): BelongsTo

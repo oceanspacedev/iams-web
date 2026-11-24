@@ -107,7 +107,7 @@ class Finding extends Model
     // Relationships
     public function audit(): BelongsTo
     {
-        return $this->belongsTo(Audit::class);
+        return $this->belongsTo(Audit::class)->withTrashed();
     }
 
     public function severityReviewer(): BelongsTo

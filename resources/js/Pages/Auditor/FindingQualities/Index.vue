@@ -80,7 +80,7 @@ const categoryColor = qualityCategoryColor;
             </div>
 
             <Link
-                :href="route(`${currentPrefix}finding-qualities.create`)"
+                :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.create`)"
                 class="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
             >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

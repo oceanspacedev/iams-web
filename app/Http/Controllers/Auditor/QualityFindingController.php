@@ -81,19 +81,19 @@ class QualityFindingController extends Controller
             'auditor_notes'           => $qf->auditor_notes,
             'status'                  => $qf->status,
             'reported_by'             => $qf->reporter?->name ?? '-',
-            'created_at'              => $qf->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
+            'created_at'              => $qf->created_at ? $qf->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-',
             'finding'                 => [
                 'id'          => $qf->finding?->id,
                 'category'    => $qf->finding?->category?->name ?? '-',
                 'finding'     => $qf->finding?->finding ?? '-',
-                'severity'    => $qf->finding?->severity,
-                'status'      => $qf->finding?->status,
+                'severity'    => $qf->finding?->severity ?? 'MINOR',
+                'status'      => $qf->finding?->status ?? 'OPEN',
                 'loss_amount' => (float) ($qf->finding?->loss_amount ?? 0),
             ],
             'audit'            => [
                 'id'           => $qf->audit?->id,
                 'audit_number' => $qf->audit?->audit_number ?? '-',
-                'store_name'   => $qf->audit?->store?->name ?? '-',
+                'store_name'   => $qf->audit?->store?->name ?? ($qf->audit?->location ?: '-'),
                 'store_code'   => $qf->audit?->store?->code ?? '-',
                 'audit_date'   => $qf->audit?->audit_date?->format('d M Y') ?? '-',
             ],
@@ -138,24 +138,50 @@ class QualityFindingController extends Controller
             });
         }
 
-        $findings = $findingsQuery->get()->map(fn ($f) => [
-            'id'           => $f->id,
-            'audit_id'     => $f->audit_id,
-            'audit_number' => $f->audit->audit_number,
-            'store_name'   => $f->audit->store?->name ?? '-',
-            'store_code'   => $f->audit->store?->code ?? '-',
-            'category'     => $f->category?->name ?? '-',
-            'finding'      => $f->finding,
-            'severity'     => $f->severity,
-            'loss_amount'  => (float) $f->loss_amount,
-            'display_label'=> "[{$f->audit->audit_number}] " . ($f->audit->store?->name ?? '-') . " - #{$f->id} " . ($f->category?->name ?? '-') . " ({$f->finding})",
-        ]);
+        $preselectedFindingId = $request->query('finding_id');
+        $findingsList = $findingsQuery->get();
+
+        // Temuan yang dipilih lewat link (?finding_id=) selalu ikut di daftar,
+        // asalkan belum punya laporan dan (di portal auditor) termasuk audit miliknya.
+        if ($preselectedFindingId && ! $findingsList->contains('id', (int) $preselectedFindingId)) {
+            $preselectedQuery = Finding::with(['audit.store', 'category'])
+                ->whereKey($preselectedFindingId)
+                ->whereDoesntHave('qualityReport');
+
+            if ($this->isAuditorPortal($request)) {
+                $preselectedQuery->whereHas('audit', fn ($q) => $q->forAuditor($user->id));
+            }
+
+            if ($preselected = $preselectedQuery->first()) {
+                $findingsList->prepend($preselected);
+            }
+        }
+
+        $findings = $findingsList->map(function ($f) {
+            $auditNum = $f->audit?->audit_number ?? '-';
+            $storeName = $f->audit?->store?->name ?? ($f->audit?->location ?: '-');
+            $catName = $f->category?->name ?? '-';
+            $findingText = $f->finding ?? '-';
+
+            return [
+                'id'            => $f->id,
+                'audit_id'      => $f->audit_id,
+                'audit_number'  => $auditNum,
+                'store_name'    => $storeName,
+                'store_code'    => $f->audit?->store?->code ?? '-',
+                'category'      => $catName,
+                'finding'       => $findingText,
+                'severity'      => $f->severity ?? 'MINOR',
+                'loss_amount'   => (float) ($f->loss_amount ?? 0),
+                'display_label' => "[{$auditNum}] {$storeName} - #{$f->id} {$catName} ({$findingText})",
+            ];
+        });
 
         return Inertia::render('Auditor/FindingQualities/Create', [
             'findings'         => $findings,
             'categories'       => QualityFinding::categories(),
             'preselectedAudit' => $request->query('audit_id'),
-            'preselectedFinding' => $request->query('finding_id'),
+            'preselectedFinding' => $preselectedFindingId,
             'routePrefix'      => $this->routePrefix($request),
         ]);
     }
@@ -250,15 +276,15 @@ class QualityFindingController extends Controller
                 'auditor_notes'           => $findingQuality->auditor_notes,
                 'status'                  => $findingQuality->status,
                 'reported_by'             => $findingQuality->reporter?->name ?? '-',
-                'created_at'              => $findingQuality->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
+                'created_at'              => $findingQuality->created_at ? $findingQuality->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-',
                 'categories_info'         => QualityFinding::categories()[$findingQuality->quality_categories[0] ?? ''] ?? [],
                 'finding'          => [
                     'id'               => $finding?->id,
                     'category'         => $finding?->category?->name ?? '-',
                     'sop'              => $finding?->sop ? "{$finding->sop->code} - {$finding->sop->title}" : '-',
                     'finding'          => $finding?->finding ?? '-',
-                    'severity'         => $finding?->severity,
-                    'status'           => $finding?->status,
+                    'severity'         => $finding?->severity ?? 'MINOR',
+                    'status'           => $finding?->status ?? 'OPEN',
                     'loss_amount'      => (float) ($finding?->loss_amount ?? 0),
                     'auditor_opinion'  => $finding?->auditor_opinion,
                     'recommendation'   => $finding?->recommendation,
@@ -266,7 +292,7 @@ class QualityFindingController extends Controller
                 'audit'            => [
                     'id'           => $audit?->id,
                     'audit_number' => $audit?->audit_number ?? '-',
-                    'store_name'   => $audit?->store?->name ?? '-',
+                    'store_name'   => $audit?->store?->name ?? ($audit?->location ?: '-'),
                     'store_code'   => $audit?->store?->code ?? '-',
                     'store_area'   => $audit?->store?->area,
                     'audit_date'   => $audit?->audit_date?->format('d M Y') ?? '-',

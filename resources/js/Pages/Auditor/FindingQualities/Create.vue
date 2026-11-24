@@ -77,7 +77,8 @@ watch(
                 form.impact_amount = found.loss_amount;
             }
         }
-    }
+    },
+    { immediate: true }
 );
 
 const categoryColor = qualityCategoryColor;
@@ -97,7 +98,7 @@ const submit = () => {
 
         <div class="mb-6">
             <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
-                <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="transition-colors duration-150 hover:text-blue-600">Kualitas temuan</Link>
+                <Link :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.index`)" class="transition-colors duration-150 hover:text-blue-600">Kualitas temuan</Link>
                 <span>/</span>
                 <span class="font-medium text-gray-900">Baru</span>
             </div>
@@ -274,7 +275,7 @@ const submit = () => {
                 <!-- Buttons -->
                 <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
                     <Link
-                        :href="route(`${currentPrefix}finding-qualities.index`)"
+                        :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.index`)"
                         class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
