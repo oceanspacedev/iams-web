@@ -1,7 +1,8 @@
 <script setup>
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const props = defineProps({
@@ -10,6 +11,17 @@ const props = defineProps({
         default: () => [],
     },
 });
+
+const evidenceList = computed(() => props.pending_evidences || []);
+
+// Pagination 10 baris per halaman; kembali ke halaman 1 saat filter berubah
+const currentPage = ref(1);
+const perPage = 10;
+watch(() => evidenceList.value.length, (n) => {
+    const last = Math.max(1, Math.ceil(n / perPage));
+    if (currentPage.value > last) currentPage.value = last;
+});
+const paginatedEvidences = computed(() => evidenceList.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage));
 
 const rejectingEvidenceId = ref(null);
 const rejectForm = useForm({
@@ -44,9 +56,9 @@ const confirmModal = ref({
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
-        title: config.title || 'Konfirmasi Tindakan',
+        title: config.title || 'Konfirmasi tindakan',
         message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
-        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        confirmText: config.confirmText || 'Ya, lanjutkan',
         type: config.type || 'primary',
         action: config.action,
     };
@@ -61,9 +73,9 @@ const handleConfirm = () => {
 
 const approveEvidence = (evidenceId) => {
     openConfirm({
-        title: 'Setujui Bukti Perbaikan (Evidence)',
-        message: 'Apakah Anda yakin bukti fisik foto perbaikan toko ini sudah sesuai dengan standar dan siap disetujui?',
-        confirmText: 'Ya, Setujui Bukti',
+        title: 'Setujui evidence',
+        message: 'Bukti perbaikan ini sudah sesuai standar?',
+        confirmText: 'Ya, setujui',
         type: 'success',
         action: () => router.patch(route('auditor.evidences.approve', evidenceId)),
     });
@@ -71,70 +83,67 @@ const approveEvidence = (evidenceId) => {
 </script>
 
 <template>
-    <AppLayout title="Antrean Verifikasi Evidence">
-        <Head title="Verification Queue" />
+    <AppLayout title="Antrean verifikasi">
+        <Head title="Antrean verifikasi" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6">
-            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Antrean Verifikasi Evidence</h1>
-            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Daftar bukti perbaikan yang diunggah oleh toko dan menunggu verifikasi Anda</p>
+        <!-- Header: judul + jumlah -->
+        <div class="mb-6 flex items-baseline gap-3">
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Antrean verifikasi</h1>
+            <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ evidenceList.length }}</span>
         </div>
 
-        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="pending_evidences.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Tidak ada evidence yang menunggu verifikasi saat ini.
+        <!-- Mobile cards vs desktop table -->
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="evidenceList.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Tidak ada evidence
                 </div>
                 <div
-                    v-for="e in pending_evidences"
+                    v-for="e in paginatedEvidences"
                     :key="'m-ev-' + e.id"
-                    class="p-4 space-y-2.5"
+                    class="space-y-3 p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ e.store }}</div>
-                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5">{{ e.audit }}</div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900">{{ e.store }}</div>
+                            <div class="mt-0.5 text-xs text-gray-500 tabular-nums">{{ e.audit }}</div>
                         </div>
+                        <span class="shrink-0 text-xs text-gray-500 tabular-nums">{{ e.uploaded_at }}</span>
                     </div>
 
-                    <div class="text-xs">
-                        <Link
-                            :href="route('auditor.findings.show', e.finding_id)"
-                            class="font-medium text-gray-900 hover:text-blue-600 hover:underline line-clamp-2"
-                        >
-                            {{ e.finding }}
-                        </Link>
+                    <Link
+                        :href="route('auditor.findings.show', e.finding_id)"
+                        class="line-clamp-2 text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                    >
+                        {{ e.finding }}
+                    </Link>
+
+                    <div class="text-sm text-gray-700">
+                        {{ e.description || 'Bukti perbaikan' }}
+                        <span class="text-xs text-gray-500">· {{ e.uploaded_by }}</span>
                     </div>
 
-                    <div class="p-2.5 bg-slate-50 rounded border border-gray-100 text-[11px] text-gray-700">
-                        <span class="font-medium text-gray-500">Keterangan:</span> {{ e.description || 'Bukti perbaikan' }}
-                    </div>
-
-                    <div class="text-[10px] text-gray-500 flex items-center justify-between pt-1 border-t border-gray-100">
-                        <span>Oleh: <strong class="text-gray-700 font-medium">{{ e.uploaded_by }}</strong></span>
-                        <span>{{ e.uploaded_at }}</span>
-                    </div>
-
-                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                    <div class="flex items-center justify-end gap-2">
                         <a
                             :href="e.file_url"
                             target="_blank"
-                            class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                            title="Lihat file"
+                            aria-label="Lihat file"
+                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
-                            Lihat File
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                         </a>
                         <button
                             @click="approveEvidence(e.id)"
-                            class="px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                            class="inline-flex h-8 cursor-pointer items-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700"
                         >
                             Approve
                         </button>
                         <button
                             @click="openRejectModal(e.id)"
-                            class="px-2.5 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                            class="inline-flex h-8 cursor-pointer items-center rounded-lg bg-red-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-red-700"
                         >
                             Reject
                         </button>
@@ -142,65 +151,67 @@ const approveEvidence = (evidenceId) => {
                 </div>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="evidenceList.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
                         <tr>
-                            <th class="px-5 py-3.5">No. Audit & Toko</th>
-                            <th class="px-5 py-3.5">Temuan Finding</th>
-                            <th class="px-5 py-3.5">Keterangan Evidence</th>
-                            <th class="px-5 py-3.5">Diunggah Oleh</th>
-                            <th class="px-5 py-3.5 text-right">Aksi Verifikasi</th>
+                            <th class="h-10 px-5 font-medium">Audit</th>
+                            <th class="h-10 px-5 font-medium">Temuan</th>
+                            <th class="h-10 px-5 font-medium">Keterangan</th>
+                            <th class="h-10 px-5 font-medium">Diunggah</th>
+                            <th class="h-10 px-5"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        <tr v-if="pending_evidences.length === 0">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200">
+                        <tr v-if="evidenceList.length === 0">
                             <td colspan="5" class="px-5 py-12 text-center text-gray-500">
-                                Tidak ada evidence yang menunggu verifikasi saat ini.
+                                Tidak ada evidence
                             </td>
                         </tr>
                         <tr
-                            v-for="e in pending_evidences"
+                            v-for="e in paginatedEvidences"
                             :key="e.id"
-                            class="hover:bg-gray-50/70 transition-colors"
+                            class="transition-colors duration-150 hover:bg-gray-50/70"
                         >
-                            <td class="px-5 py-3.5">
-                                <div class="tabular-nums font-semibold text-gray-900">{{ e.audit }}</div>
-                                <div class="text-[11px] text-gray-500 font-medium">{{ e.store }}</div>
+                            <td class="px-5 py-3">
+                                <div class="font-medium text-gray-900 tabular-nums">{{ e.audit }}</div>
+                                <div class="text-xs text-gray-500">{{ e.store }}</div>
                             </td>
-                            <td class="px-5 py-3.5">
+                            <td class="px-5 py-3">
                                 <Link
                                     :href="route('auditor.findings.show', e.finding_id)"
-                                    class="font-medium text-gray-900 hover:text-blue-600 hover:underline line-clamp-2"
+                                    class="line-clamp-2 font-medium text-gray-900 hover:text-blue-600 hover:underline"
                                 >
                                     {{ e.finding }}
                                 </Link>
                             </td>
-                            <td class="px-5 py-3.5 text-gray-700">
+                            <td class="px-5 py-3 text-gray-700">
                                 {{ e.description || 'Bukti perbaikan' }}
                             </td>
-                            <td class="px-5 py-3.5 text-gray-600">
+                            <td class="px-5 py-3 text-gray-600">
                                 <div>{{ e.uploaded_by }}</div>
-                                <div class="text-[10px] text-gray-400">{{ e.uploaded_at }}</div>
+                                <div class="text-xs text-gray-400 tabular-nums">{{ e.uploaded_at }}</div>
                             </td>
-                            <td class="px-5 py-3.5 text-right space-x-2">
+                            <td class="space-x-2 whitespace-nowrap px-5 py-3 text-right">
                                 <a
                                     :href="e.file_url"
                                     target="_blank"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                                    title="Lihat file"
+                                    aria-label="Lihat file"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white align-middle text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                                 >
-                                    Lihat File
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                                 </a>
                                 <button
                                     @click="approveEvidence(e.id)"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                                    class="inline-flex h-8 cursor-pointer items-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700"
                                 >
                                     Approve
                                 </button>
                                 <button
                                     @click="openRejectModal(e.id)"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                                    class="inline-flex h-8 cursor-pointer items-center rounded-lg bg-red-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-red-700"
                                 >
                                     Reject
                                 </button>
@@ -209,46 +220,51 @@ const approveEvidence = (evidenceId) => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                :current-page="currentPage"
+                :per-page="perPage"
+                :total-items="evidenceList.length"
+                @update:current-page="currentPage = $event"
+            />
         </div>
 
         <!-- Reject Modal -->
         <div
             v-if="rejectingEvidenceId"
-            class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-            <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl text-xs space-y-4">
-                <h3 class="text-sm font-semibold text-gray-900">Tolak Bukti Perbaikan (Evidence)</h3>
-                <p class="text-gray-500">Jelaskan alasan penolakan agar pihak toko dapat memperbaiki bukti yang diunggah.</p>
+            <div class="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <h3 class="text-base font-semibold text-gray-900">Tolak evidence</h3>
 
                 <form @submit.prevent="submitReject" class="space-y-4">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Alasan Penolakan <span class="text-red-500">*</span>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Alasan penolakan <span class="text-red-600">*</span>
                         </label>
                         <textarea
                             v-model="rejectForm.rejection_reason"
                             required
                             rows="4"
-                            placeholder="Tuliskan catatan perbaikan atau alasan belum memenuhi syarat..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         ></textarea>
-                        <div v-if="rejectForm.errors.rejection_reason" class="text-red-600 text-[11px] mt-1">{{ rejectForm.errors.rejection_reason }}</div>
+                        <div v-if="rejectForm.errors.rejection_reason" class="mt-1 text-xs text-red-600">{{ rejectForm.errors.rejection_reason }}</div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                    <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
                         <button
                             type="button"
                             @click="closeRejectModal"
-                            class="px-3.5 py-1.5 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium"
+                            class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             :disabled="rejectForm.processing"
-                            class="px-4 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50"
+                            class="inline-flex h-9 items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-red-700 disabled:opacity-50"
                         >
-                            {{ rejectForm.processing ? 'Menolak...' : 'Konfirmasi Tolak' }}
+                            {{ rejectForm.processing ? 'Menolak…' : 'Konfirmasi tolak' }}
                         </button>
                     </div>
                 </form>

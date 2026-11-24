@@ -36,7 +36,7 @@ class StoreController extends Controller
             'code'            => $s->code,
             'name'            => $s->name,
             'business_entity' => $s->business_entity ?: '-',
-            'type'            => $s->type ?: 'toko',
+            'type'            => strtolower($s->type ?: 'toko'),
             'area'            => $s->area ?: '-',
             'regional'        => $s->regional ?: '-',
             'address'         => $s->address ?: '',
@@ -73,7 +73,7 @@ class StoreController extends Controller
 
         Store::create($validated);
 
-        return redirect()->route('admin.stores.index')->with('success', 'Data saved! Toko / Gudang berhasil ditambahkan.');
+        return redirect()->route('admin.stores.index')->with('success', 'Unit berhasil ditambahkan.');
     }
 
     public function edit(Store $store): Response
@@ -84,7 +84,7 @@ class StoreController extends Controller
                 'code'            => $store->code,
                 'name'            => $store->name,
                 'business_entity' => $store->business_entity,
-                'type'            => $store->type ?: 'toko',
+                'type'            => strtolower($store->type ?: 'toko'),
                 'area'            => $store->area,
                 'regional'        => $store->regional,
                 'address'         => $store->address,
@@ -108,7 +108,7 @@ class StoreController extends Controller
 
         $store->update($validated);
 
-        return redirect()->route('admin.stores.index')->with('success', 'Data saved! Toko / Gudang berhasil diperbarui.');
+        return redirect()->route('admin.stores.index')->with('success', 'Unit berhasil diperbarui.');
     }
 
     public function destroy(Store $store): RedirectResponse
@@ -119,7 +119,7 @@ class StoreController extends Controller
 
         $store->delete();
 
-        return redirect()->route('admin.stores.index')->with('success', 'Toko berhasil dihapus.');
+        return redirect()->route('admin.stores.index')->with('success', 'Unit berhasil dihapus.');
     }
 
     public function importCsv(Request $request): RedirectResponse
@@ -162,6 +162,12 @@ class StoreController extends Controller
 
             if (empty($code) || empty($name)) continue;
 
+            $type = str_replace([' ', '-'], '_', $type);
+            $type = match ($type) {
+                'warehouse', 'dc' => 'gudang',
+                'ho', 'finance', 'kantor_pusat' => 'head_office',
+                default => $type,
+            };
             if (!in_array($type, ['toko', 'gudang', 'head_office', 'hub'])) {
                 $type = 'toko';
             }
@@ -192,7 +198,7 @@ class StoreController extends Controller
         fclose($handle);
 
         return redirect()->route('admin.stores.index')
-            ->with('success', "Data saved! Import CSA berhasil. {$inserted} data baru, {$updated} data diperbarui.");
+            ->with('success', "Import berhasil. {$inserted} data baru, {$updated} data diperbarui.");
     }
 
     /**

@@ -10,7 +10,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE `findings` MODIFY COLUMN `severity` ENUM('MINOR', 'MEDIUM', 'MAJOR', 'CRITICAL', 'OBSERVATION', 'CONTINUOUS') NOT NULL DEFAULT 'MINOR'");
+        // On other drivers (SQLite for tests) severity is already a plain string
+        // since 2026_09_01_000005, so CONTINUOUS is accepted without changes.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `findings` MODIFY COLUMN `severity` ENUM('MINOR', 'MEDIUM', 'MAJOR', 'CRITICAL', 'OBSERVATION', 'CONTINUOUS') NOT NULL DEFAULT 'MINOR'");
+        }
     }
 
     /**
@@ -18,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE `findings` MODIFY COLUMN `severity` ENUM('MINOR', 'MEDIUM', 'MAJOR', 'CRITICAL', 'OBSERVATION') NOT NULL DEFAULT 'MINOR'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `findings` MODIFY COLUMN `severity` ENUM('MINOR', 'MEDIUM', 'MAJOR', 'CRITICAL', 'OBSERVATION') NOT NULL DEFAULT 'MINOR'");
+        }
     }
 };

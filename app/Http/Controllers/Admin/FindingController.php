@@ -106,21 +106,27 @@ class FindingController extends Controller
 
     public function close(Request $request, Finding $finding): RedirectResponse
     {
+        if (! $finding->isCloseable()) {
+            return back()->with('error', 'Temuan hanya bisa ditutup setelah bukti diverifikasi.');
+        }
+
         $this->authorize('close', $finding);
 
-        $finding->update(['status' => Finding::STATUS_CLOSED]);
-
-        // Update action plan status
-        $finding->actionPlan?->update(['status' => 'COMPLETED']);
+        // CLOSED + action plan COMPLETED, audit ikut COMPLETED bila semua temuan sudah ditutup
+        $finding->markClosed();
 
         WhatsAppService::notifyFindingClosed($finding);
 
         return redirect()->route('admin.findings.show', $finding)
-            ->with('success', 'Data tersimpan! Temuan audit resmi ditutup (CLOSED).');
+            ->with('success', 'Temuan ditutup.');
     }
 
     public function updateRecommendation(Request $request, Finding $finding): RedirectResponse
     {
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
+
         $validated = $request->validate([
             'recommendation' => 'required|string|max:2000',
         ]);
@@ -129,11 +135,15 @@ class FindingController extends Controller
             'recommendation' => $validated['recommendation'],
         ]);
 
-        return back()->with('success', 'Rekomendasi perbaikan temuan audit berhasil diperbarui.');
+        return back()->with('success', 'Rekomendasi disimpan.');
     }
 
     public function reviewSeverity(Request $request, Finding $finding): RedirectResponse
     {
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
+
         $validated = $request->validate([
             'severity'       => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS',
             'severity_notes' => 'nullable|string|max:500',
@@ -160,13 +170,13 @@ class FindingController extends Controller
 
         \App\Services\WhatsAppService::notifySeverityReviewed($finding, $oldSeverity);
 
-        return back()->with('success', 'Severity & Rekomendasi berhasil disimpan. Notifikasi WhatsApp telah dikirim ke Auditor.');
+        return back()->with('success', 'Severity disimpan.');
     }
 
     public function destroy(Finding $finding): RedirectResponse
     {
         $finding->delete();
 
-        return redirect()->route('admin.findings.index')->with('success', 'Finding berhasil dihapus.');
+        return redirect()->route('admin.findings.index')->with('success', 'Temuan dihapus.');
     }
 }

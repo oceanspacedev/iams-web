@@ -27,7 +27,8 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Setelah login, user diarahkan ke dashboard portal sesuai role (User::getRedirectRoute)
+        $response->assertRedirect($user->getRedirectRoute());
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

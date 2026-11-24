@@ -20,12 +20,20 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'phone' => '081234567890',
             'email' => 'test@example.com',
+            'requested_role' => 'auditor',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Pendaftaran mandiri menunggu persetujuan admin: user belum login dan belum aktif
+        $this->assertGuest();
+        $response->assertRedirect(route('register.pending', absolute: false));
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'approval_status' => 'pending',
+            'is_active' => false,
+        ]);
     }
 }

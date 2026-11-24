@@ -60,9 +60,9 @@ const goToPage = (page) => {
 </script>
 
 <template>
-    <div v-if="totalItems > 0" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 bg-white border-t border-gray-200 text-xs">
-        <div class="text-gray-500">
-            Menampilkan <span class="font-semibold text-gray-800">{{ startItem }}</span> - <span class="font-semibold text-gray-800">{{ endItem }}</span> dari <span class="font-semibold text-gray-800">{{ totalItems }}</span> data
+    <div v-if="totalItems > 0" class="flex flex-col gap-3 border-t border-gray-200 bg-white px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-gray-500 tabular-nums">
+            Menampilkan <span class="font-medium text-gray-800">{{ startItem }}</span> - <span class="font-medium text-gray-800">{{ endItem }}</span> dari <span class="font-medium text-gray-800">{{ totalItems }}</span> data
         </div>
 
         <div v-if="totalPages > 1" class="flex items-center gap-1 self-center sm:self-auto">
@@ -70,10 +70,11 @@ const goToPage = (page) => {
             <button
                 @click="goToPage(currentPage - 1)"
                 :disabled="currentPage === 1"
-                class="px-2.5 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Halaman Sebelumnya"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors duration-150 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Halaman sebelumnya"
+                aria-label="Halaman sebelumnya"
             >
-                ‹ Prev
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
 
             <!-- Page Number Buttons -->
@@ -82,7 +83,7 @@ const goToPage = (page) => {
                 <button
                     v-else
                     @click="goToPage(p)"
-                    class="min-w-[28px] h-7 px-2 rounded text-xs font-medium transition-colors border"
+                    class="h-8 min-w-[32px] rounded-lg border px-2 text-sm tabular-nums transition-colors duration-150"
                     :class="p === currentPage ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
                 >
                     {{ p }}
@@ -93,10 +94,11 @@ const goToPage = (page) => {
             <button
                 @click="goToPage(currentPage + 1)"
                 :disabled="currentPage === totalPages"
-                class="px-2.5 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Halaman Selanjutnya"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors duration-150 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Halaman berikutnya"
+                aria-label="Halaman berikutnya"
             >
-                Next ›
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
             </button>
         </div>
     </div>

@@ -1,5 +1,5 @@
 <script setup>
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -16,7 +16,7 @@ const isModalOpen = ref(false);
 const isEditing = ref(false);
 const currentRuleId = ref(null);
 
-const form = ref({
+const form = useForm({
     name: '',
     days_before: 0,
     send_time: '08:00',
@@ -26,14 +26,8 @@ const form = ref({
 });
 
 const resetForm = () => {
-    form.value = {
-        name: '',
-        days_before: 0,
-        send_time: '08:00',
-        channel: 'whatsapp',
-        recipient_type: 'all',
-        is_active: true,
-    };
+    form.reset();
+    form.clearErrors();
     isEditing.value = false;
     currentRuleId.value = null;
 };
@@ -44,36 +38,33 @@ const openCreateModal = () => {
 };
 
 const openEditModal = (rule) => {
-    form.value = {
-        name: rule.name,
-        days_before: rule.days_before,
-        send_time: rule.send_time,
-        channel: rule.channel,
-        recipient_type: rule.recipient_type || 'all',
-        is_active: Boolean(rule.is_active),
-    };
+    form.clearErrors();
+    form.name = rule.name;
+    form.days_before = rule.days_before;
+    form.send_time = rule.send_time;
+    form.channel = rule.channel;
+    form.recipient_type = rule.recipient_type || 'all';
+    form.is_active = Boolean(rule.is_active);
     currentRuleId.value = rule.id;
     isEditing.value = true;
     isModalOpen.value = true;
 };
 
+const closeModal = () => {
+    isModalOpen.value = false;
+    resetForm();
+};
+
 const submitForm = () => {
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => closeModal(),
+    };
+
     if (isEditing.value) {
-        router.put(route('admin.notification-rules.update', currentRuleId.value), form.value, {
-            preserveScroll: true,
-            onSuccess: () => {
-                isModalOpen.value = false;
-                resetForm();
-            },
-        });
+        form.put(route('admin.notification-rules.update', currentRuleId.value), options);
     } else {
-        router.post(route('admin.notification-rules.store'), form.value, {
-            preserveScroll: true,
-            onSuccess: () => {
-                isModalOpen.value = false;
-                resetForm();
-            },
-        });
+        form.post(route('admin.notification-rules.store'), options);
     }
 };
 
@@ -119,9 +110,9 @@ const handleConfirm = () => {
 
 const deleteRule = (rule) => {
     openConfirm({
-        title: 'Hapus Aturan Notifikasi',
+        title: 'Hapus aturan notifikasi',
         message: `Apakah Anda yakin ingin menghapus aturan "${rule.name}"?`,
-        confirmText: 'Hapus Aturan',
+        confirmText: 'Hapus aturan',
         type: 'danger',
         action: () => router.delete(route('admin.notification-rules.destroy', rule.id)),
     });
@@ -129,67 +120,59 @@ const deleteRule = (rule) => {
 </script>
 
 <template>
-    <AppLayout title="Jadwal Notifikasi Audit">
-        <Head title="Jadwal Notifikasi Audit — Admin" />
+    <AppLayout title="Jadwal notifikasi">
+        <Head title="Jadwal notifikasi" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Jadwal Notifikasi Audit (Notification Rules)</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Kelola aturan pengingat otomatis jadwal audit (H-7, H-3, H-1, Hari H) yang dihitung berdasarkan Tanggal Audit</p>
+        <!-- Header: judul + jumlah, aksi di kanan -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Jadwal notifikasi</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ rules.length }}</span>
             </div>
-
-            <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 tabular-nums hidden sm:inline">
-                    {{ rules.length }} Aturan
-                </span>
-                <button
-                    @click="openCreateModal"
-                    type="button"
-                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
-                >
-                    + Tambah Aturan
-                </button>
-            </div>
+            <button
+                @click="openCreateModal"
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Tambah aturan
+            </button>
         </div>
 
-        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="rules.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Belum ada aturan notifikasi yang dibuat.
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="rules.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Belum ada aturan
                 </div>
                 <div
                     v-for="rule in paginatedRules"
                     :key="'m-rule-' + rule.id"
-                    class="p-4 space-y-2.5"
+                    class="space-y-3 p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ rule.name }}</div>
-                            <div class="text-[11px] text-gray-500 mt-0.5">
-                                Penerima: <strong class="text-gray-700 capitalize">{{ rule.recipient_type || 'Semua' }}</strong>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900">{{ rule.name }}</div>
+                            <div class="mt-0.5 text-xs text-gray-500 tabular-nums">
+                                <span class="font-medium text-blue-700">{{ rule.days_before === 0 ? 'Hari H' : 'H-' + rule.days_before }}</span>
+                                · {{ rule.send_time }} WIB
                             </div>
                         </div>
                         <span
-                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            class="inline-flex shrink-0 items-center gap-2 rounded-md border px-2 py-0.5 text-xs font-medium"
                             :class="rule.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                         >
-                            <span class="w-1.5 h-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                            <span class="h-1.5 w-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                             {{ rule.is_active ? 'Aktif' : 'Nonaktif' }}
                         </span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span class="font-medium text-blue-700">
-                            {{ rule.days_before === 0 ? 'Hari H (0 Hari)' : rule.days_before + ' hari sebelum audit' }}
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <span class="tabular-nums text-gray-500 text-[10px]">{{ rule.send_time }} WIB</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex min-w-0 items-center gap-2 text-xs text-gray-500">
                             <span
-                                class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border"
+                                class="inline-block rounded-md border px-2 py-0.5 text-xs font-medium capitalize"
                                 :class="{
                                     'bg-emerald-50 text-emerald-700 border-emerald-200': rule.channel === 'whatsapp',
                                     'bg-blue-50 text-blue-700 border-blue-200': rule.channel === 'email',
@@ -198,66 +181,73 @@ const deleteRule = (rule) => {
                             >
                                 {{ rule.channel }}
                             </span>
+                            <span class="truncate capitalize" title="Penerima">{{ rule.recipient_type || 'Semua' }}</span>
                         </div>
-                    </div>
 
-                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
-                        <button
-                            @click="openEditModal(rule)"
-                            class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] cursor-pointer"
-                        >
-                            Edit
-                        </button>
-                        <button
-                            @click="toggleActive(rule)"
-                            class="px-2.5 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 text-slate-700 font-medium text-[11px] cursor-pointer"
-                        >
-                            {{ rule.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                        </button>
-                        <button
-                            @click="deleteRule(rule)"
-                            class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px] cursor-pointer"
-                        >
-                            Hapus
-                        </button>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <button
+                                @click="openEditModal(rule)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors duration-150 hover:bg-slate-200"
+                                title="Edit"
+                                aria-label="Edit"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
+                            </button>
+                            <button
+                                @click="toggleActive(rule)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-slate-700 transition-colors duration-150 hover:bg-gray-50"
+                                :title="rule.is_active ? 'Nonaktifkan' : 'Aktifkan'"
+                                :aria-label="rule.is_active ? 'Nonaktifkan' : 'Aktifkan'"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9" /><path d="M6.4 6.4a8 8 0 1 0 11.2 0" /></svg>
+                            </button>
+                            <button
+                                @click="deleteRule(rule)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition-colors duration-150 hover:bg-red-100"
+                                title="Hapus"
+                                aria-label="Hapus"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="rules.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-slate-50 text-xs text-slate-700">
                         <tr>
-                            <th class="px-4 py-3 whitespace-nowrap">Nama Aturan</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Waktu Pengiriman</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Jam Kirim</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Channel</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Penerima</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-center">Status</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-right">Aksi</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Nama</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Jadwal</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Jam</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Channel</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Penerima</th>
+                            <th class="h-10 whitespace-nowrap px-5 text-center font-medium">Status</th>
+                            <th class="h-10 whitespace-nowrap px-5"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200 bg-white">
                         <tr v-if="rules.length === 0">
-                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">
-                                Belum ada aturan notifikasi yang dibuat.
+                            <td colspan="7" class="px-5 py-10 text-center text-gray-500">
+                                Belum ada aturan
                             </td>
                         </tr>
-                        <tr v-for="rule in paginatedRules" :key="rule.id" class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-4 py-3 font-semibold text-gray-900">
+                        <tr v-for="rule in paginatedRules" :key="rule.id" class="transition-colors duration-150 hover:bg-slate-50/70">
+                            <td class="h-14 px-5 py-3 font-medium text-gray-900">
                                 {{ rule.name }}
                             </td>
-                            <td class="px-4 py-3 text-gray-700">
-                                <span v-if="rule.days_before === 0" class="font-medium text-blue-700">Hari H (0 Hari)</span>
-                                <span v-else>{{ rule.days_before }} hari sebelum audit</span>
+                            <td class="px-5 py-3 text-gray-700 tabular-nums">
+                                <span v-if="rule.days_before === 0" class="font-medium text-blue-700">Hari H</span>
+                                <span v-else :title="rule.days_before + ' hari sebelum audit'">H-{{ rule.days_before }}</span>
                             </td>
-                            <td class="px-4 py-3 tabular-nums text-gray-800">
+                            <td class="px-5 py-3 text-gray-800 tabular-nums">
                                 {{ rule.send_time }} WIB
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-5 py-3">
                                 <span
-                                    class="inline-block px-2 py-0.5 rounded text-[11px] font-medium uppercase border"
+                                    class="inline-block rounded-md border px-2 py-0.5 text-xs font-medium capitalize"
                                     :class="{
                                         'bg-emerald-50 text-emerald-700 border-emerald-200': rule.channel === 'whatsapp',
                                         'bg-blue-50 text-blue-700 border-blue-200': rule.channel === 'email',
@@ -267,33 +257,37 @@ const deleteRule = (rule) => {
                                     {{ rule.channel }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-gray-700 capitalize">
+                            <td class="px-5 py-3 capitalize text-gray-700">
                                 {{ rule.recipient_type || 'Semua' }}
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-5 py-3 text-center">
                                 <button
                                     @click="toggleActive(rule)"
-                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer"
+                                    class="inline-flex items-center gap-2 rounded-md border px-2 py-0.5 text-xs font-medium transition-colors duration-150"
                                     :class="rule.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100' : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'"
+                                    title="Ubah status aktif"
                                 >
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                                    <span class="h-1.5 w-1.5 rounded-full" :class="rule.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                                     {{ rule.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </button>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="inline-flex items-center gap-2">
+                            <td class="whitespace-nowrap px-5 py-3 text-right">
+                                <div class="inline-flex items-center gap-1">
                                     <button
                                         @click="openEditModal(rule)"
-                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:text-slate-900"
+                                        title="Edit"
+                                        aria-label="Edit"
                                     >
-                                        Edit
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
                                     </button>
-                                    <span class="text-slate-300">|</span>
                                     <button
                                         @click="deleteRule(rule)"
-                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors duration-150 hover:text-red-800"
+                                        title="Hapus"
+                                        aria-label="Hapus"
                                     >
-                                        Hapus
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                                     </button>
                                 </div>
                             </td>
@@ -314,107 +308,116 @@ const deleteRule = (rule) => {
         <!-- Modal Form Create / Edit Rule -->
         <div
             v-if="isModalOpen"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs"
         >
-            <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl border border-gray-200">
-                <div class="flex items-center justify-between mb-4 border-b pb-3">
-                    <h3 class="text-sm font-semibold text-gray-900">
-                        {{ isEditing ? 'Edit Aturan Notifikasi' : 'Tambah Aturan Notifikasi Baru' }}
+            <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h3 class="text-base font-semibold text-gray-900">
+                        {{ isEditing ? 'Edit aturan' : 'Tambah aturan' }}
                     </h3>
-                    <button @click="isModalOpen = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">
-                        &times;
+                    <button @click="closeModal" aria-label="Tutup" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:text-gray-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
-                <form @submit.prevent="submitForm" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Nama Aturan</label>
-                        <input
-                            v-model="form.name"
-                            type="text"
-                            placeholder="Contoh: H-7, H-3, H-1, Hari H"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
+                <form @submit.prevent="submitForm" class="text-sm">
+                    <div class="space-y-4 p-5">
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">Hari Sebelum (Days Before)</label>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Nama</label>
                             <input
-                                v-model.number="form.days_before"
-                                type="number"
-                                min="0"
-                                max="90"
-                                required
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <span class="text-[10px] text-gray-400 mt-0.5 block">0 = Hari H pelaksanaan</span>
-                        </div>
-
-                        <div>
-                            <label class="block font-medium text-gray-700 mb-1">Jam Pengiriman</label>
-                            <input
-                                v-model="form.send_time"
+                                v-model="form.name"
                                 type="text"
-                                placeholder="08:00"
+                                placeholder="H-7, H-3, H-1, Hari H"
                                 required
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                             />
-                            <span class="text-[10px] text-gray-400 mt-0.5 block">Format: JJ:MM (24 Jam)</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-medium text-gray-700 mb-1">Channel Notifikasi</label>
-                            <select
-                                v-model="form.channel"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            >
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="email">Email</option>
-                                <option value="dashboard">Dashboard</option>
-                            </select>
+                            <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</div>
                         </div>
 
-                        <div>
-                            <label class="block font-medium text-gray-700 mb-1">Target Penerima</label>
-                            <select
-                                v-model="form.recipient_type"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            >
-                                <option value="all">Semua (Toko & Auditor)</option>
-                                <option value="auditee">Auditee Toko</option>
-                                <option value="auditor">Staff Audit</option>
-                            </select>
-                        </div>
-                    </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Hari sebelum</label>
+                                <input
+                                    v-model.number="form.days_before"
+                                    type="number"
+                                    min="0"
+                                    max="90"
+                                    required
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                                <span class="mt-1 block text-xs text-gray-400">0 = Hari H</span>
+                                <div v-if="form.errors.days_before" class="mt-1 text-sm text-red-600">{{ form.errors.days_before }}</div>
+                            </div>
 
-                    <div class="pt-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Jam kirim</label>
+                                <input
+                                    v-model="form.send_time"
+                                    type="text"
+                                    placeholder="08:00"
+                                    required
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                                <span class="mt-1 block text-xs text-gray-400">JJ:MM, 24 jam</span>
+                                <div v-if="form.errors.send_time" class="mt-1 text-sm text-red-600">{{ form.errors.send_time }}</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Channel</label>
+                                <select
+                                    v-model="form.channel"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                >
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="email">Email</option>
+                                    <option value="dashboard">Dashboard</option>
+                                </select>
+                                <div v-if="form.errors.channel" class="mt-1 text-sm text-red-600">{{ form.errors.channel }}</div>
+                            </div>
+
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Penerima</label>
+                                <select
+                                    v-model="form.recipient_type"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                >
+                                    <option value="all">Semua</option>
+                                    <option value="auditee">Auditee Toko</option>
+                                    <option value="auditor">Staff Audit</option>
+                                </select>
+                                <div v-if="form.errors.recipient_type" class="mt-1 text-sm text-red-600">{{ form.errors.recipient_type }}</div>
+                            </div>
+                        </div>
+
+                        <label class="flex cursor-pointer items-center gap-2">
                             <input
                                 v-model="form.is_active"
                                 type="checkbox"
-                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 shadow-sm"
                             />
-                            <span class="text-xs text-gray-700 font-medium">Status Aturan Aktif</span>
+                            <span class="text-sm font-medium text-gray-700">Aktif</span>
                         </label>
+                        <div v-if="form.errors.is_active" class="mt-1 text-sm text-red-600">{{ form.errors.is_active }}</div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
+                    <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
                         <button
-                            @click="isModalOpen = false"
+                            @click="closeModal"
                             type="button"
-                            class="px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                            class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
-                            class="px-3.5 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium"
+                            :disabled="form.processing"
+                            class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                         >
-                            {{ isEditing ? 'Simpan Perubahan' : 'Tambah Aturan' }}
+                            {{ form.processing ? 'Menyimpan…' : (isEditing ? 'Simpan perubahan' : 'Tambah aturan') }}
                         </button>
                     </div>
                 </form>

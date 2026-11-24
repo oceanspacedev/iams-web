@@ -95,7 +95,9 @@ class SopController extends Controller
             Storage::disk('public')->delete($sop->document);
         }
 
-        $sop->delete();
+        // Hapus permanen: kolom code unik di database, jadi soft delete membuat kode lama tidak bisa dipakai lagi.
+        // Aman karena SOP yang masih ditautkan ke temuan sudah ditolak di atas, dan file dokumennya sudah dihapus.
+        $sop->forceDelete();
 
         return back()->with('success', 'SOP / SE berhasil dihapus.');
     }

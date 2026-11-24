@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -63,12 +63,22 @@ watch([searchQuery, roleFilter], () => {
     currentPage.value = 1;
 });
 
+// Jaga halaman tetap valid saat jumlah data berkurang (hapus / ganti tab)
+watch(() => filteredUsers.value.length, (total) => {
+    const lastPage = Math.max(1, Math.ceil(total / 10));
+    if (currentPage.value > lastPage) currentPage.value = lastPage;
+});
+
 const paginatedUsers = computed(() => {
     const start = (currentPage.value - 1) * 10;
     return filteredUsers.value.slice(start, start + 10);
 });
 
+const approveRoleOrder = ['auditor', 'coordinator', 'auditee', 'asmen', 'chief', 'admin'];
+const approveRoles = computed(() => approveRoleOrder.filter((r) => props.roles.includes(r)));
+
 const setStatusFilter = (status) => {
+    currentPage.value = 1;
     router.get(route('admin.users.index'), { status }, {
         preserveState: true,
         preserveScroll: true,
@@ -86,6 +96,7 @@ const approveModal = ref({
     show: false,
     user: null,
     selectedRole: 'auditor',
+    error: '',
 });
 
 const openApproveModal = (user) => {
@@ -93,17 +104,22 @@ const openApproveModal = (user) => {
         show: true,
         user,
         selectedRole: user.requested_role || 'auditor',
+        error: '',
     };
 };
 
 const submitApprove = () => {
     if (!approveModal.value.user) return;
+    approveModal.value.error = '';
     router.patch(route('admin.users.approve', approveModal.value.user.id), {
         role: approveModal.value.selectedRole,
     }, {
         preserveScroll: true,
         onSuccess: () => {
             approveModal.value.show = false;
+        },
+        onError: (errors) => {
+            approveModal.value.error = errors.role || '';
         },
     });
 };
@@ -147,9 +163,9 @@ const confirmModal = ref({
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
-        title: config.title || 'Konfirmasi Tindakan',
+        title: config.title || 'Konfirmasi tindakan',
         message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
-        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        confirmText: config.confirmText || 'Ya, lanjutkan',
         type: config.type || 'primary',
         action: config.action,
     };
@@ -162,11 +178,16 @@ const handleConfirm = () => {
     confirmModal.value.show = false;
 };
 
+// Chief tidak boleh mengelola akun admin (server juga menolak), jadi tombolnya disembunyikan
+const page = usePage();
+const isAdmin = computed(() => (page.props.auth?.user?.roles || []).some((r) => (r.name || r) === 'admin'));
+const canManage = (u) => isAdmin.value || u.role !== 'admin';
+
 const deleteUser = (user) => {
     openConfirm({
-        title: 'Hapus Akun Pengguna',
+        title: 'Hapus akun pengguna',
         message: `Apakah Anda yakin ingin menghapus user ${user.name} (${user.email})?`,
-        confirmText: 'Ya, Hapus Pengguna',
+        confirmText: 'Ya, hapus pengguna',
         type: 'danger',
         action: () => router.delete(route('admin.users.destroy', user.id)),
     });
@@ -174,104 +195,102 @@ const deleteUser = (user) => {
 </script>
 
 <template>
-    <AppLayout title="Manajemen Pengguna">
-        <Head title="Manajemen Pengguna — Admin" />
+    <AppLayout title="Pengguna">
+        <Head title="Pengguna" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Manajemen Pengguna</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Kelola akun, persetujuan pendaftar baru, dan hak akses pengguna sistem</p>
+        <!-- Header: judul + jumlah, aksi di kanan -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Pengguna</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ filteredUsers.length }}</span>
             </div>
-
-            <div class="flex items-center">
-                <Link
-                    :href="route('admin.users.create')"
-                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
-                >
-                    + Tambah Pengguna
-                </Link>
-            </div>
+            <Link
+                :href="route('admin.users.create')"
+                class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Tambah pengguna
+            </Link>
         </div>
 
-        <!-- Filter Status Tabs (Scrollable on Mobile) -->
-        <div class="mb-4 border-b border-gray-200 overflow-x-auto no-scrollbar">
-            <nav class="flex space-x-3 sm:space-x-6 text-xs whitespace-nowrap min-w-max pb-2" aria-label="Tabs">
-                <button
-                    type="button"
-                    @click="setStatusFilter('all')"
-                    class="pb-2 px-1 border-b-2 font-medium cursor-pointer transition-colors"
-                    :class="currentStatus === 'all' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                >
-                    Semua Pengguna
-                    <span class="ml-1 py-0.5 px-1.5 rounded-full text-[10px]" :class="currentStatus === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'">
-                        {{ stats.all }}
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    @click="setStatusFilter('active')"
-                    class="pb-2 px-1 border-b-2 font-medium cursor-pointer transition-colors"
-                    :class="currentStatus === 'active' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                >
-                    Aktif
-                    <span class="ml-1 py-0.5 px-1.5 rounded-full text-[10px]" :class="currentStatus === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'">
-                        {{ stats.active }}
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    @click="setStatusFilter('pending')"
-                    class="pb-2 px-1 border-b-2 font-medium cursor-pointer transition-colors flex items-center gap-1"
-                    :class="currentStatus === 'pending' ? 'border-amber-600 text-amber-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                >
-                    Menunggu Persetujuan
-                    <span
-                        class="py-0.5 px-1.5 rounded-full text-[10px] font-bold"
-                        :class="stats.pending > 0 ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300 animate-pulse' : 'bg-gray-100 text-gray-600'"
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <!-- Tab status di dalam kartu -->
+            <div class="no-scrollbar overflow-x-auto border-b border-gray-200 px-5">
+                <nav class="flex min-w-max gap-6 whitespace-nowrap text-sm" aria-label="Tabs">
+                    <button
+                        type="button"
+                        @click="setStatusFilter('all')"
+                        class="-mb-px flex h-12 items-center gap-2 border-b-2 px-1 font-medium transition-colors duration-150"
+                        :class="currentStatus === 'all' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                     >
-                        {{ stats.pending }}
-                    </span>
-                </button>
+                        Semua
+                        <span class="rounded-md px-2 py-0.5 text-xs tabular-nums" :class="currentStatus === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'">
+                            {{ stats.all }}
+                        </span>
+                    </button>
 
-                <button
-                    type="button"
-                    @click="setStatusFilter('inactive')"
-                    class="pb-2 px-1 border-b-2 font-medium cursor-pointer transition-colors"
-                    :class="currentStatus === 'inactive' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                >
-                    Nonaktif / Ditolak
-                    <span class="ml-1 py-0.5 px-1.5 rounded-full text-[10px]" :class="currentStatus === 'inactive' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600'">
-                        {{ stats.inactive }}
-                    </span>
-                </button>
-            </nav>
-        </div>
+                    <button
+                        type="button"
+                        @click="setStatusFilter('active')"
+                        class="-mb-px flex h-12 items-center gap-2 border-b-2 px-1 font-medium transition-colors duration-150"
+                        :class="currentStatus === 'active' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    >
+                        Aktif
+                        <span class="rounded-md px-2 py-0.5 text-xs tabular-nums" :class="currentStatus === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'">
+                            {{ stats.active }}
+                        </span>
+                    </button>
 
-        <!-- Filter Bar -->
-        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
-            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-                <div class="relative flex-1 w-full">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
+                    <button
+                        type="button"
+                        @click="setStatusFilter('pending')"
+                        class="-mb-px flex h-12 items-center gap-2 border-b-2 px-1 font-medium transition-colors duration-150"
+                        :class="currentStatus === 'pending' ? 'border-amber-600 text-amber-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    >
+                        Menunggu
+                        <span
+                            class="rounded-md px-2 py-0.5 text-xs font-medium tabular-nums"
+                            :class="stats.pending > 0 ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300' : 'bg-gray-100 text-gray-600'"
+                        >
+                            {{ stats.pending }}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="setStatusFilter('inactive')"
+                        class="-mb-px flex h-12 items-center gap-2 border-b-2 px-1 font-medium transition-colors duration-150"
+                        :class="currentStatus === 'inactive' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    >
+                        Nonaktif / ditolak
+                        <span class="rounded-md px-2 py-0.5 text-xs tabular-nums" :class="currentStatus === 'inactive' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600'">
+                            {{ stats.inactive }}
+                        </span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Filter di dalam kartu tabel -->
+            <div class="flex flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center">
+                <div class="relative w-full sm:w-80">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Cari nama, email, atau no. WhatsApp..."
-                        class="w-full pl-9 pr-4 py-2 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        placeholder="Cari"
+                        aria-label="Cari nama, email, atau no. WhatsApp"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                     />
                 </div>
-                <div class="w-full sm:w-56 shrink-0">
+                <div class="flex w-full gap-3 sm:ml-auto sm:w-auto">
                     <select
                         v-model="roleFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white font-medium"
+                        aria-label="Jabatan"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 sm:w-auto shadow-sm"
                     >
-                        <option value="">Semua Jabatan</option>
+                        <option value="">Semua jabatan</option>
                         <option value="admin">Admin</option>
                         <option value="chief">Chief Auditor</option>
                         <option value="asmen">Asisten Manager</option>
@@ -281,209 +300,200 @@ const deleteUser = (user) => {
                     </select>
                 </div>
             </div>
-        </div>
 
-        <!-- Content: Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="filteredUsers.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Tidak ada data pengguna pada filter ini.
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="filteredUsers.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Tidak ada pengguna
                 </div>
                 <div
                     v-for="u in paginatedUsers"
                     :key="'mobile-' + u.id"
-                    class="p-4 space-y-2.5"
+                    class="space-y-3 p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ u.name }}</div>
-                            <div class="text-xs text-gray-500 mt-0.5">{{ u.email }}</div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900">{{ u.name }}</div>
+                            <div class="mt-0.5 truncate text-sm text-gray-500">{{ u.email }}</div>
                         </div>
 
-                        <!-- Status Badge -->
-                        <div>
+                        <div class="shrink-0">
                             <template v-if="u.approval_status === 'pending'">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                    Pending Review
+                                <span class="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                    Menunggu
                                 </span>
                             </template>
                             <template v-else-if="u.approval_status === 'rejected'">
-                                <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                                <span class="rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800">
                                     Ditolak
                                 </span>
                             </template>
                             <template v-else>
                                 <button
                                     @click="toggleActive(u)"
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border"
+                                    class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
                                     :class="u.is_active ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
+                                    title="Ubah status aktif"
                                 >
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="u.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                                    <span class="h-1.5 w-1.5 rounded-full" :class="u.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                                     {{ u.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </button>
                             </template>
                         </div>
                     </div>
 
-                    <!-- Role & Phone Details -->
-                    <div class="flex items-center justify-between text-xs text-gray-600 pt-1 border-t border-gray-100">
-                        <div>
-                            <span class="text-gray-400">Jabatan: </span>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 text-xs text-gray-600">
                             <span class="font-medium text-slate-800">
                                 {{ u.approval_status === 'pending' ? getRoleLabel(u.requested_role) : getRoleLabel(u.role) }}
                             </span>
+                            <span class="tabular-nums"> · {{ u.phone || '—' }}</span>
                         </div>
-                        <div class="text-xs text-gray-700">
-                            {{ u.phone || '—' }}
-                        </div>
-                    </div>
 
-                    <!-- Mobile Action Buttons -->
-                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
-                        <template v-if="u.approval_status === 'pending'">
-                            <button
-                                @click="openApproveModal(u)"
-                                class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs transition cursor-pointer"
-                            >
-                                Setujui
-                            </button>
-                            <button
-                                @click="openRejectModal(u)"
-                                class="px-3 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-xs transition cursor-pointer"
-                            >
-                                Tolak
-                            </button>
-                        </template>
-                        <template v-else>
-                            <Link
-                                :href="route('admin.users.edit', u.id)"
-                                class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition cursor-pointer"
-                            >
-                                Edit
-                            </Link>
-                            <button
-                                @click="deleteUser(u)"
-                                class="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-xs transition cursor-pointer"
-                            >
-                                Hapus
-                            </button>
-                        </template>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <template v-if="u.approval_status === 'pending'">
+                                <button
+                                    @click="openApproveModal(u)"
+                                    class="inline-flex h-8 items-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700"
+                                >
+                                    Setujui
+                                </button>
+                                <button
+                                    @click="openRejectModal(u)"
+                                    class="inline-flex h-8 items-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-rose-700 transition-colors duration-150 hover:bg-rose-100"
+                                >
+                                    Tolak
+                                </button>
+                            </template>
+                            <template v-else-if="canManage(u)">
+                                <Link
+                                    :href="route('admin.users.edit', u.id)"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors duration-150 hover:bg-slate-200"
+                                    title="Edit"
+                                    aria-label="Edit"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
+                                </Link>
+                                <button
+                                    @click="deleteUser(u)"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition-colors duration-150 hover:bg-red-100"
+                                    title="Hapus"
+                                    aria-label="Hapus"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
+                                </button>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="filteredUsers.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-slate-50 text-xs text-slate-700">
                         <tr>
-                            <th class="px-4 py-3 whitespace-nowrap">Nama Lengkap</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Email</th>
-                            <th class="px-4 py-3 whitespace-nowrap">No. WhatsApp</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Jabatan / Role</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-center">Status</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-right">Aksi</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Nama</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">WhatsApp</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Jabatan</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Daftar</th>
+                            <th class="h-10 whitespace-nowrap px-5 text-center font-medium">Status</th>
+                            <th class="h-10 whitespace-nowrap px-5"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200 bg-white">
                         <tr v-if="filteredUsers.length === 0">
-                            <td colspan="6" class="px-4 py-10 text-center text-gray-500">
-                                Tidak ada data pengguna pada filter ini.
+                            <td colspan="6" class="px-5 py-10 text-center text-gray-500">
+                                Tidak ada pengguna
                             </td>
                         </tr>
                         <tr
                             v-for="u in paginatedUsers"
                             :key="u.id"
-                            class="hover:bg-slate-50/70 transition-colors"
+                            class="transition-colors duration-150 hover:bg-slate-50/70"
                         >
-                            <td class="px-4 py-3 align-middle font-medium text-gray-900">
-                                <div>{{ u.name }}</div>
-                                <div v-if="u.created_at" class="text-xs text-gray-400 font-normal">
-                                    Daftar: {{ u.created_at }}
-                                </div>
+                            <td class="h-14 px-5 py-3 align-middle">
+                                <div class="font-medium text-gray-900">{{ u.name }}</div>
+                                <div class="mt-0.5 text-xs text-gray-500">{{ u.email }}</div>
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-600 text-xs">
-                                {{ u.email }}
-                            </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-gray-700 text-xs">
+                            <td class="whitespace-nowrap px-5 py-3 align-middle text-gray-700 tabular-nums">
                                 {{ u.phone || '—' }}
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap">
+                            <td class="whitespace-nowrap px-5 py-3 align-middle">
                                 <template v-if="u.approval_status === 'pending'">
-                                    <div class="text-xs text-amber-800 font-medium">
-                                        Pengajuan: <span class="font-semibold underline">{{ getRoleLabel(u.requested_role) }}</span>
+                                    <div class="text-sm text-amber-800" title="Jabatan yang diajukan">
+                                        <span class="font-medium underline">{{ getRoleLabel(u.requested_role) }}</span>
                                     </div>
-                                    <div v-if="u.stores !== '—'" class="text-xs text-gray-500">
-                                        Toko: {{ u.stores }}
+                                    <div v-if="u.stores !== '—'" class="mt-0.5 text-xs text-gray-500">
+                                        {{ u.stores }}
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                    <span class="inline-block rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                                         {{ getRoleLabel(u.role) }}
                                     </span>
                                 </template>
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-center">
-                                <!-- PENDING APPROVAL BADGE -->
+                            <td class="whitespace-nowrap px-5 py-3 align-middle text-xs text-gray-400 tabular-nums">
+                                {{ u.created_at || '—' }}
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3 text-center align-middle">
                                 <template v-if="u.approval_status === 'pending'">
-                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        Pending Review
+                                    <span class="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                        Menunggu
                                     </span>
                                 </template>
-                                <!-- REJECTED BADGE -->
                                 <template v-else-if="u.approval_status === 'rejected'">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                                    <span class="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800">
                                         Ditolak
                                     </span>
                                 </template>
-                                <!-- STANDARD ACTIVE / INACTIVE TOGGLE -->
                                 <template v-else>
                                     <button
                                         @click="toggleActive(u)"
-                                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors border cursor-pointer"
+                                        class="inline-flex items-center gap-2 rounded-md border px-2 py-0.5 text-xs font-medium transition-colors duration-150"
                                         :class="u.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100' : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'"
-                                        title="Klik untuk mengubah status aktif"
+                                        title="Ubah status aktif"
                                     >
-                                        <span class="w-1.5 h-1.5 rounded-full" :class="u.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                                        <span class="h-1.5 w-1.5 rounded-full" :class="u.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                                         {{ u.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </button>
                                 </template>
                             </td>
-                            <td class="px-4 py-3 align-middle whitespace-nowrap text-right">
-                                <!-- ACTION FOR PENDING USERS -->
+                            <td class="whitespace-nowrap px-5 py-3 text-right align-middle">
                                 <div v-if="u.approval_status === 'pending'" class="inline-flex items-center gap-2">
                                     <button
                                         @click="openApproveModal(u)"
-                                        class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs transition cursor-pointer"
+                                        class="inline-flex h-8 items-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700"
                                     >
                                         Setujui
                                     </button>
                                     <button
                                         @click="openRejectModal(u)"
-                                        class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium text-xs transition cursor-pointer"
+                                        class="inline-flex h-8 items-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-rose-700 transition-colors duration-150 hover:bg-rose-100"
                                     >
                                         Tolak
                                     </button>
                                 </div>
 
-                                <!-- ACTION FOR APPROVED USERS -->
-                                <div v-else class="inline-flex items-center gap-2">
+                                <div v-else-if="canManage(u)" class="inline-flex items-center gap-1">
                                     <Link
                                         :href="route('admin.users.edit', u.id)"
-                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:text-slate-900"
+                                        title="Edit"
+                                        aria-label="Edit"
                                     >
-                                        Edit
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
                                     </Link>
-                                    <span class="text-slate-300">|</span>
                                     <button
                                         @click="deleteUser(u)"
-                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors duration-150 hover:text-red-800"
+                                        title="Hapus"
+                                        aria-label="Hapus"
                                     >
-                                        Hapus
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                                     </button>
                                 </div>
                             </td>
@@ -502,106 +512,94 @@ const deleteUser = (user) => {
         </div>
 
         <!-- Approve Modal -->
-        <div v-if="approveModal.show" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-sm w-full p-6 shadow-xl text-xs space-y-4">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <div v-if="approveModal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-sm space-y-5 rounded-2xl bg-white p-6 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900">Setujui Pendaftaran Akun</h3>
-                        <p class="text-gray-500 text-[11px]">Konfirmasi peran dan hak akses akun</p>
-                    </div>
+                    <h3 class="text-base font-semibold text-gray-900">Setujui pendaftaran</h3>
                 </div>
 
-                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-slate-700 space-y-1">
-                    <div>Nama: <strong class="text-slate-900">{{ approveModal.user?.name }}</strong></div>
-                    <div>WhatsApp: <span>{{ approveModal.user?.phone }}</span></div>
-                    <div>Pengajuan: <span class="text-blue-700 font-medium">{{ getRoleLabel(approveModal.user?.requested_role) }}</span></div>
-                </div>
+                <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-700">
+                    <dt class="text-gray-500">Nama</dt>
+                    <dd class="font-medium text-slate-900">{{ approveModal.user?.name }}</dd>
+                    <dt class="text-gray-500">WhatsApp</dt>
+                    <dd class="tabular-nums">{{ approveModal.user?.phone }}</dd>
+                    <dt class="text-gray-500">Pengajuan</dt>
+                    <dd class="font-medium text-blue-700">{{ getRoleLabel(approveModal.user?.requested_role) }}</dd>
+                </dl>
 
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Pilih Jabatan yang Disetujui:</label>
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Jabatan disetujui</label>
                     <select
                         v-model="approveModal.selectedRole"
-                        class="w-full text-xs rounded border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 font-medium"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     >
-                        <option value="auditor">Auditor</option>
-                        <option value="coordinator">Koordinator</option>
-                        <option value="auditee">Auditee Toko</option>
-                        <option value="asmen">Asisten Manager</option>
-                        <option value="chief">Chief Auditor</option>
-                        <option value="admin">Admin (Administrator)</option>
+                        <option v-for="r in approveRoles" :key="r" :value="r">{{ getRoleLabel(r) }}</option>
                     </select>
-                    <p class="text-[10px] text-gray-400 mt-1">
-                        Notifikasi WhatsApp persetujuan akan otomatis dikirim ke nomor pengguna.
+                    <div v-if="approveModal.error" class="mt-1 text-sm text-red-600">{{ approveModal.error }}</div>
+                    <p class="mt-2 text-xs text-gray-400">
+                        Notifikasi WA terkirim otomatis
                     </p>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
                     <button
                         type="button"
                         @click="approveModal.show = false"
-                        class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium cursor-pointer"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
                     </button>
                     <button
                         type="button"
                         @click="submitApprove"
-                        class="px-3.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium cursor-pointer"
+                        class="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700"
                     >
-                        Ya, Setujui Akun
+                        Setujui
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Reject Modal -->
-        <div v-if="rejectModal.show" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-sm w-full p-6 shadow-xl text-xs space-y-4">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <div v-if="rejectModal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-sm space-y-5 rounded-2xl bg-white p-6 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900">Tolak Pendaftaran Akun</h3>
-                        <p class="text-gray-500 text-[11px]">Tolak permohonan pendaftar</p>
-                    </div>
-                </div>
-
-                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-slate-700">
-                    <div>Tolak pendaftaran akun untuk <strong class="text-slate-900">{{ rejectModal.user?.name }}</strong>?</div>
+                    <h3 class="text-base font-semibold text-gray-900">Tolak {{ rejectModal.user?.name }}?</h3>
                 </div>
 
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Alasan Penolakan (Opsional):</label>
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Alasan <span class="font-normal text-gray-400">opsional</span></label>
                     <textarea
                         v-model="rejectModal.reason"
                         rows="2"
-                        placeholder="Contoh: Nomor telepon atau identitas tidak valid..."
-                        class="w-full text-xs rounded border-gray-300 focus:border-rose-500 focus:ring-rose-500"
+                        class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:ring-rose-500"
                     ></textarea>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
                     <button
                         type="button"
                         @click="rejectModal.show = false"
-                        class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium cursor-pointer"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
                     </button>
                     <button
                         type="button"
                         @click="submitReject"
-                        class="px-3.5 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium cursor-pointer"
+                        class="inline-flex h-9 items-center justify-center rounded-lg bg-rose-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-rose-700"
                     >
-                        Tolak Pendaftaran
+                        Tolak
                     </button>
                 </div>
             </div>

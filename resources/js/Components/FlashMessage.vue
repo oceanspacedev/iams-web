@@ -59,26 +59,23 @@ onUnmounted(() => {
         <!-- Clean Success Alert with 7s timer -->
         <div
             v-if="flash.success"
-            class="relative overflow-hidden bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-md"
+            class="relative overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900"
         >
-            <div class="flex items-center justify-between px-3.5 py-2.5">
-                <div class="flex items-center gap-2.5 text-xs">
-                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex items-center gap-3 text-sm">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <div class="font-medium">
-                        <span class="font-semibold text-emerald-950">Data saved:</span>
-                        <span class="ml-1 text-emerald-900">{{ flash.success.replace(/^Data saved!\s*/i, '') }}</span>
-                    </div>
+                    <span class="font-medium text-emerald-900">{{ flash.success.replace(/^Data saved!\s*/i, '') }}</span>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0 ml-3">
                     <button
                         @click="close"
-                        class="p-1 rounded text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 transition-colors"
+                        class="flex h-7 w-7 items-center justify-center rounded-md text-emerald-700 transition-colors duration-150 hover:bg-emerald-100 hover:text-emerald-950" aria-label="Tutup"
                         title="Tutup"
                     >
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -88,8 +85,8 @@ onUnmounted(() => {
             <!-- 7s Countdown Line -->
             <div class="w-full bg-emerald-100 h-0.5">
                 <div
-                    class="bg-emerald-600 h-0.5 transition-all ease-linear"
-                    :style="{ width: `${progress}%` }"
+                    class="h-0.5 origin-left bg-emerald-600 transition-transform ease-linear"
+                    :style="{ transform: `scaleX(${progress / 100})` }"
                 ></div>
             </div>
         </div>
@@ -97,19 +94,42 @@ onUnmounted(() => {
         <!-- Clean Error Alert -->
         <div
             v-if="flash.error"
-            class="bg-red-50 border border-red-200 text-red-900 rounded-md px-3.5 py-2.5 flex items-center justify-between text-xs"
+            class="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
         >
-            <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="flex items-center gap-3">
+                <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <span class="font-medium text-red-900">{{ flash.error }}</span>
             </div>
             <button
                 @click="close"
-                class="p-1 text-red-700 hover:text-red-950 rounded hover:bg-red-100 transition-colors ml-3"
+                class="ml-3 flex h-7 w-7 items-center justify-center rounded-md text-red-700 transition-colors duration-150 hover:bg-red-100 hover:text-red-950" aria-label="Tutup"
             >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Info -->
+        <div
+            v-if="flash.message && !flash.success && !flash.error"
+            class="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900"
+        >
+            <div class="flex items-center gap-3">
+                <svg class="h-4 w-4 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8h.01M11 12h1v4h1m-1-13a9 9 0 110 18 9 9 0 010-18z" />
+                </svg>
+                <span class="font-medium text-blue-900">{{ flash.message }}</span>
+            </div>
+            <button
+                @click="close"
+                class="ml-3 flex h-7 w-7 items-center justify-center rounded-md text-blue-700 transition-colors duration-150 hover:bg-blue-100 hover:text-blue-950"
+                aria-label="Tutup"
+                title="Tutup"
+            >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>

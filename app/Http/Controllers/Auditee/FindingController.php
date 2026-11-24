@@ -60,10 +60,14 @@ class FindingController extends Controller
                     'verified_by'         => $e->verifier?->name,
                     'uploaded_at'         => $e->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                     'file_url'            => $e->file_url,
-                    'can_delete'          => $e->uploaded_by === $request->user()->id && in_array($e->verification_status, ['PENDING', 'REJECTED']),
+                    'can_delete'          => $e->uploaded_by === $request->user()->id
+                        && in_array($e->verification_status, ['PENDING', 'REJECTED'])
+                        && ! $finding->isClosed(),
                 ]),
                 'can_upload_evidence' => $finding->canUploadEvidence(),
-                'can_edit_action_plan' => in_array($finding->status, [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS]),
+                'can_edit_action_plan' => $finding->canEditActionPlan(),
+                // Sama dengan aturan di Auditee\ActionPlanController: setelah action plan diisi, deadline tidak bisa diubah auditee
+                'deadline_locked' => (bool) ($finding->actionPlan && (! empty($finding->actionPlan->action_plan) || $finding->actionPlan->deadline !== null)),
             ],
         ]);
     }

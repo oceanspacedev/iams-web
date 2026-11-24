@@ -69,153 +69,146 @@ const categoryColor = qualityCategoryColor;
 </script>
 
 <template>
-    <AppLayout title="Laporan Finding Quality">
-        <Head title="Laporan Finding Quality" />
+    <AppLayout title="Kualitas temuan">
+        <Head title="Kualitas temuan" />
 
-        <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan Finding Quality</h1>
-                <p class="text-xs text-gray-500 mt-1">
-                    Monitoring dan eskalasi temuan audit berdampak tinggi (High-Impact Audit Findings)
-                </p>
+        <!-- Header: judul + jumlah, aksi utama di kanan -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Kualitas temuan</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ qualityFindings.length }}</span>
             </div>
 
             <Link
                 :href="route(`${currentPrefix}finding-qualities.create`)"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                class="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
             >
-                + Buat Laporan Baru
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 5v14M5 12h14" />
+                </svg>
+                Buat laporan
             </Link>
         </div>
 
-        <!-- 4 Kategori Finding Quality (klik untuk filter) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <!-- Satu panel kategori (klik untuk filter) -->
+        <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white lg:grid-cols-4 shadow-sm">
             <button
                 v-for="(cat, key) in categories"
                 :key="key"
                 type="button"
                 @click="filterByCategory(key)"
-                class="flex flex-col text-left p-4 rounded-lg border transition-colors text-xs cursor-pointer select-none"
+                :title="cat.description"
+                class="-mb-px -mr-px flex cursor-pointer select-none flex-col border-b border-r border-gray-200 px-5 py-5 text-left text-sm ring-inset transition-colors duration-150"
                 :class="selectedCategory === key ? categoryColor(key).selected : categoryColor(key).card"
             >
-                <div class="font-medium truncate" :class="categoryColor(key).label" :title="cat.label || cat.title">
-                    {{ cat.label || cat.title }}
+                <div class="flex min-w-0 items-center gap-2 font-medium" :class="categoryColor(key).label">
+                    <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="categoryColor(key).dot"></span>
+                    <span class="truncate" :title="cat.label || cat.title">{{ cat.label || cat.title }}</span>
                 </div>
-                <div class="mt-2 flex items-baseline gap-1.5">
-                    <span class="text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ stats[key] || 0 }}</span>
-                    <span class="text-gray-500">temuan</span>
-                </div>
-                <p class="mt-1 text-[11px] leading-relaxed line-clamp-2" :class="categoryColor(key).desc" :title="cat.description">
-                    {{ cat.description }}
-                </p>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ stats[key] || 0 }}</div>
             </button>
         </div>
 
-        <!-- Active Filter Indicator -->
-        <div v-if="selectedCategory" class="mb-4 flex items-center justify-between bg-slate-100 px-4 py-2 rounded text-xs text-slate-800 border border-slate-200">
-            <div class="flex items-center gap-2">
-                <span>Filter Kategori: <strong>{{ categories[selectedCategory]?.label || selectedCategory }}</strong></span>
+        <!-- Daftar laporan -->
+        <section class="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                <h2 class="text-base font-semibold text-gray-900">Laporan</h2>
+                <button
+                    v-if="selectedCategory"
+                    type="button"
+                    @click="filterByCategory('')"
+                    aria-label="Reset filter"
+                    title="Reset filter"
+                    class="inline-flex h-8 items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm font-medium text-slate-800 transition-colors duration-150 hover:text-slate-900"
+                >
+                    {{ categories[selectedCategory]?.label || selectedCategory }}
+                    <svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <button @click="filterByCategory('')" class="text-slate-600 hover:text-slate-900 font-medium text-xs">
-                Reset Filter ✕
-            </button>
-        </div>
 
-        <!-- Clean Table / List of Quality Findings with 10-Item Pagination -->
-        <div v-if="qualityFindings.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center text-xs text-gray-500">
-            <p class="font-medium text-gray-700">Belum ada data laporan Finding Quality.</p>
-            <p class="text-gray-400 mt-1">Klik tombol "Buat Laporan Baru" di atas untuk menambahkan temuan berkualitas tinggi.</p>
-        </div>
+            <div v-if="qualityFindings.length === 0" class="p-12 text-center text-sm font-medium text-gray-700">
+                Belum ada laporan
+            </div>
 
-        <div v-else class="space-y-3">
-            <div
-                v-for="item in paginatedQualityFindings"
-                :key="item.id"
-                class="bg-white rounded-lg border border-gray-200 p-4 shadow-2xs hover:border-gray-300 transition-colors"
-            >
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 mb-3 border-b border-gray-100">
-                    <div class="flex items-center flex-wrap gap-2 text-xs">
-                        <template v-if="item.quality_categories && item.quality_categories.length">
-                            <span
-                                v-for="catKey in item.quality_categories"
-                                :key="catKey"
-                                class="inline-flex items-center gap-1.5 font-medium text-gray-800 px-2 py-0.5 rounded border border-gray-200"
-                            >
-                                <span class="w-1.5 h-1.5 rounded-full" :class="categoryColor(catKey).dot"></span>
-                                {{ categories[catKey]?.label || catKey }}
-                            </span>
-                        </template>
-                        <span v-else class="inline-flex items-center gap-1.5 font-medium text-gray-800 px-2 py-0.5 rounded border border-gray-200">
-                            <span class="w-1.5 h-1.5 rounded-full" :class="categoryColor(item.quality_category).dot"></span>
-                            {{ categories[item.quality_category]?.label || item.quality_category }}
-                        </span>
-                        <span class="tabular-nums text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                            {{ item.audit.audit_number }}
-                        </span>
-                        <span class="text-gray-500">• {{ item.audit.store_name }} ({{ item.audit.store_code }})</span>
-                    </div>
-
+            <template v-else>
+                <div>
                     <Link
+                        v-for="item in paginatedQualityFindings"
+                        :key="item.id"
                         :href="route(`${currentPrefix}finding-qualities.show`, item.id)"
-                        class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        class="group block border-b border-gray-100 px-5 py-4 transition-colors duration-150 last:border-b-0 hover:bg-gray-50"
                     >
-                        Lihat Laporan →
+                        <div class="flex items-start gap-4">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                    <template v-if="item.quality_categories && item.quality_categories.length">
+                                        <span
+                                            v-for="catKey in item.quality_categories"
+                                            :key="catKey"
+                                            class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-0.5 font-medium text-gray-800"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="categoryColor(catKey).dot"></span>
+                                            {{ categories[catKey]?.label || catKey }}
+                                        </span>
+                                    </template>
+                                    <span v-else class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-0.5 font-medium text-gray-800">
+                                        <span class="h-1.5 w-1.5 rounded-full" :class="categoryColor(item.quality_category).dot"></span>
+                                        {{ categories[item.quality_category]?.label || item.quality_category }}
+                                    </span>
+                                    <span class="text-gray-500 tabular-nums">{{ item.audit.audit_number }} · {{ item.audit.store_name }} ({{ item.audit.store_code }})</span>
+                                </div>
+
+                                <h3 class="mt-2 text-base font-semibold text-gray-900">{{ item.title }}</h3>
+                                <p class="mt-1 line-clamp-1 text-sm text-gray-700">{{ item.finding.finding }}</p>
+
+                                <div class="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                                    <div class="line-clamp-2">
+                                        <span class="text-gray-500">Root cause </span>
+                                        <span class="text-gray-800">{{ item.root_cause }}</span>
+                                    </div>
+                                    <div class="line-clamp-2">
+                                        <span class="text-gray-500">Rekomendasi </span>
+                                        <span class="text-gray-800">{{ item.recommendation }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Angka & severity (mobile) -->
+                                <div class="mt-3 flex flex-wrap items-center gap-3 sm:hidden">
+                                    <span class="text-base font-medium text-gray-900 tabular-nums">{{ formatRupiah(item.impact_amount || item.finding.loss_amount) }}</span>
+                                    <SeverityBadge :severity="item.finding.severity" :show-timeline="true" />
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500 tabular-nums sm:hidden">
+                                    {{ item.reported_by }} · {{ item.created_at }}
+                                </div>
+                            </div>
+
+                            <!-- Angka & severity (desktop) -->
+                            <div class="hidden w-48 shrink-0 text-right sm:block">
+                                <div class="text-base font-medium text-gray-900 tabular-nums" title="Nilai dampak / kerugian">
+                                    {{ formatRupiah(item.impact_amount || item.finding.loss_amount) }}
+                                </div>
+                                <div class="mt-2 flex justify-end">
+                                    <SeverityBadge :severity="item.finding.severity" :show-timeline="true" />
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500">{{ item.reported_by }}</div>
+                                <div class="text-xs text-gray-500 tabular-nums">{{ item.created_at }}</div>
+                            </div>
+
+                            <svg class="mt-1 hidden h-4 w-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-900 sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                        </div>
                     </Link>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-                    <div class="md:col-span-2 space-y-2">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-900">{{ item.title }}</h3>
-                        </div>
-
-                        <div class="text-gray-700 bg-gray-50 p-2.5 rounded border border-gray-100 line-clamp-2">
-                            {{ item.finding.finding }}
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-[11px]">
-                            <div>
-                                <span class="text-gray-500 font-medium">Root Cause: </span>
-                                <span class="text-gray-800">{{ item.root_cause }}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-500 font-medium">Rekomendasi: </span>
-                                <span class="text-gray-800">{{ item.recommendation }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="border-t md:border-t-0 md:border-l md:border-gray-100 md:pl-5 space-y-2">
-                        <div>
-                            <div class="text-[11px] text-gray-500 font-medium">Nilai Dampak / Kerugian</div>
-                            <div class="text-sm font-semibold text-gray-900 tabular-nums mt-0.5">
-                                {{ formatRupiah(item.impact_amount || item.finding.loss_amount) }}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="text-[11px] text-gray-500 font-medium">Severity Finding</div>
-                            <div class="mt-1">
-                                <SeverityBadge :severity="item.finding.severity" :show-timeline="true" />
-                            </div>
-                        </div>
-
-                        <div class="pt-2 border-t border-gray-100 text-[11px] text-gray-400 space-y-0.5">
-                            <div>Pelapor: <span class="text-gray-700">{{ item.reported_by }}</span></div>
-                            <div>Tanggal: <span class="tabular-nums text-gray-600">{{ item.created_at }}</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pagination Footer -->
-            <Pagination
-                :current-page="currentPage"
-                :per-page="10"
-                :total-items="qualityFindings.length"
-                @update:current-page="currentPage = $event"
-            />
-        </div>
+                <!-- Pagination Footer -->
+                <Pagination
+                    :current-page="currentPage"
+                    :per-page="10"
+                    :total-items="qualityFindings.length"
+                    @update:current-page="currentPage = $event"
+                />
+            </template>
+        </section>
     </AppLayout>
 </template>

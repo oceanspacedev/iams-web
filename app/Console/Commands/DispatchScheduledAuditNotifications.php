@@ -37,18 +37,32 @@ class DispatchScheduledAuditNotifications extends Command
         $successCount = 0;
         $failCount    = 0;
 
+        $skippedCount = 0;
+
         foreach ($dueNotifications as $notification) {
+            $audit = $notification->audit;
+
+            // Audit deleted, or no longer PLANNED: the reminder is obsolete
+            if (!$audit || $audit->status !== 'PLANNED') {
+                $notification->update(['status' => 'INACTIVE']);
+                $skippedCount++;
+                continue;
+            }
+
+            $ruleName    = $notification->rule?->name ?? '-';
+            $auditNumber = $audit->audit_number;
+
             $ok = AuditNotificationService::dispatch($notification);
             if ($ok) {
                 $successCount++;
-                $this->line("  ✓ Sent [{$notification->rule->name}] for Audit: {$notification->audit->audit_number}");
+                $this->line("  ✓ Sent [{$ruleName}] for Audit: {$auditNumber}");
             } else {
                 $failCount++;
-                $this->error("  ✗ Failed [{$notification->rule->name}] for Audit: {$notification->audit->audit_number}");
+                $this->error("  ✗ Failed [{$ruleName}] for Audit: {$auditNumber}");
             }
         }
 
-        $this->info("Selesai: {$successCount} terkirim, {$failCount} gagal.");
+        $this->info("Selesai: {$successCount} terkirim, {$failCount} gagal, {$skippedCount} dinonaktifkan.");
 
         return Command::SUCCESS;
     }

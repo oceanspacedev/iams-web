@@ -123,6 +123,9 @@ class User extends Authenticatable
         if ($this->isAuditor()) {
             return '/auditor/dashboard';
         }
+        if ($this->isAuditee()) {
+            return '/auditee/dashboard';
+        }
 
         return '/coordinator/dashboard';
     }

@@ -58,18 +58,25 @@ class FindingController extends Controller
         \App\Services\WhatsAppService::notifyFindingCreated($finding);
 
         return redirect()->route('auditor.audits.show', $audit)
-            ->with('success', 'Data saved! Temuan (Finding) baru berhasil disimpan.');
+            ->with('success', 'Temuan disimpan.');
     }
 
     public function destroy(Request $request, Finding $finding): RedirectResponse
     {
         $this->authorize('delete', $finding);
 
+        $deletable = in_array($finding->status, [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS], true)
+            && ! $finding->evidences()->where('verification_status', 'APPROVED')->exists();
+
+        if (! $deletable) {
+            return back()->with('error', 'Temuan yang sudah diproses tidak bisa dihapus.');
+        }
+
         $audit = $finding->audit;
         $finding->delete();
 
         return redirect()->route('auditor.audits.show', $audit)
-            ->with('success', 'Temuan (Finding) berhasil dihapus.');
+            ->with('success', 'Temuan dihapus.');
     }
 
     public function show(Request $request, Finding $finding): Response
@@ -131,26 +138,45 @@ class FindingController extends Controller
                     'verified_by'         => $e->verifier?->name,
                     'uploaded_at'         => $e->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB',
                     'file_url'            => $e->file_url,
-                    'can_verify'          => $e->isPending(),
+                    'can_verify'          => $e->isPending() && ! $finding->isClosed(),
                 ]),
             ],
         ]);
     }
 
-    public function edit(Request $request, Finding $finding): Response
+    public function edit(Request $request, Finding $finding): Response|RedirectResponse
     {
         $this->authorize('update', $finding);
 
+        if ($finding->isClosed()) {
+            return redirect()->route('auditor.findings.show', $finding)
+                ->with('error', 'Temuan sudah ditutup.');
+        }
+
+        $finding->load(['audit.store', 'audit.category', 'category', 'sop']);
+
         return Inertia::render('Auditor/Findings/Edit', [
-            'finding'    => $finding->load(['audit.store', 'category', 'sop']),
-            'categories' => AuditCategory::active()->get(['id', 'name']),
-            'sops'       => Sop::active()->get(['id', 'code', 'title']),
+            'finding'          => $finding,
+            'categories'       => AuditCategory::active()->orderBy('name')->get(['id', 'name']),
+            'sops'             => Sop::active()->orderBy('code')->get(['id', 'code', 'title']),
+            'severity_options' => array_values(Finding::severityOptions()),
+            'audit'            => [
+                'id'           => $finding->audit->id,
+                'audit_number' => $finding->audit->audit_number,
+                'status'       => $finding->audit->status,
+                'store'        => $finding->audit->store?->only(['id', 'name', 'code']),
+                'category'     => $finding->audit->category?->only(['id', 'name']),
+            ],
         ]);
     }
 
     public function update(Request $request, Finding $finding): RedirectResponse
     {
         $this->authorize('update', $finding);
+
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
 
         $rules = [
             'category_id'     => 'required|exists:audit_categories,id',
@@ -177,12 +203,16 @@ class FindingController extends Controller
         $finding->update($validated);
 
         return redirect()->route('auditor.findings.show', $finding)
-            ->with('success', 'Finding berhasil diperbarui.');
+            ->with('success', 'Temuan diperbarui.');
     }
 
     public function updateActionPlan(Request $request, Finding $finding): RedirectResponse
     {
         $this->authorize('update', $finding);
+
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
 
         $validated = $request->validate([
             'action_plan' => 'required|string',
@@ -198,7 +228,8 @@ class FindingController extends Controller
                 'pic'         => $validated['pic'] ?? null,
                 'deadline'    => $validated['deadline'] ?? null,
                 'response'    => $validated['notes'] ?? null,
-                'status'      => 'IN_PROGRESS',
+                // Temuan yang sudah VERIFIED tetap COMPLETED
+                'status'      => $finding->status === Finding::STATUS_VERIFIED ? 'COMPLETED' : 'IN_PROGRESS',
             ]
         );
 
@@ -207,12 +238,16 @@ class FindingController extends Controller
         }
 
         return redirect()->route('auditor.findings.show', $finding)
-            ->with('success', 'Data saved! Komitmen tindak lanjut toko berhasil disimpan.');
+            ->with('success', 'Action plan disimpan.');
     }
 
     public function storeEvidence(Request $request, Finding $finding): RedirectResponse
     {
         $this->authorize('update', $finding);
+
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
 
         $validated = $request->validate([
             'description' => 'required|string|max:255',
@@ -232,6 +267,6 @@ class FindingController extends Controller
         ]);
 
         return redirect()->route('auditor.findings.show', $finding)
-            ->with('success', 'Data saved! Bukti tindak lanjut berhasil diunggah.');
+            ->with('success', 'Bukti diunggah.');
     }
 }

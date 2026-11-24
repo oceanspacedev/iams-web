@@ -1,7 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
 
@@ -26,11 +27,28 @@ const filteredPlans = computed(() => {
             (ap.pic && ap.pic.toLowerCase().includes(query)) ||
             (ap.finding && ap.finding.toLowerCase().includes(query));
 
-        const matchesStatus = !statusFilter.value || ap.status === statusFilter.value;
+        // Overdue memakai flag is_overdue (sama dengan badge), bukan status tersimpan
+        const matchesStatus =
+            !statusFilter.value ||
+            (statusFilter.value === 'OVERDUE'
+                ? ap.is_overdue
+                : !ap.is_overdue && ap.status === statusFilter.value);
 
         return matchesSearch && matchesStatus;
     });
 });
+
+// Pagination 10 baris per halaman; kembali ke halaman 1 saat filter berubah
+const currentPage = ref(1);
+const perPage = 10;
+watch([searchQuery, statusFilter], () => {
+    currentPage.value = 1;
+});
+watch(() => filteredPlans.value.length, (n) => {
+    const last = Math.max(1, Math.ceil(n / perPage));
+    if (currentPage.value > last) currentPage.value = last;
+});
+const paginatedPlans = computed(() => filteredPlans.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage));
 
 const confirmModal = ref({
     show: false,
@@ -61,9 +79,9 @@ const handleConfirm = () => {
 
 const sendSingleReminder = (ap) => {
     openConfirm({
-        title: 'Kirim Pengingat WhatsApp',
+        title: 'Kirim pengingat WhatsApp',
         message: `Kirim notifikasi pengingat ke toko ${ap.store} untuk audit ${ap.audit_number}?`,
-        confirmText: 'Kirim Pengingat',
+        confirmText: 'Kirim pengingat',
         type: 'primary',
         action: () => router.post(route('admin.action-plans.send-reminder', ap.id), {}, { preserveScroll: true }),
     });
@@ -71,9 +89,9 @@ const sendSingleReminder = (ap) => {
 
 const broadcastAllReminders = () => {
     openConfirm({
-        title: 'Jalankan Pengingat Otomatis',
+        title: 'Jalankan pengingat otomatis',
         message: 'Sistem akan memproses seluruh Action Plan yang mendekati batas waktu dan mengirimkan pengingat ke toko terkait.',
-        confirmText: 'Jalankan Pengingat',
+        confirmText: 'Jalankan pengingat',
         type: 'primary',
         action: () => router.post(route('admin.action-plans.broadcast-reminders'), {}, { preserveScroll: true }),
     });
@@ -81,194 +99,202 @@ const broadcastAllReminders = () => {
 </script>
 
 <template>
-    <AppLayout title="Action Plans">
-        <Head title="Action Plans" />
+    <AppLayout title="Action plan">
+        <Head title="Action plan" />
 
         <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Manajemen Action Plans</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Daftar tindak lanjut perbaikan temuan audit dan status penyelesaian toko</p>
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Action plan</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ filteredPlans.length }}</span>
             </div>
-            <div>
-                <button
-                    @click="broadcastAllReminders"
-                    type="button"
-                    class="w-full sm:w-auto px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
-                >
-                    Jalankan Pengingat WA
-                </button>
-            </div>
+            <button
+                @click="broadcastAllReminders"
+                type="button"
+                class="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
+            >
+                Jalankan pengingat WA
+            </button>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
-            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-                <div class="relative flex-1 w-full">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <!-- Filter di dalam kartu tabel -->
+            <div class="flex flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center">
+                <div class="relative w-full sm:w-80">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Cari rencana, toko, no. audit..."
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Cari"
+                        aria-label="Cari rencana, toko, no. audit, PIC, atau temuan"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                     />
                 </div>
-                <div class="w-full sm:w-52 shrink-0">
+                <div class="flex w-full gap-3 sm:ml-auto sm:w-auto">
                     <select
                         v-model="statusFilter"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
+                        aria-label="Status plan"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 sm:w-auto shadow-sm"
                     >
-                        <option value="">Semua Status Plan</option>
-                        <option value="OPEN">Open</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="OVERDUE">Overdue</option>
+                        <option value="">Semua status</option>
+                        <option value="OPEN">Terbuka</option>
+                        <option value="IN_PROGRESS">Dalam proses</option>
+                        <option value="COMPLETED">Selesai</option>
+                        <option value="OVERDUE">Terlambat</option>
                     </select>
                 </div>
             </div>
-        </div>
 
-        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="filteredPlans.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Tidak ada data action plan.
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="filteredPlans.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Tidak ada action plan
                 </div>
                 <div
-                    v-for="ap in filteredPlans"
+                    v-for="ap in paginatedPlans"
                     :key="'m-ap-' + ap.id"
-                    class="p-4 space-y-2.5"
+                    class="space-y-3 p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ ap.store }}</div>
-                            <div class="tabular-nums text-[10px] text-gray-400 mt-0.5">{{ ap.audit_number }}</div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900">{{ ap.store }}</div>
+                            <div class="mt-0.5 text-xs text-gray-400 tabular-nums">{{ ap.audit_number }}</div>
                         </div>
                         <StatusBadge :status="ap.is_overdue ? 'OVERDUE' : ap.status" />
                     </div>
 
-                    <div class="text-xs text-gray-800 line-clamp-2">
-                        <span class="font-medium text-gray-500">Temuan:</span> {{ ap.finding }}
+                    <div class="line-clamp-2 text-sm text-gray-800">{{ ap.finding }}</div>
+
+                    <div class="rounded-lg border border-gray-100 bg-slate-50 p-3 text-xs">
+                        <div v-if="ap.action_plan" class="line-clamp-2 text-gray-700">{{ ap.action_plan }}</div>
+                        <div v-else class="text-gray-400">Belum diisi toko</div>
                     </div>
 
-                    <div class="p-2.5 bg-slate-50 rounded border border-gray-100 text-[11px] space-y-1">
-                        <div class="text-gray-800 font-medium">Rencana Perbaikan:</div>
-                        <div v-if="ap.action_plan" class="text-gray-700 line-clamp-2">{{ ap.action_plan }}</div>
-                        <div v-else class="text-gray-400 italic">Belum diisi oleh toko</div>
-                    </div>
-
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span>PIC: <strong class="text-gray-800 font-medium">{{ ap.pic || '—' }}</strong></span>
-                        <span :class="ap.is_overdue ? 'text-red-600 font-semibold' : 'text-gray-500 tabular-nums'">
-                            Target: {{ ap.deadline || '—' }}
-                        </span>
-                    </div>
-
-                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
-                        <button
-                            v-if="ap.status !== 'COMPLETED'"
-                            @click="sendSingleReminder(ap)"
-                            type="button"
-                            class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
-                        >
-                            Ingatkan WA
-                        </button>
-                        <Link
-                            :href="route('admin.findings.show', ap.finding_id)"
-                            class="px-2.5 py-1 text-xs rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium"
-                        >
-                            Detail
-                        </Link>
+                    <div class="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                        <div class="min-w-0 text-xs text-gray-600">
+                            <div class="truncate font-medium text-gray-800">{{ ap.pic || '—' }}</div>
+                            <div class="tabular-nums" :class="ap.is_overdue ? 'text-red-600 font-semibold' : 'text-gray-500 tabular-nums'">
+                                {{ ap.deadline || '—' }}
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <button
+                                v-if="ap.status !== 'COMPLETED'"
+                                @click="sendSingleReminder(ap)"
+                                type="button"
+                                class="inline-flex h-8 items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
+                            >
+                                Ingatkan WA
+                            </button>
+                            <Link
+                                :href="route('admin.findings.show', ap.finding_id)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors duration-150 hover:bg-slate-200"
+                                title="Detail"
+                                aria-label="Detail"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="filteredPlans.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
                         <tr>
-                            <th class="px-4 py-3.5 whitespace-nowrap">No. Audit & Toko</th>
-                            <th class="px-4 py-3.5">Temuan</th>
-                            <th class="px-4 py-3.5">Rencana Perbaikan</th>
-                            <th class="px-4 py-3.5 whitespace-nowrap">PIC & Deadline</th>
-                            <th class="px-4 py-3.5 whitespace-nowrap">Status Plan</th>
-                            <th class="px-4 py-3.5 whitespace-nowrap">Status Finding</th>
-                            <th class="px-4 py-3.5 whitespace-nowrap text-right">Aksi</th>
+                            <th class="h-10 whitespace-nowrap px-4 font-medium">Audit</th>
+                            <th class="h-10 px-4 font-medium">Temuan</th>
+                            <th class="h-10 px-4 font-medium">Rencana</th>
+                            <th class="h-10 whitespace-nowrap px-4 font-medium">PIC & deadline</th>
+                            <th class="h-10 whitespace-nowrap px-4 font-medium">Plan</th>
+                            <th class="h-10 whitespace-nowrap px-4 font-medium">Finding</th>
+                            <th class="h-10 whitespace-nowrap px-4"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200">
                         <tr v-if="filteredPlans.length === 0">
                             <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                Tidak ada data action plan.
+                                Tidak ada action plan
                             </td>
                         </tr>
                         <tr
-                            v-for="ap in filteredPlans"
+                            v-for="ap in paginatedPlans"
                             :key="ap.id"
-                            class="hover:bg-gray-50/70"
+                            class="transition-colors duration-150 hover:bg-gray-50/70"
                         >
-                            <td class="px-4 py-3.5 align-top whitespace-nowrap">
-                                <div class="tabular-nums font-medium text-gray-900">
+                            <td class="whitespace-nowrap px-4 py-3 align-top">
+                                <div class="font-medium text-gray-900 tabular-nums">
                                     {{ ap.audit_number }}
                                 </div>
-                                <div class="text-[11px] text-gray-600 mt-0.5">{{ ap.store }}</div>
+                                <div class="mt-0.5 text-xs text-gray-600">{{ ap.store }}</div>
                             </td>
 
-                            <td class="px-4 py-3.5 align-top max-w-xs">
-                                <div class="text-gray-900 line-clamp-2">
+                            <td class="max-w-xs px-4 py-3 align-top">
+                                <div class="line-clamp-2 text-gray-900">
                                     {{ ap.finding }}
                                 </div>
                             </td>
 
-                            <td class="px-4 py-3.5 align-top max-w-sm">
-                                <div v-if="ap.action_plan" class="text-gray-800 line-clamp-2">
+                            <td class="max-w-sm px-4 py-3 align-top">
+                                <div v-if="ap.action_plan" class="line-clamp-2 text-gray-800">
                                     {{ ap.action_plan }}
                                 </div>
-                                <div v-else class="text-gray-400 italic text-[11px]">
-                                    Belum diisi oleh toko
+                                <div v-else class="text-gray-400">
+                                    Belum diisi toko
                                 </div>
                             </td>
 
-                            <td class="px-4 py-3.5 align-top whitespace-nowrap">
-                                <div class="text-gray-900 font-medium">{{ ap.pic || '—' }}</div>
+                            <td class="whitespace-nowrap px-4 py-3 align-top">
+                                <div class="font-medium text-gray-900">{{ ap.pic || '—' }}</div>
                                 <div
-                                    class="text-[11px] mt-0.5"
+                                    class="mt-0.5 text-xs tabular-nums"
                                     :class="ap.is_overdue ? 'text-red-600 font-medium' : 'text-gray-500'"
                                 >
-                                    DL: {{ ap.deadline || '—' }}
+                                    {{ ap.deadline || '—' }}
                                 </div>
                             </td>
 
-                            <td class="px-4 py-3.5 align-top whitespace-nowrap">
+                            <td class="whitespace-nowrap px-4 py-3 align-top">
                                 <StatusBadge :status="ap.is_overdue ? 'OVERDUE' : ap.status" />
                             </td>
 
-                            <td class="px-4 py-3.5 align-top whitespace-nowrap">
+                            <td class="whitespace-nowrap px-4 py-3 align-top">
                                 <StatusBadge :status="ap.finding_status" />
                             </td>
 
-                            <td class="px-4 py-3.5 align-top whitespace-nowrap text-right space-x-1.5">
-                                <button
-                                    v-if="ap.status !== 'COMPLETED'"
-                                    @click="sendSingleReminder(ap)"
-                                    type="button"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium cursor-pointer"
-                                >
-                                    Ingatkan WA
-                                </button>
-                                <Link
-                                    :href="route('admin.findings.show', ap.finding_id)"
-                                    class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium cursor-pointer"
-                                >
-                                    Detail
-                                </Link>
+                            <td class="whitespace-nowrap px-4 py-3 text-right align-top">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button
+                                        v-if="ap.status !== 'COMPLETED'"
+                                        @click="sendSingleReminder(ap)"
+                                        type="button"
+                                        class="inline-flex h-8 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
+                                    >
+                                        Ingatkan WA
+                                    </button>
+                                    <Link
+                                        :href="route('admin.findings.show', ap.finding_id)"
+                                        class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
+                                        title="Detail"
+                                        aria-label="Detail"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                    </Link>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                :current-page="currentPage"
+                :per-page="perPage"
+                :total-items="filteredPlans.length"
+                @update:current-page="currentPage = $event"
+            />
         </div>
 
         <!-- Confirm Modal -->

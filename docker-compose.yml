@@ -79,6 +79,25 @@ services:
     networks:
       - auditflow_network
 
+  # ------------------------------------------------------------
+  # Scheduler (notifikasi jadwal audit tiap menit & reminder harian 08:00 WIB)
+  # Menjalankan jadwal di routes/console.php
+  # ------------------------------------------------------------
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auditflow_scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - auditflow_network
+
 # ------------------------------------------------------------
 # Networks & Persistent Volumes
 # ------------------------------------------------------------

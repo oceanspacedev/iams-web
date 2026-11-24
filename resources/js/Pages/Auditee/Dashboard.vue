@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
@@ -16,166 +16,162 @@ const props = defineProps({
 </script>
 
 <template>
-    <AppLayout title="Dashboard Toko">
-        <Head title="Store Dashboard" />
+    <AppLayout title="Dashboard">
+        <Head title="Dashboard" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6">
-            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Dashboard Toko (Auditee)</h1>
-            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Status audit, temuan perbaikan, dan tindak lanjut toko Anda</p>
-        </div>
+        <h1 class="mb-6 text-2xl font-semibold leading-8 text-gray-900">Dashboard</h1>
 
-        <!-- Metrics Overview (Clean Corporate Grid) -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Audits</div>
-                <div class="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{{ stats.total_audits }}</div>
+        <!-- Satu panel angka -->
+        <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white sm:grid-cols-3 xl:grid-cols-6 shadow-sm">
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                    Audit
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ stats.total_audits }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
-                <div class="text-[10px] sm:text-[11px] font-medium text-red-600 uppercase tracking-wider">Open Findings</div>
-                <div class="text-xl sm:text-2xl font-semibold text-red-600 mt-1">{{ stats.open_findings }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-red-600"></span>
+                    Terbuka
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-red-600 tabular-nums">{{ stats.open_findings }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
-                <div class="text-[10px] sm:text-[11px] font-medium text-amber-600 uppercase tracking-wider">In Progress</div>
-                <div class="text-xl sm:text-2xl font-semibold text-amber-600 mt-1">{{ stats.in_progress_findings }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span>
+                    Dalam proses
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-amber-600 tabular-nums">{{ stats.in_progress_findings }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-blue-200 bg-blue-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-blue-700 uppercase tracking-wider">Waiting Verify</div>
-                <div class="text-xl sm:text-2xl font-semibold text-blue-700 mt-1">{{ stats.waiting_verification }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-700"></span>
+                    Menunggu verifikasi
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-blue-700 tabular-nums">{{ stats.waiting_verification }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-emerald-200 bg-emerald-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-emerald-700 uppercase tracking-wider">Closed (All)</div>
-                <div class="flex items-center justify-between gap-1.5 mt-1">
-                    <div class="text-xl sm:text-2xl font-bold text-emerald-700 leading-none shrink-0">{{ stats.closed_findings }}</div>
-                    <div class="flex items-center gap-1 shrink-0">
-                        <div class="bg-emerald-100/80 rounded px-1.5 py-0.5 text-center border border-emerald-200/80" title="Closed tepat waktu">
-                            <div class="text-[8px] sm:text-[8.5px] font-semibold text-emerald-700 uppercase tracking-tight leading-none">On Time</div>
-                            <div class="text-[11px] sm:text-xs font-bold text-emerald-800 mt-0.5 leading-none">{{ stats.closed_on_time ?? 0 }}</div>
-                        </div>
-                        <div class="bg-rose-100/80 rounded px-1.5 py-0.5 text-center border border-rose-200/80" title="Closed melewati deadline">
-                            <div class="text-[8px] sm:text-[8.5px] font-semibold text-rose-600 uppercase tracking-tight leading-none">Overdue</div>
-                            <div class="text-[11px] sm:text-xs font-bold text-rose-700 mt-0.5 leading-none">{{ stats.closed_overdue ?? 0 }}</div>
-                        </div>
-                    </div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-700"></span>
+                    Ditutup
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-emerald-700 tabular-nums">{{ stats.closed_findings }}</div>
+                <div class="mt-1 text-xs tabular-nums">
+                    <span class="text-emerald-700" title="Ditutup tepat waktu">{{ stats.closed_on_time ?? 0 }} tepat</span>
+                    <span class="text-gray-300"> · </span>
+                    <span class="text-rose-600" title="Ditutup melewati deadline">{{ stats.closed_overdue ?? 0 }} telat</span>
                 </div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-red-200 bg-red-50/30">
-                <div class="text-[10px] sm:text-[11px] font-medium text-red-700 uppercase tracking-wider">Overdue Actions</div>
-                <div class="text-xl sm:text-2xl font-semibold text-red-700 mt-1">{{ stats.overdue_actions }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-red-700"></span>
+                    Action plan terlambat
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-red-700 tabular-nums">{{ stats.overdue_actions }}</div>
             </div>
         </div>
 
-        <!-- Recent Audits Table / List -->
-        <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-2xs">
-            <div class="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex items-center justify-between">
-                <div>
-                    <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Daftar Audit Toko Terkini</h2>
-                    <p class="text-[10px] sm:text-xs text-gray-500">Audit yang terhubung dengan unit toko Anda</p>
-                </div>
+        <!-- Recent audits -->
+        <section class="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                <h2 class="text-base font-semibold text-gray-900">Audit terbaru</h2>
                 <Link
                     :href="route('auditee.audits.index')"
-                    class="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    class="shrink-0 text-sm font-medium text-blue-600 transition-colors duration-150 hover:text-blue-800"
                 >
-                    Lihat Semua Audit →
+                    Lihat semua
                 </Link>
             </div>
 
-            <!-- 1. Mobile List View (No horizontal scrolling) -->
-            <div class="block sm:hidden divide-y divide-gray-100">
-                <div v-if="recent_audits.length === 0" class="p-5 text-center text-gray-400 text-xs">
-                    Belum ada riwayat audit untuk toko Anda.
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-100 sm:hidden">
+                <div v-if="recent_audits.length === 0" class="p-6 text-center text-sm text-gray-400">
+                    Belum ada audit
                 </div>
-                <div
+                <Link
                     v-for="audit in recent_audits"
                     :key="'m-auditee-audit-' + audit.id"
-                    class="p-3.5 space-y-2 hover:bg-gray-50 transition-colors"
+                    :href="route('auditee.audits.show', audit.id)"
+                    class="block p-4 transition-colors duration-150 hover:bg-gray-50"
                 >
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="tabular-nums text-[11px] text-gray-500 mt-0.5">{{ audit.audit_number }}</div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="truncate text-sm font-medium text-gray-900">{{ audit.store }}</div>
+                            <div class="mt-0.5 text-sm text-gray-500 tabular-nums">{{ audit.audit_number }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span>Lead: <strong class="text-gray-700 font-medium">{{ audit.auditor }}</strong></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
-                            {{ audit.findings_count }} temuan
-                        </span>
+                    <div class="mt-2 flex items-center justify-between gap-3 text-xs text-gray-600 tabular-nums">
+                        <span class="truncate text-gray-700">{{ audit.auditor }}</span>
+                        <span class="shrink-0">{{ audit.findings_count }} temuan</span>
                     </div>
-                    <div class="pt-1.5 flex justify-end">
-                        <Link
-                            :href="route('auditee.audits.show', audit.id)"
-                            class="inline-flex items-center px-3 py-1 text-xs font-medium rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                        >
-                            Lihat Temuan →
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             </div>
 
-            <!-- 2. Desktop Table View -->
-            <div class="hidden sm:block overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div class="hidden overflow-x-auto sm:block">
+                <table class="w-full text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
                         <tr>
-                            <th class="px-5 py-3">No. Audit</th>
-                            <th class="px-5 py-3">Toko</th>
-                            <th class="px-5 py-3">Auditor</th>
-                            <th class="px-5 py-3">Tanggal Audit</th>
-                            <th class="px-5 py-3">Findings</th>
-                            <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3 text-right">Aksi</th>
+                            <th class="h-10 px-5 font-medium">No. audit</th>
+                            <th class="h-10 px-5 font-medium">Toko</th>
+                            <th class="h-10 px-5 font-medium">Auditor</th>
+                            <th class="h-10 px-5 font-medium">Tanggal</th>
+                            <th class="h-10 px-5 text-right font-medium">Temuan</th>
+                            <th class="h-10 px-5 font-medium">Status</th>
+                            <th class="h-10 w-12 px-5"><span class="sr-only">Lihat temuan</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-100">
                         <tr v-if="recent_audits.length === 0">
                             <td colspan="7" class="px-5 py-8 text-center text-gray-500">
-                                Belum ada riwayat audit untuk toko Anda.
+                                Belum ada audit
                             </td>
                         </tr>
                         <tr
                             v-for="audit in recent_audits"
                             :key="audit.id"
-                            class="hover:bg-gray-50/70 transition-colors"
+                            class="group cursor-pointer transition-colors duration-150 hover:bg-gray-50/70"
+                            @click="router.visit(route('auditee.audits.show', audit.id))"
                         >
-                            <td class="px-5 py-3 tabular-nums font-medium text-gray-900">
+                            <td class="h-14 whitespace-nowrap px-5 font-medium text-gray-900 tabular-nums">
                                 {{ audit.audit_number }}
                             </td>
-                            <td class="px-5 py-3 font-medium text-gray-900">
+                            <td class="h-14 px-5 font-medium text-gray-900">
                                 {{ audit.store }}
                             </td>
-                            <td class="px-5 py-3 text-gray-700">
+                            <td class="h-14 px-5 text-gray-700">
                                 {{ audit.auditor }}
                             </td>
-                            <td class="px-5 py-3 text-gray-600">
+                            <td class="h-14 whitespace-nowrap px-5 text-gray-600 tabular-nums">
                                 {{ audit.audit_date }}
                             </td>
-                            <td class="px-5 py-3">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                    {{ audit.findings_count }} temuan
-                                </span>
+                            <td class="h-14 whitespace-nowrap px-5 text-right text-gray-800 tabular-nums">
+                                {{ audit.findings_count }}
                             </td>
-                            <td class="px-5 py-3">
+                            <td class="h-14 whitespace-nowrap px-5">
                                 <StatusBadge :status="audit.status" />
                             </td>
-                            <td class="px-5 py-3 text-right">
+                            <td class="h-14 w-12 whitespace-nowrap px-5 text-right">
                                 <Link
                                     :href="route('auditee.audits.show', audit.id)"
-                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 group-hover:text-gray-900"
+                                    :aria-label="'Lihat temuan ' + audit.audit_number"
+                                    @click.stop
                                 >
-                                    Lihat Temuan
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                                 </Link>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </AppLayout>
 </template>

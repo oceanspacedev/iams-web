@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -20,232 +20,176 @@ const props = defineProps({
 });
 
 const formatRupiah = (number) => {
-    if (!number) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
-    }).format(number);
+    }).format(number || 0);
 };
 </script>
 
 <template>
-    <AppLayout title="Koordinator Dashboard">
-        <Head title="Dashboard — Koordinator" />
+    <AppLayout title="Dashboard">
+        <Head title="Dashboard" />
 
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Enterprise Audit Dashboard</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Ringkasan operasional dan pengawasan seluruh audit retail</p>
-            </div>
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Dashboard</h1>
 
-            <div class="flex items-center">
-                <Link
-                    :href="route('coordinator.audits.create')"
-                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
-                >
-                    + Buat Audit Baru
-                </Link>
-            </div>
+            <Link
+                :href="route('coordinator.audits.create')"
+                class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Buat audit baru
+            </Link>
         </div>
 
-        <!-- Metrics Overview Grid -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Audits</div>
-                <div class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ stats.total_audits }}</div>
-                <div class="text-[10px] text-gray-400 mt-0.5 sm:mt-1">{{ stats.active_audits }} aktif</div>
+        <!-- Satu panel angka: ringkasan (baris 1) + status temuan (baris 2) -->
+        <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white lg:grid-cols-4 shadow-sm">
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                    Audit
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ stats.total_audits }}</div>
+                <div class="mt-1 text-xs text-gray-500 tabular-nums">{{ stats.active_audits }} aktif</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Findings</div>
-                <div class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ stats.total_findings }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                    Temuan
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ stats.total_findings }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-red-200 bg-red-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-red-600 uppercase tracking-wider">Open</div>
-                <div class="text-xl sm:text-2xl font-bold text-red-600 mt-1">{{ stats.open_findings }}</div>
+            <div class="-mb-px -mr-px min-w-0 border-b border-r border-gray-200 px-5 py-5" title="Nilai barang hilang">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                    NBH
+                </div>
+                <div class="mt-3 break-words text-lg font-medium leading-10 text-gray-900 tabular-nums sm:text-2xl">{{ formatRupiah(stats.total_loss_amount) }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-amber-200 bg-amber-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-amber-600 uppercase tracking-wider">In Progress</div>
-                <div class="text-xl sm:text-2xl font-bold text-amber-600 mt-1">{{ stats.in_progress_findings }}</div>
+            <div class="-mb-px -mr-px min-w-0 border-b border-r border-gray-200 px-5 py-5" title="Nilai barang lebih">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                    NBL
+                </div>
+                <div class="mt-3 break-words text-lg font-medium leading-10 text-gray-900 tabular-nums sm:text-2xl">{{ formatRupiah(stats.total_surplus_amount) }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-blue-200 bg-blue-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-blue-700 uppercase tracking-wider">Waiting Verify</div>
-                <div class="text-xl sm:text-2xl font-bold text-blue-700 mt-1">{{ stats.waiting_verification }}</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-red-600"></span>
+                    Terbuka
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-red-600 tabular-nums">{{ stats.open_findings }}</div>
             </div>
 
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-emerald-200 bg-emerald-50/20">
-                <div class="text-[10px] sm:text-[11px] font-medium text-emerald-700 uppercase tracking-wider">Closed (All)</div>
-                <div class="flex items-center justify-between gap-1.5 mt-1">
-                    <div class="text-xl sm:text-2xl font-bold text-emerald-700 leading-none shrink-0">{{ stats.closed_findings }}</div>
-                    <div class="flex items-center gap-1 shrink-0">
-                        <div class="bg-emerald-100/80 rounded px-1.5 py-0.5 text-center border border-emerald-200/80" title="Closed tepat waktu">
-                            <div class="text-[8px] sm:text-[8.5px] font-semibold text-emerald-700 uppercase tracking-tight leading-none">On Time</div>
-                            <div class="text-[11px] sm:text-xs font-bold text-emerald-800 mt-0.5 leading-none">{{ stats.closed_on_time ?? 0 }}</div>
-                        </div>
-                        <div class="bg-rose-100/80 rounded px-1.5 py-0.5 text-center border border-rose-200/80" title="Closed melewati deadline">
-                            <div class="text-[8px] sm:text-[8.5px] font-semibold text-rose-600 uppercase tracking-tight leading-none">Overdue</div>
-                            <div class="text-[11px] sm:text-xs font-bold text-rose-700 mt-0.5 leading-none">{{ stats.closed_overdue ?? 0 }}</div>
-                        </div>
-                    </div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span>
+                    Dalam proses
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-amber-600 tabular-nums">{{ stats.in_progress_findings }}</div>
+            </div>
+
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-700"></span>
+                    Menunggu verifikasi
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-blue-700 tabular-nums">{{ stats.waiting_verification }}</div>
+            </div>
+
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-700"></span>
+                    Ditutup
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-emerald-700 tabular-nums">{{ stats.closed_findings }}</div>
+                <div class="mt-1 text-xs tabular-nums">
+                    <span class="text-emerald-700" title="Ditutup tepat waktu">{{ stats.closed_on_time ?? 0 }} tepat</span>
+                    <span class="text-gray-300"> · </span>
+                    <span class="text-rose-600" title="Ditutup melewati deadline">{{ stats.closed_overdue ?? 0 }} telat</span>
                 </div>
             </div>
-
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200" title="Nilai Barang Hilang">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBH</div>
-                <div class="text-xs sm:text-sm font-bold text-gray-900 mt-1 sm:mt-2 truncate">{{ formatRupiah(stats.total_loss_amount) }}</div>
-                <div class="text-[10px] text-gray-400 mt-0.5">Nilai Barang Hilang</div>
-            </div>
-
-            <div class="bg-white p-3.5 sm:p-4 rounded border border-gray-200" title="Nilai Barang Lebih">
-                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBL</div>
-                <div class="text-xs sm:text-sm font-bold text-gray-900 mt-1 sm:mt-2 truncate">{{ formatRupiah(stats.total_surplus_amount) }}</div>
-                <div class="text-[10px] text-gray-400 mt-0.5">Nilai Barang Lebih</div>
-            </div>
         </div>
 
-        <!-- 2 Column Tables: Recent Audits & Recent Findings -->
-        <div class="grid grid-cols-1 2xl:grid-cols-2 gap-5 sm:gap-6">
-            <!-- Recent Audits Table / List -->
-            <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-2xs">
-                <div class="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Recent Audits</h2>
-                        <p class="text-[10px] sm:text-[11px] text-gray-500">Penugasan audit terbaru</p>
-                    </div>
-                    <Link :href="route('coordinator.audits.index')" class="text-xs font-medium text-blue-600 hover:text-blue-800">
-                        Semua Audit →
+        <!-- Aktivitas terbaru -->
+        <!-- Daftar ringkas (bukan tabel): tetap rapi saat dua kartu berdampingan -->
+        <div class="mt-8 grid grid-cols-1 gap-6 2xl:grid-cols-2">
+            <!-- Audit terbaru -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Audit terbaru</h2>
+                    <Link :href="route('coordinator.audits.index')" class="shrink-0 text-sm font-medium text-blue-600 transition-colors duration-150 hover:text-blue-800">
+                        Lihat semua
                     </Link>
                 </div>
 
-                <!-- 1. Mobile List View (No horizontal scrolling) -->
-                <div class="block sm:hidden divide-y divide-gray-100">
-                    <div v-if="recent_audits.length === 0" class="p-5 text-center text-gray-400 text-xs">
-                        Belum ada data audit.
-                    </div>
+                <div v-if="recent_audits.length === 0" class="p-6 text-center text-sm text-gray-500">
+                    Belum ada audit
+                </div>
+                <div v-else class="divide-y divide-gray-200">
                     <Link
                         v-for="a in recent_audits"
-                        :key="'m-audit-' + a.id"
+                        :key="a.id"
                         :href="route('coordinator.audits.show', a.id)"
-                        class="block p-3 hover:bg-gray-50 transition-colors"
+                        class="group flex items-center gap-4 px-5 py-3 transition-colors duration-150 hover:bg-gray-50/70"
                     >
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <div class="font-semibold text-gray-900 text-xs">{{ a.store }}</div>
-                                <div class="tabular-nums text-[11px] text-blue-600 font-medium mt-0.5">{{ a.audit_number }}</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="truncate text-sm font-medium text-gray-900">{{ a.store }}</div>
+                            <div class="mt-0.5 truncate text-xs text-gray-500">
+                                <span class="text-blue-600 tabular-nums">{{ a.audit_number }}</span>
+                                <span class="text-gray-300"> · </span>{{ a.auditor }}
                             </div>
-                            <StatusBadge :status="a.status" />
                         </div>
-                        <div class="mt-2 flex items-center justify-between text-[10px] text-gray-500 pt-1.5 border-t border-gray-100">
-                            <span>Auditor: <strong class="text-gray-700 font-medium">{{ a.auditor }}</strong></span>
-                        </div>
+                        <StatusBadge :status="a.status" class="shrink-0" />
+                        <svg class="hidden h-4 w-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-900 sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                    </Link>
+                </div>
+            </section>
+
+            <!-- Temuan terbaru -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Temuan terbaru</h2>
+                    <Link :href="route('coordinator.findings.index')" class="shrink-0 text-sm font-medium text-blue-600 transition-colors duration-150 hover:text-blue-800">
+                        Lihat semua
                     </Link>
                 </div>
 
-                <!-- 2. Desktop Table View -->
-                <div class="hidden sm:block overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
-                            <tr>
-                                <th class="px-4 py-2.5">No. Audit</th>
-                                <th class="px-4 py-2.5">Toko</th>
-                                <th class="px-4 py-2.5">Auditor</th>
-                                <th class="px-4 py-2.5">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr v-if="recent_audits.length === 0">
-                                <td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada data audit.</td>
-                            </tr>
-                            <tr v-for="a in recent_audits" :key="a.id" class="hover:bg-gray-50/70">
-                                <td class="px-4 py-2.5 tabular-nums font-medium text-blue-600 hover:underline">
-                                    <Link :href="route('coordinator.audits.show', a.id)">{{ a.audit_number }}</Link>
-                                </td>
-                                <td class="px-4 py-2.5 font-medium text-gray-900">{{ a.store }}</td>
-                                <td class="px-4 py-2.5 text-gray-600">{{ a.auditor }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap"><StatusBadge :status="a.status" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div v-if="recent_findings.length === 0" class="p-6 text-center text-sm text-gray-500">
+                    Belum ada temuan
                 </div>
-            </div>
-
-            <!-- Recent Findings Table / List -->
-            <div class="bg-white rounded border border-gray-200 overflow-hidden shadow-2xs">
-                <div class="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xs sm:text-sm font-semibold text-gray-900">Recent Findings</h2>
-                        <p class="text-[10px] sm:text-[11px] text-gray-500">Temuan audit yang baru dicatat</p>
-                    </div>
-                    <Link :href="route('coordinator.findings.index')" class="text-xs font-medium text-blue-600 hover:text-blue-800">
-                        Semua Finding →
-                    </Link>
-                </div>
-
-                <!-- 1. Mobile List View (No horizontal scrolling) -->
-                <div class="block sm:hidden divide-y divide-gray-100">
-                    <div v-if="recent_findings.length === 0" class="p-5 text-center text-gray-400 text-xs">
-                        Belum ada temuan audit.
-                    </div>
+                <div v-else class="divide-y divide-gray-200">
                     <Link
                         v-for="f in recent_findings"
-                        :key="'m-finding-' + f.id"
+                        :key="f.id"
                         :href="route('coordinator.findings.show', f.id)"
-                        class="block p-3 hover:bg-gray-50 transition-colors"
+                        class="group flex items-center gap-4 px-5 py-3 transition-colors duration-150 hover:bg-gray-50/70"
                     >
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <div class="font-semibold text-gray-900 text-xs">{{ f.store }}</div>
-                                <div class="text-[11px] text-gray-500 mt-0.5">{{ f.category }}</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="truncate text-sm font-medium text-gray-900">{{ f.store }}</div>
+                            <div class="mt-1 flex min-w-0 items-center gap-2">
+                                <SeverityBadge :severity="f.severity" class="shrink-0" />
+                                <span class="truncate text-xs text-gray-500">{{ f.category }}</span>
                             </div>
-                            <StatusBadge :status="f.status" />
+                            <div class="mt-1 text-xs text-gray-500 tabular-nums sm:hidden">NBH {{ formatRupiah(f.loss_amount) }} · NBL {{ formatRupiah(f.surplus_amount) }}</div>
                         </div>
-                        <div class="mt-2 flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-100">
-                            <SeverityBadge :severity="f.severity" />
-                            <span class="font-semibold text-gray-800 text-[11px] text-right">
-                                NBH {{ formatRupiah(f.loss_amount) }}
-                                <span class="text-gray-300">·</span>
-                                NBL {{ formatRupiah(f.surplus_amount) }}
-                            </span>
+                        <div class="hidden shrink-0 text-right tabular-nums sm:block">
+                            <div class="text-sm text-gray-900"><span class="text-xs text-gray-500">NBH</span> {{ formatRupiah(f.loss_amount) }}</div>
+                            <div class="mt-0.5 text-xs text-gray-500">NBL {{ formatRupiah(f.surplus_amount) }}</div>
                         </div>
+                        <StatusBadge :status="f.status" class="shrink-0" />
+                        <svg class="hidden h-4 w-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-900 sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                     </Link>
                 </div>
-
-                <!-- 2. Desktop Table View -->
-                <div class="hidden sm:block overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
-                            <tr>
-                                <th class="px-4 py-2.5">Toko & Kategori</th>
-                                <th class="px-4 py-2.5">Severity</th>
-                                <th class="px-4 py-2.5">NBH</th>
-                                <th class="px-4 py-2.5">NBL</th>
-                                <th class="px-4 py-2.5">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr v-if="recent_findings.length === 0">
-                                <td colspan="5" class="px-4 py-6 text-center text-gray-500">Belum ada temuan audit.</td>
-                            </tr>
-                            <tr v-for="f in recent_findings" :key="f.id" class="hover:bg-gray-50/70">
-                                <td class="px-4 py-2.5">
-                                    <Link :href="route('coordinator.findings.show', f.id)" class="font-medium text-gray-900 hover:text-blue-600 hover:underline">
-                                        {{ f.store }}
-                                    </Link>
-                                    <div class="text-[10px] text-gray-500">{{ f.category }}</div>
-                                </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap"><SeverityBadge :severity="f.severity" /></td>
-                                <td class="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{{ formatRupiah(f.loss_amount) }}</td>
-                                <td class="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{{ formatRupiah(f.surplus_amount) }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap"><StatusBadge :status="f.status" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            </section>
         </div>
     </AppLayout>
 </template>

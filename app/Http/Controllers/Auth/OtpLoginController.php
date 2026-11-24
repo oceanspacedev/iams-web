@@ -176,6 +176,19 @@ class OtpLoginController extends Controller
         // Success: Clean up OTPs and log user in
         UserOtp::where('user_id', $user->id)->delete();
 
+        // Re-check account state (it may have changed since the OTP was requested)
+        $user->refresh();
+        $blockedMessage = match (true) {
+            $user->approval_status === 'pending'  => 'Pendaftaran akun Anda masih MENUNGGU PERSETUJUAN dari Administrator.',
+            $user->approval_status === 'rejected' => 'Permohonan pendaftaran akun Anda ditolak oleh Administrator.',
+            !$user->is_active                     => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
+            default                               => null,
+        };
+
+        if ($blockedMessage) {
+            return back()->withErrors(['otp' => $blockedMessage]);
+        }
+
         Auth::login($user, $request->boolean('remember', true));
         $request->session()->regenerate();
 

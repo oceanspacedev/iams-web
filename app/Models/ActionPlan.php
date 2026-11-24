@@ -37,18 +37,31 @@ class ActionPlan extends Model
     }
 
     // Scopes
+    // Overdue = deadline < hari ini, belum COMPLETED, temuan bukan CONTINUOUS dan belum VERIFIED/CLOSED.
+    // Harus sama dengan Finding::scopeOverdue().
     public function scopeOverdue($query)
     {
         return $query->where('deadline', '<', now()->toDateString())
                      ->where('status', '!=', 'COMPLETED')
-                     ->whereHas('finding', fn ($q) => $q->where('severity', '!=', Finding::SEVERITY_CONTINUOUS));
+                     ->whereHas('finding', fn ($q) => $q
+                         ->where('severity', '!=', Finding::SEVERITY_CONTINUOUS)
+                         ->whereNotIn('status', [Finding::STATUS_VERIFIED, Finding::STATUS_CLOSED]));
     }
 
     public function isOverdue(): bool
     {
-        if ($this->finding && $this->finding->severity === Finding::SEVERITY_CONTINUOUS) {
+        if (! $this->deadline || $this->status === 'COMPLETED') {
             return false;
         }
-        return $this->deadline && $this->deadline->isPast() && $this->status !== 'COMPLETED';
+
+        $finding = $this->finding;
+        if ($finding && (
+            $finding->severity === Finding::SEVERITY_CONTINUOUS
+            || in_array($finding->status, [Finding::STATUS_VERIFIED, Finding::STATUS_CLOSED], true)
+        )) {
+            return false;
+        }
+
+        return $this->deadline->toDateString() < now()->toDateString();
     }
 }

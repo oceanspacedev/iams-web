@@ -15,6 +15,10 @@ class EvidenceController extends Controller
     {
         $this->authorize('view', $finding);
 
+        if (! $finding->canUploadEvidence()) {
+            return back()->with('error', 'Bukti tidak bisa diunggah untuk temuan dengan status ini.');
+        }
+
         $request->validate([
             'file'        => 'required|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240',
             'description' => 'nullable|string|max:500',
@@ -35,11 +39,17 @@ class EvidenceController extends Controller
 
         \App\Services\WhatsAppService::notifyEvidenceUploaded($evidence);
 
-        return back()->with('success', 'Evidence berhasil diunggah & notifikasi WhatsApp terkirim ke Auditor.');
+        return back()->with('success', 'Bukti diunggah.');
     }
 
     public function destroy(Request $request, Evidence $evidence): RedirectResponse
     {
+        $finding = $evidence->finding;
+
+        if ($finding?->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
+
         $this->authorize('delete', $evidence);
 
         $disk = config('filesystems.default');
@@ -49,17 +59,10 @@ class EvidenceController extends Controller
             Storage::disk('public')->delete($evidence->file);
         }
 
-        $finding = $evidence->finding;
         $evidence->delete();
 
-        // If no more pending/approved evidences, revert finding status to IN_PROGRESS if was WAITING_VERIFICATION
-        if ($finding->status === Finding::STATUS_WAITING_VERIFICATION) {
-            $hasOtherPending = $finding->evidences()->where('verification_status', 'PENDING')->exists();
-            if (!$hasOtherPending) {
-                $finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
-            }
-        }
+        $finding->recalculateStatusFromEvidence();
 
-        return back()->with('success', 'Evidence berhasil dihapus.');
+        return back()->with('success', 'Bukti dihapus.');
     }
 }

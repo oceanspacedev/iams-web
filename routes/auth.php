@@ -25,10 +25,15 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    Route::get('login/whatsapp', [AuthenticatedSessionController::class, 'createWhatsapp'])
+        ->name('login.whatsapp');
+
     Route::post('login/otp/request', [\App\Http\Controllers\Auth\OtpLoginController::class, 'requestOtp'])
+        ->middleware('throttle:6,1')
         ->name('login.otp.request');
 
     Route::post('login/otp/verify', [\App\Http\Controllers\Auth\OtpLoginController::class, 'verifyOtp'])
+        ->middleware('throttle:6,1')
         ->name('login.otp.verify');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])

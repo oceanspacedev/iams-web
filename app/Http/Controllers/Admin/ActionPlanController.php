@@ -48,7 +48,7 @@ class ActionPlanController extends Controller
 
         $actionPlan->update($validated);
 
-        return back()->with('success', 'Status Action Plan berhasil diperbarui.');
+        return back()->with('success', 'Action plan berhasil diperbarui.');
     }
 
     /**
@@ -60,10 +60,10 @@ class ActionPlanController extends Controller
         $sentCount = WhatsAppService::notifyActionPlanReminder($actionPlan, $type);
 
         if ($sentCount > 0) {
-            return back()->with('success', "Pengingat WhatsApp berhasil dikirim ke {$sentCount} kontak tim toko.");
+            return back()->with('success', "Pengingat terkirim ke {$sentCount} kontak toko.");
         }
 
-        return back()->with('warning', 'Pesan tidak terkirim. Pastikan nomor WhatsApp toko sudah terisi dengan benar.');
+        return back()->with('error', 'Pengingat tidak terkirim. Pastikan nomor WhatsApp toko sudah benar.');
     }
 
     /**
@@ -73,6 +73,6 @@ class ActionPlanController extends Controller
     {
         Artisan::call('audit:send-reminders');
 
-        return back()->with('success', 'Proses pengingat WhatsApp otomatis (Cron Job) berhasil dijalankan.');
+        return back()->with('success', 'Pengingat WhatsApp otomatis berhasil dijalankan.');
     }
 }

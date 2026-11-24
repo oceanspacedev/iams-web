@@ -42,99 +42,99 @@ const printReport = () => {
 };
 
 const deleteQualityFinding = () => {
-    if (confirm('Yakin ingin menghapus laporan Finding Quality ini?')) {
+    if (confirm('Hapus laporan finding quality ini?')) {
         router.delete(route(`${currentPrefix.value}finding-qualities.destroy`, props.qualityFinding.id));
     }
 };
 </script>
 
 <template>
-    <AppLayout title="Detail Laporan Finding Quality">
-        <Head :title="`Finding Quality - ${qualityFinding.title}`" />
+    <AppLayout title="Kualitas temuan">
+        <Head :title="`Kualitas temuan - ${qualityFinding.title}`" />
 
-        <!-- Breadcrumb & Top Actions -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
+        <!-- Breadcrumb, judul, aksi -->
+        <div class="mx-auto mb-6 flex max-w-4xl flex-wrap items-end justify-between gap-4 print:hidden">
             <div>
-                <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                    <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
+                <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                    <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="transition-colors duration-150 hover:text-blue-600">Kualitas temuan</Link>
                     <span>/</span>
-                    <span class="text-gray-900 font-medium tabular-nums">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
+                    <span class="font-medium text-gray-900 tabular-nums">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
                 </div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">
-                    Lembar Laporan Finding Quality
-                </h1>
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Lembar laporan</h1>
             </div>
 
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
                 <button
                     @click="printReport"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+                    class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                 >
-                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
-                    Cetak / Print PDF
+                    Cetak
                 </button>
 
                 <button
                     @click="deleteQualityFinding"
-                    class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded border border-red-200 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors"
+                    title="Hapus"
+                    aria-label="Hapus"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition-colors duration-150 hover:bg-red-600 hover:text-white"
                 >
-                    Hapus
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                 </button>
             </div>
         </div>
 
-        <!-- Main Corporate Audit Sheet -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden text-xs max-w-4xl mx-auto">
-            <!-- Sheet Header -->
-            <div class="p-6 border-b border-gray-200 bg-slate-50/70">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <!-- Lembar laporan (ikut tercetak) -->
+        <div class="mx-auto max-w-4xl overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+            <!-- Kepala lembar -->
+            <div class="border-b border-gray-200 bg-slate-50/70 px-6 py-5">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <div class="mb-2 flex flex-wrap items-center gap-2">
                             <template v-if="qualityFinding.quality_categories_info && qualityFinding.quality_categories_info.length">
                                 <span
                                     v-for="cat in qualityFinding.quality_categories_info"
                                     :key="cat.id"
-                                    class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-800 border border-slate-300"
+                                    class="rounded-md border border-slate-300 bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-800"
                                 >
                                     {{ cat.label }}
                                 </span>
                             </template>
-                            <span v-else class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-800 border border-slate-300">
+                            <span v-else class="rounded-md border border-slate-300 bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-800">
                                 {{ qualityFinding.categories_info?.label || qualityFinding.quality_category }}
                             </span>
-                            <span class="tabular-nums text-gray-500">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
+                            <span class="text-xs text-gray-500 tabular-nums">#FQ-{{ String(qualityFinding.id).padStart(4, '0') }}</span>
                         </div>
-                        <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">
+                        <h2 class="text-2xl font-semibold leading-8 text-gray-900">
                             {{ qualityFinding.title }}
                         </h2>
                     </div>
 
-                    <div class="text-left sm:text-right shrink-0 text-[11px] text-gray-500 tabular-nums space-y-0.5">
-                        <div>Tanggal: {{ qualityFinding.created_at }}</div>
-                        <div>Pelapor: <span class="font-medium text-gray-800 font-sans">{{ qualityFinding.reported_by }}</span></div>
+                    <div class="shrink-0 space-y-1 text-left text-xs text-gray-500 tabular-nums sm:text-right">
+                        <div>{{ qualityFinding.created_at }}</div>
+                        <div>Pelapor <span class="font-medium text-gray-800">{{ qualityFinding.reported_by }}</span></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-gray-200 text-xs">
+                <div class="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-gray-200 pt-4 md:grid-cols-4">
                     <div>
-                        <div class="text-gray-400 font-medium text-[11px]">Nomor Surat Tugas</div>
-                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ qualityFinding.audit.audit_number }}</div>
+                        <div class="text-xs text-gray-500">No. surat tugas</div>
+                        <div class="mt-1 text-sm text-gray-900 tabular-nums">{{ qualityFinding.audit.audit_number }}</div>
                     </div>
                     <div>
-                        <div class="text-gray-400 font-medium text-[11px]">Unit / Toko</div>
-                        <div class="font-semibold text-gray-900 mt-0.5">{{ qualityFinding.audit.store_name }}</div>
+                        <div class="text-xs text-gray-500">Toko</div>
+                        <div class="mt-1 text-sm text-gray-900">{{ qualityFinding.audit.store_name }}</div>
                     </div>
                     <div>
-                        <div class="text-gray-400 font-medium text-[11px]">Nilai Dampak Finansial</div>
-                        <div class="tabular-nums font-bold text-gray-900 mt-0.5">
+                        <div class="text-xs text-gray-500">Nilai dampak</div>
+                        <div class="mt-1 text-sm font-medium text-gray-900 tabular-nums">
                             {{ formatRupiah(qualityFinding.impact_amount || qualityFinding.finding.loss_amount) }}
                         </div>
                     </div>
                     <div>
-                        <div class="text-gray-400 font-medium text-[11px]">Severity & Status</div>
-                        <div class="mt-1 flex items-center gap-1.5">
+                        <div class="text-xs text-gray-500">Severity & status</div>
+                        <div class="mt-1 flex flex-wrap items-center gap-2">
                             <SeverityBadge :severity="qualityFinding.finding.severity" />
                             <StatusBadge :status="qualityFinding.finding.status" />
                         </div>
@@ -142,76 +142,52 @@ const deleteQualityFinding = () => {
                 </div>
             </div>
 
-            <!-- Report Body -->
-            <div class="p-6 space-y-5">
-                <!-- 1. Uraian Temuan -->
+            <!-- Isi laporan: label kiri, isi kanan -->
+            <div>
+                <div class="grid grid-cols-1 gap-2 border-b border-gray-200 px-6 py-5 md:grid-cols-[160px_1fr] md:gap-6">
+                    <h3 class="text-sm text-gray-500">Uraian temuan</h3>
+                    <div class="leading-relaxed text-gray-800">{{ qualityFinding.finding.finding }}</div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 border-b border-gray-200 px-6 py-5 md:grid-cols-[160px_1fr] md:gap-6">
+                    <h3 class="text-sm text-gray-500">Root cause</h3>
+                    <div class="whitespace-pre-line leading-relaxed text-gray-800">{{ qualityFinding.root_cause }}</div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 border-b border-gray-200 px-6 py-5 md:grid-cols-[160px_1fr] md:gap-6">
+                    <h3 class="text-sm text-gray-500">Kelemahan sistemik</h3>
+                    <div class="whitespace-pre-line leading-relaxed text-gray-800">
+                        {{ qualityFinding.systemic_issue || 'Kelemahan kontrol internal di tingkat operasional unit yang memerlukan revisi SOP atau supervisi terpusat.' }}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 border-b border-gray-200 px-6 py-5 md:grid-cols-[160px_1fr] md:gap-6">
+                    <h3 class="text-sm text-gray-500">Rekomendasi</h3>
+                    <div class="whitespace-pre-line leading-relaxed text-gray-800">{{ qualityFinding.recommendation }}</div>
+                </div>
+
+                <div v-if="qualityFinding.auditor_notes" class="grid grid-cols-1 gap-2 border-b border-gray-200 px-6 py-5 md:grid-cols-[160px_1fr] md:gap-6">
+                    <h3 class="text-sm text-gray-500">Catatan auditor</h3>
+                    <div class="leading-relaxed text-gray-700">{{ qualityFinding.auditor_notes }}</div>
+                </div>
+            </div>
+
+            <!-- Tanda tangan (untuk cetak) -->
+            <div class="grid grid-cols-3 gap-6 px-6 pb-6 pt-8 text-center text-sm">
                 <div>
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                        1. Uraian Temuan Pemeriksaan
-                    </h3>
-                    <div class="bg-gray-50 p-3.5 rounded border border-gray-200 text-gray-800 leading-relaxed">
-                        {{ qualityFinding.finding.finding }}
-                    </div>
+                    <div class="mb-12 text-gray-500">Auditor pelapor</div>
+                    <div class="border-t border-gray-300 pt-2 font-medium text-gray-900">{{ qualityFinding.reported_by }}</div>
+                    <div class="text-xs text-gray-400">Staff Audit</div>
                 </div>
-
-                <!-- 2. Root Cause & Kelemahan Sistemik -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                            2. Analisis Akar Masalah (Root Cause)
-                        </h3>
-                        <div class="bg-white p-3.5 rounded border border-gray-200 text-gray-800 leading-relaxed whitespace-pre-line">
-                            {{ qualityFinding.root_cause }}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                            3. Kelemahan Sistemik / Pengendalian Internal
-                        </h3>
-                        <div class="bg-white p-3.5 rounded border border-gray-200 text-gray-800 leading-relaxed whitespace-pre-line">
-                            {{ qualityFinding.systemic_issue || 'Kelemahan kontrol internal di tingkat operasional unit yang memerlukan revisi SOP atau supervisi terpusat.' }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Rekomendasi Solusi -->
                 <div>
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                        4. Rekomendasi & Mitigasi Strategis
-                    </h3>
-                    <div class="bg-white p-3.5 rounded border border-gray-200 text-gray-800 leading-relaxed whitespace-pre-line">
-                        {{ qualityFinding.recommendation }}
-                    </div>
+                    <div class="mb-12 text-gray-500">Koordinator / Asmen</div>
+                    <div class="border-t border-gray-300 pt-2 font-medium text-gray-900">( ........................................ )</div>
+                    <div class="text-xs text-gray-400">Koordinator Audit / Asmen</div>
                 </div>
-
-                <!-- 5. Catatan Khusus Auditor -->
-                <div v-if="qualityFinding.auditor_notes">
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                        5. Catatan Tambahan Auditor
-                    </h3>
-                    <div class="bg-white p-3 rounded border border-gray-200 text-gray-700 leading-relaxed">
-                        {{ qualityFinding.auditor_notes }}
-                    </div>
-                </div>
-
-                <!-- Signatures Section for Printing -->
-                <div class="pt-8 border-t border-gray-200 grid grid-cols-3 gap-6 text-center text-xs">
-                    <div>
-                        <div class="text-gray-500 mb-12">Auditor Pelapor:</div>
-                        <div class="font-semibold text-gray-900 border-t border-gray-300 pt-1.5">{{ qualityFinding.reported_by }}</div>
-                        <div class="text-[10px] text-gray-400">Staff Audit</div>
-                    </div>
-                    <div>
-                        <div class="text-gray-500 mb-12">Koordinator / Asmen:</div>
-                        <div class="font-semibold text-gray-900 border-t border-gray-300 pt-1.5">( ........................................ )</div>
-                        <div class="text-[10px] text-gray-400">Koordinator Audit / Asmen</div>
-                    </div>
-                    <div>
-                        <div class="text-gray-500 mb-12">Chief Auditor:</div>
-                        <div class="font-semibold text-gray-900 border-t border-gray-300 pt-1.5">( ........................................ )</div>
-                        <div class="text-[10px] text-gray-400">Chief Internal Audit</div>
-                    </div>
+                <div>
+                    <div class="mb-12 text-gray-500">Chief Auditor</div>
+                    <div class="border-t border-gray-300 pt-2 font-medium text-gray-900">( ........................................ )</div>
+                    <div class="text-xs text-gray-400">Chief Internal Audit</div>
                 </div>
             </div>
         </div>

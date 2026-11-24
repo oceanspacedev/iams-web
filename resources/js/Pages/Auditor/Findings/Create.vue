@@ -34,245 +34,266 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Buat Finding Baru">
-        <Head :title="`Tambah Finding - ${audit.audit_number}`" />
+    <AppLayout title="Tambah temuan">
+        <Head :title="`Tambah temuan - ${audit.audit_number}`" />
 
+        <!-- Header -->
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('auditor.audits.index')" class="hover:text-blue-600">My Audits</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route('auditor.audits.index')" class="transition-colors duration-150 hover:text-blue-600">Audit saya</Link>
                 <span>/</span>
-                <Link :href="route('auditor.audits.show', audit.id)" class="hover:text-blue-600">{{ audit.audit_number }}</Link>
+                <Link :href="route('auditor.audits.show', audit.id)" class="tabular-nums transition-colors duration-150 hover:text-blue-600">{{ audit.audit_number }}</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">Buat Finding</span>
+                <span class="font-medium text-gray-900">Temuan baru</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Tambah Temuan Audit (Finding)</h1>
-            <p class="text-xs text-gray-500 mt-1">Audit No: {{ audit.audit_number }} • Toko: {{ audit.store.name }}</p>
+            <div class="flex flex-wrap items-baseline gap-x-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Tambah temuan</h1>
+                <span class="text-2xl leading-8 text-gray-500">{{ audit.store.name }}</span>
+            </div>
         </div>
 
-        <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-4xl">
-            <form @submit.prevent="submit" class="space-y-6 text-xs">
-                <!-- Row 1: Category, SOP, Severity -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <form @submit.prevent="submit" class="grid grid-cols-1 items-start gap-6 text-sm lg:grid-cols-3">
+            <!-- Kolom utama: uraian -->
+            <section class="rounded-xl border border-gray-200 bg-white lg:col-span-2 shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Temuan</h2>
+                </div>
+                <div class="space-y-4 p-5">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            Kategori Audit <span class="text-red-500">*</span>
+                        <label for="finding-text" class="mb-2 block text-sm font-medium text-gray-900">
+                            Uraian temuan <span class="text-red-600">*</span>
+                        </label>
+                        <textarea
+                            id="finding-text"
+                            v-model="form.finding"
+                            rows="6"
+                            required
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                        ></textarea>
+                        <div v-if="form.errors.finding" class="mt-1 text-xs text-red-600">{{ form.errors.finding }}</div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label for="finding-opinion" class="mb-2 block text-sm font-medium text-gray-900">
+                                Opini auditor
+                            </label>
+                            <textarea
+                                id="finding-opinion"
+                                v-model="form.auditor_opinion"
+                                rows="4"
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
+                            <div v-if="form.errors.auditor_opinion" class="mt-1 text-xs text-red-600">{{ form.errors.auditor_opinion }}</div>
+                        </div>
+
+                        <div>
+                            <label for="finding-recommendation" class="mb-2 block text-sm font-medium text-gray-900">
+                                Rekomendasi <span class="text-red-600">*</span>
+                            </label>
+                            <textarea
+                                id="finding-recommendation"
+                                v-model="form.recommendation"
+                                rows="4"
+                                required
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
+                            <div v-if="form.errors.recommendation" class="mt-1 text-xs text-red-600">{{ form.errors.recommendation }}</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Kolom samping: klasifikasi + nilai -->
+            <section class="rounded-xl border border-gray-200 bg-white lg:sticky lg:top-6 shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Klasifikasi</h2>
+                </div>
+                <div class="space-y-4 p-5">
+                    <div>
+                        <label for="finding-category" class="mb-2 block text-sm font-medium text-gray-900">
+                            Kategori <span class="text-red-600">*</span>
                         </label>
                         <select
+                            id="finding-category"
                             v-model="form.category_id"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         >
-                            <option value="" disabled>Pilih Kategori</option>
+                            <option value="" disabled>Pilih kategori</option>
                             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
                                 {{ cat.name }}
                             </option>
                         </select>
-                        <div v-if="form.errors.category_id" class="text-red-600 text-[11px] mt-1">{{ form.errors.category_id }}</div>
+                        <div v-if="form.errors.category_id" class="mt-1 text-xs text-red-600">{{ form.errors.category_id }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            SOP / Surat Edaran Terkait
+                        <label for="finding-sop" class="mb-2 block text-sm font-medium text-gray-900">
+                            SOP / SE
                         </label>
                         <select
+                            id="finding-sop"
                             v-model="form.sop_id"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         >
-                            <option value="">Pilih SOP/SE (Opsional)</option>
+                            <option value="">Opsional</option>
                             <option v-for="sop in sops" :key="sop.id" :value="sop.id">
                                 {{ sop.code }} - {{ sop.title }}
                             </option>
                         </select>
-                        <div v-if="form.errors.sop_id" class="text-red-600 text-[11px] mt-1">{{ form.errors.sop_id }}</div>
+                        <div v-if="form.errors.sop_id" class="mt-1 text-xs text-red-600">{{ form.errors.sop_id }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            Severity / Dampak <span class="text-red-500">*</span>
+                        <label id="finding-severity-label" for="finding-severity" class="mb-2 block text-sm font-medium text-gray-900">
+                            Severity <span class="text-red-600">*</span>
                         </label>
                         <select
+                            id="finding-severity"
                             v-model="form.severity"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                            class="sr-only"
+                            tabindex="-1"
+                            aria-label="Severity"
                         >
-                            <option value="MINOR">Minor (Timeline SLA: 3 - 7 hari)</option>
-                            <option value="MEDIUM">Medium (Timeline SLA: 8 - 14 hari)</option>
-                            <option value="MAJOR">Major (Timeline SLA: 15 - 30 hari)</option>
-                            <option value="CONTINUOUS">Continuous (Dalam Monitoring)</option>
+                            <option value="MINOR">Minor (3 - 7 hari)</option>
+                            <option value="MEDIUM">Medium (8 - 14 hari)</option>
+                            <option value="MAJOR">Major (15 - 30 hari)</option>
+                            <option value="CONTINUOUS">Continuous (monitoring)</option>
                         </select>
-                        <div v-if="form.errors.severity" class="text-red-600 text-[11px] mt-1">{{ form.errors.severity }}</div>
+
+                        <!-- Pilihan severity -->
+                        <div class="grid grid-cols-2 gap-2 text-center text-sm" role="group" aria-labelledby="finding-severity-label">
+                            <button
+                                type="button"
+                                @click="form.severity = 'MINOR'"
+                                aria-label="Severity minor, 3 - 7 hari"
+                                :aria-pressed="form.severity === 'MINOR'"
+                                class="cursor-pointer select-none rounded-lg border p-3 text-center transition-colors duration-150"
+                                :class="form.severity === 'MINOR'
+                                    ? 'bg-emerald-100 border-emerald-500 ring-2 ring-emerald-400 text-emerald-950 font-medium'
+                                    : 'bg-emerald-50/70 border-emerald-200 text-emerald-800 hover:bg-emerald-100/60 hover:border-emerald-300'"
+                            >
+                                <div class="flex items-center justify-center gap-1 text-sm font-medium">
+                                    <span>Minor</span>
+                                    <span v-if="form.severity === 'MINOR'" class="text-xs text-emerald-700">✓</span>
+                                </div>
+                                <div class="mt-0.5 text-xs text-emerald-700/90 tabular-nums">3 - 7 hari</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="form.severity = 'MEDIUM'"
+                                aria-label="Severity medium, 8 - 14 hari"
+                                :aria-pressed="form.severity === 'MEDIUM'"
+                                class="cursor-pointer select-none rounded-lg border p-3 text-center transition-colors duration-150"
+                                :class="form.severity === 'MEDIUM'
+                                    ? 'bg-amber-100 border-amber-500 ring-2 ring-amber-400 text-amber-950 font-medium'
+                                    : 'bg-amber-50/70 border-amber-200 text-amber-800 hover:bg-amber-100/60 hover:border-amber-300'"
+                            >
+                                <div class="flex items-center justify-center gap-1 text-sm font-medium">
+                                    <span>Medium</span>
+                                    <span v-if="form.severity === 'MEDIUM'" class="text-xs text-amber-700">✓</span>
+                                </div>
+                                <div class="mt-0.5 text-xs text-amber-700/90 tabular-nums">8 - 14 hari</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="form.severity = 'MAJOR'"
+                                aria-label="Severity major, 15 - 30 hari"
+                                :aria-pressed="form.severity === 'MAJOR'"
+                                class="cursor-pointer select-none rounded-lg border p-3 text-center transition-colors duration-150"
+                                :class="form.severity === 'MAJOR'
+                                    ? 'bg-rose-100 border-rose-500 ring-2 ring-rose-400 text-rose-950 font-medium'
+                                    : 'bg-rose-50/70 border-rose-200 text-rose-800 hover:bg-rose-100/60 hover:border-rose-300'"
+                            >
+                                <div class="flex items-center justify-center gap-1 text-sm font-medium">
+                                    <span>Major</span>
+                                    <span v-if="form.severity === 'MAJOR'" class="text-xs text-rose-700">✓</span>
+                                </div>
+                                <div class="mt-0.5 text-xs text-rose-700/90 tabular-nums">15 - 30 hari</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="form.severity = 'CONTINUOUS'"
+                                aria-label="Severity continuous, monitoring"
+                                :aria-pressed="form.severity === 'CONTINUOUS'"
+                                class="cursor-pointer select-none rounded-lg border p-3 text-center transition-colors duration-150"
+                                :class="form.severity === 'CONTINUOUS'
+                                    ? 'bg-purple-100 border-purple-500 ring-2 ring-purple-400 text-purple-950 font-medium'
+                                    : 'bg-purple-50/70 border-purple-200 text-purple-800 hover:bg-purple-100/60 hover:border-purple-300'"
+                            >
+                                <div class="flex items-center justify-center gap-1 text-sm font-medium">
+                                    <span>Continuous</span>
+                                    <span v-if="form.severity === 'CONTINUOUS'" class="text-xs text-purple-700">✓</span>
+                                </div>
+                                <div class="mt-0.5 text-xs text-purple-700/90">Monitoring</div>
+                            </button>
+                        </div>
+                        <div v-if="form.errors.severity" class="mt-1 text-xs text-red-600">{{ form.errors.severity }}</div>
+                    </div>
+
+                    <!-- NBH & NBL -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="finding-nbh" class="mb-2 block text-sm font-medium text-gray-900" title="Nilai barang hilang">NBH</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">Rp</span>
+                                <input
+                                    id="finding-nbh"
+                                    v-model="form.loss_amount"
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    aria-label="NBH - nilai barang hilang (Rp)"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
+                            <div v-if="form.errors.loss_amount" class="mt-1 text-xs text-red-600">{{ form.errors.loss_amount }}</div>
+                        </div>
+                        <div>
+                            <label for="finding-nbl" class="mb-2 block text-sm font-medium text-gray-900" title="Nilai barang lebih">NBL</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">Rp</span>
+                                <input
+                                    id="finding-nbl"
+                                    v-model="form.surplus_amount"
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    aria-label="NBL - nilai barang lebih (Rp)"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
+                            <div v-if="form.errors.surplus_amount" class="mt-1 text-xs text-red-600">{{ form.errors.surplus_amount }}</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Severity SLA Info Guide -->
-                <div class="bg-gray-50/80 border border-gray-200 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
-                    <!-- Minor Card -->
-                    <button
-                        type="button"
-                        @click="form.severity = 'MINOR'"
-                        class="p-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                        :class="form.severity === 'MINOR'
-                            ? 'bg-emerald-100 border-emerald-500 ring-2 ring-emerald-400 text-emerald-950 font-bold shadow-xs'
-                            : 'bg-emerald-50/70 border-emerald-200 text-emerald-800 hover:bg-emerald-100/60 hover:border-emerald-300'"
-                    >
-                        <div class="text-xs font-semibold flex items-center justify-center gap-1">
-                            <span>Minor</span>
-                            <span v-if="form.severity === 'MINOR'" class="text-emerald-700 text-[11px]">✓</span>
-                        </div>
-                        <div class="text-[11px] text-emerald-700/90 tabular-nums mt-0.5 font-medium">3 - 7 hari</div>
-                    </button>
-
-                    <!-- Medium Card -->
-                    <button
-                        type="button"
-                        @click="form.severity = 'MEDIUM'"
-                        class="p-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                        :class="form.severity === 'MEDIUM'
-                            ? 'bg-amber-100 border-amber-500 ring-2 ring-amber-400 text-amber-950 font-bold shadow-xs'
-                            : 'bg-amber-50/70 border-amber-200 text-amber-800 hover:bg-amber-100/60 hover:border-amber-300'"
-                    >
-                        <div class="text-xs font-semibold flex items-center justify-center gap-1">
-                            <span>Medium</span>
-                            <span v-if="form.severity === 'MEDIUM'" class="text-amber-700 text-[11px]">✓</span>
-                        </div>
-                        <div class="text-[11px] text-amber-700/90 tabular-nums mt-0.5 font-medium">8 - 14 hari</div>
-                    </button>
-
-                    <!-- Major Card -->
-                    <button
-                        type="button"
-                        @click="form.severity = 'MAJOR'"
-                        class="p-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                        :class="form.severity === 'MAJOR'
-                            ? 'bg-rose-100 border-rose-500 ring-2 ring-rose-400 text-rose-950 font-bold shadow-xs'
-                            : 'bg-rose-50/70 border-rose-200 text-rose-800 hover:bg-rose-100/60 hover:border-rose-300'"
-                    >
-                        <div class="text-xs font-semibold flex items-center justify-center gap-1">
-                            <span>Major</span>
-                            <span v-if="form.severity === 'MAJOR'" class="text-rose-700 text-[11px]">✓</span>
-                        </div>
-                        <div class="text-[11px] text-rose-700/90 tabular-nums mt-0.5 font-medium">15 - 30 hari</div>
-                    </button>
-
-                    <!-- Continuous Card -->
-                    <button
-                        type="button"
-                        @click="form.severity = 'CONTINUOUS'"
-                        class="p-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                        :class="form.severity === 'CONTINUOUS'
-                            ? 'bg-purple-100 border-purple-500 ring-2 ring-purple-400 text-purple-950 font-bold shadow-xs'
-                            : 'bg-purple-50/70 border-purple-200 text-purple-800 hover:bg-purple-100/60 hover:border-purple-300'"
-                    >
-                        <div class="text-xs font-semibold flex items-center justify-center gap-1">
-                            <span>Continuous</span>
-                            <span v-if="form.severity === 'CONTINUOUS'" class="text-purple-700 text-[11px]">✓</span>
-                        </div>
-                        <div class="text-[11px] text-purple-700/90 mt-0.5 font-medium">Monitoring</div>
-                    </button>
-                </div>
-
-                <!-- Row 2: NBH (Nilai Barang Hilang) & NBL (Nilai Barang Lebih) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            NBH - Nilai Barang Hilang (Rp)
-                        </label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
-                            <input
-                                v-model="form.loss_amount"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div v-if="form.errors.loss_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.loss_amount }}</div>
-                    </div>
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            NBL - Nilai Barang Lebih (Rp)
-                        </label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
-                            <input
-                                v-model="form.surplus_amount"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div v-if="form.errors.surplus_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.surplus_amount }}</div>
-                    </div>
-                </div>
-
-                <!-- Row 3: Finding Description -->
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1.5">
-                        Uraian Temuan (Finding) <span class="text-red-500">*</span>
-                    </label>
-                    <textarea
-                        v-model="form.finding"
-                        rows="4"
-                        required
-                        placeholder="Jelaskan kondisi temuan audit secara objektif dan faktual..."
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    ></textarea>
-                    <div v-if="form.errors.finding" class="text-red-600 text-[11px] mt-1">{{ form.errors.finding }}</div>
-                </div>
-
-                <!-- Row 4: Auditor Opinion & Recommendation -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            Opini Auditor
-                        </label>
-                        <textarea
-                            v-model="form.auditor_opinion"
-                            rows="3"
-                            placeholder="Analisis penyebab atau penilaian auditor terhadap dampak temuan..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        ></textarea>
-                        <div v-if="form.errors.auditor_opinion" class="text-red-600 text-[11px] mt-1">{{ form.errors.auditor_opinion }}</div>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1.5">
-                            Rekomendasi Perbaikan <span class="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            v-model="form.recommendation"
-                            rows="3"
-                            required
-                            placeholder="Langkah-langkah perbaikan yang disarankan untuk unit / auditee..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        ></textarea>
-                        <div v-if="form.errors.recommendation" class="text-red-600 text-[11px] mt-1">{{ form.errors.recommendation }}</div>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                <!-- Footer -->
+                <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
                     <Link
                         :href="route('auditor.audits.show', audit.id)"
-                        class="px-4 py-2 text-xs font-medium rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
+                        class="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                     >
-                        <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <svg v-if="form.processing" class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Finding' }}</span>
+                        <span>{{ form.processing ? 'Menyimpan…' : 'Simpan temuan' }}</span>
                     </button>
                 </div>
-            </form>
-        </div>
+            </section>
+        </form>
     </AppLayout>
 </template>

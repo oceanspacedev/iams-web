@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
@@ -16,41 +16,27 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Profile" />
+    <!-- Memakai AppLayout (shell aplikasi) — AuthenticatedLayout bawaan Breeze memanggil route('dashboard') yang tidak ada -->
+    <AppLayout title="Profil">
+        <Head title="Profil" />
 
-    <AuthenticatedLayout>
-        <template #header>
-            <h2
-                class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200"
-            >
-                Profile
-            </h2>
-        </template>
+        <h1 class="mb-6 text-2xl font-semibold leading-8 text-gray-900">Profil</h1>
 
-        <div class="py-12">
-            <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                <div
-                    class="bg-white p-4 shadow sm:rounded-lg sm:p-8 dark:bg-gray-800"
-                >
-                    <UpdateProfileInformationForm
-                        :must-verify-email="mustVerifyEmail"
-                        :status="status"
-                        class="max-w-xl"
-                    />
-                </div>
+        <div class="max-w-3xl space-y-6">
+            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <UpdateProfileInformationForm
+                    :must-verify-email="mustVerifyEmail"
+                    :status="status"
+                />
+            </div>
 
-                <div
-                    class="bg-white p-4 shadow sm:rounded-lg sm:p-8 dark:bg-gray-800"
-                >
-                    <UpdatePasswordForm class="max-w-xl" />
-                </div>
+            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <UpdatePasswordForm />
+            </div>
 
-                <div
-                    class="bg-white p-4 shadow sm:rounded-lg sm:p-8 dark:bg-gray-800"
-                >
-                    <DeleteUserForm class="max-w-xl" />
-                </div>
+            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <DeleteUserForm />
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AppLayout>
 </template>

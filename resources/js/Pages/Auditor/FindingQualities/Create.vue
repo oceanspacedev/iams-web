@@ -92,72 +92,69 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Buat Laporan Finding Quality">
-        <Head title="Buat Laporan Finding Quality" />
+    <AppLayout title="Buat laporan kualitas temuan">
+        <Head title="Buat laporan kualitas temuan" />
 
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="hover:text-blue-600">Finding Quality</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route(`${currentPrefix}finding-qualities.index`)" class="transition-colors duration-150 hover:text-blue-600">Kualitas temuan</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">Buat Laporan Baru</span>
+                <span class="font-medium text-gray-900">Baru</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Formulir Laporan Finding Quality</h1>
-            <p class="text-xs text-gray-500 mt-1">
-                Pilih kriteria temuan berkualitas tinggi untuk dilaporkan ke manajemen (dapat memilih 1 hingga 4 kategori sekaligus)
-            </p>
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Buat laporan</h1>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-4xl text-xs">
-            <form @submit.prevent="submit" class="space-y-6">
-                <!-- STEP 1: Pilih Finding Referensi -->
-                <div>
-                    <label class="block font-semibold text-gray-800 text-xs mb-1.5">
-                        1. Referensi Temuan Audit (Nomor Audit & Uraian) <span class="text-red-500">*</span>
-                    </label>
+        <form @submit.prevent="submit" class="max-w-4xl space-y-6 text-sm">
+            <!-- Temuan referensi -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Temuan <span class="text-red-600">*</span></h2>
+                </div>
+                <div class="p-5">
                     <select
                         v-model="form.finding_id"
                         required
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
+                        aria-label="Temuan audit"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                     >
-                        <option value="" disabled>-- Pilih Nomor Temuan Audit --</option>
+                        <option value="" disabled>Pilih temuan</option>
                         <option v-for="f in findings" :key="f.id" :value="f.id">
                             {{ f.display_label }}
                         </option>
                     </select>
-                    <div v-if="form.errors.finding_id" class="text-red-600 text-[11px] mt-1">{{ form.errors.finding_id }}</div>
+                    <div v-if="form.errors.finding_id" class="mt-1 text-xs text-red-600">{{ form.errors.finding_id }}</div>
 
                     <!-- Highlight box for selected finding -->
-                    <div v-if="selectedFindingObj" class="mt-2.5 p-3 rounded bg-slate-50 border border-slate-200">
-                        <div class="font-semibold text-gray-900 flex items-center gap-2">
-                            <span>{{ selectedFindingObj.audit_number }}</span>
+                    <div v-if="selectedFindingObj" class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="flex flex-wrap items-center gap-2 font-medium text-gray-900">
+                            <span class="tabular-nums">{{ selectedFindingObj.audit_number }}</span>
                             <span>• {{ selectedFindingObj.store_name }}</span>
-                            <span class="text-[10px] px-1.5 py-0.5 bg-slate-200 rounded font-normal">{{ selectedFindingObj.category }}</span>
+                            <span class="rounded-md bg-slate-200 px-2 py-0.5 text-xs font-normal">{{ selectedFindingObj.category }}</span>
                         </div>
-                        <p class="text-gray-700 mt-1 font-normal">"{{ selectedFindingObj.finding }}"</p>
+                        <p class="mt-1 font-normal text-gray-700">"{{ selectedFindingObj.finding }}"</p>
                     </div>
                 </div>
+            </section>
 
-                <!-- STEP 2: Pilih Kategori Target Temuan High Quality (Bisa multi-pilih hingga 4 kategori) -->
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block font-semibold text-gray-800 text-xs">
-                            2. Kategori Target Finding Quality <span class="text-red-500">*</span>
-                            <span class="font-normal text-gray-500 ml-1">(Dapat dipilih lebih dari satu atau sekaligus ke-4 nya)</span>
-                        </label>
-                        <button
-                            type="button"
-                            @click="selectAllCategories"
-                            class="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer underline"
-                        >
-                            {{ form.quality_categories.length === Object.keys(categories).length ? 'Batal Pilih Semua' : 'Pilih Semua (4 Kategori)' }}
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Kategori (multi-pilih) -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Kategori <span class="text-red-600">*</span></h2>
+                    <button
+                        type="button"
+                        @click="selectAllCategories"
+                        class="shrink-0 cursor-pointer text-sm font-medium text-blue-600 transition-colors duration-150 hover:text-blue-800"
+                    >
+                        {{ form.quality_categories.length === Object.keys(categories).length ? 'Batal pilih semua' : 'Pilih semua' }}
+                    </button>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div
                             v-for="(cat, key) in categories"
                             :key="key"
                             @click="toggleCategory(key)"
-                            class="p-4 rounded-lg border cursor-pointer transition-colors flex items-start gap-3 select-none"
+                            class="flex cursor-pointer select-none items-start gap-3 rounded-xl border p-4 transition-colors duration-150"
                             :class="form.quality_categories.includes(key) ? categoryColor(key).selected : categoryColor(key).card"
                         >
                             <input
@@ -165,136 +162,136 @@ const submit = () => {
                                 :value="key"
                                 :checked="form.quality_categories.includes(key)"
                                 @click.stop="toggleCategory(key)"
-                                class="mt-0.5 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                                class="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-600"
                                 :class="categoryColor(key).checkbox"
                             />
-                            <div class="flex-1 min-w-0">
-                                <div class="font-medium text-xs" :class="categoryColor(key).label">
+                            <div class="min-w-0 flex-1">
+                                <div class="text-sm font-medium" :class="categoryColor(key).label">
                                     {{ cat.label }}
                                 </div>
-                                <p class="mt-1 text-[11px] leading-relaxed" :class="categoryColor(key).desc">
+                                <p class="mt-1 line-clamp-2 text-xs leading-relaxed" :class="categoryColor(key).desc" :title="cat.description">
                                     {{ cat.description }}
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div v-if="form.errors.quality_categories" class="text-red-600 text-[11px] mt-1">{{ form.errors.quality_categories }}</div>
+                    <div v-if="form.errors.quality_categories" class="mt-1 text-xs text-red-600">{{ form.errors.quality_categories }}</div>
                 </div>
+            </section>
 
-                <!-- STEP 3: Judul & Dampak Finansial -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Isi laporan -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Laporan</h2>
+                </div>
+                <div class="space-y-4 p-5">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div class="md:col-span-2">
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Judul Laporan Finding Quality <span class="text-red-500">*</span>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Judul <span class="text-red-600">*</span>
                         </label>
                         <input
                             v-model="form.title"
                             type="text"
                             required
-                            placeholder="Contoh: Selisih Fisik Barang Dagangan Senilai Rp 65 Juta di DC Cikarang"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         />
-                        <div v-if="form.errors.title" class="text-red-600 text-[11px] mt-1">{{ form.errors.title }}</div>
+                        <div v-if="form.errors.title" class="mt-1 text-xs text-red-600">{{ form.errors.title }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Nilai Dampak / Kerugian (Rp)
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Nilai dampak
                         </label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp</span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">Rp</span>
                             <input
                                 v-model="form.impact_amount"
                                 type="number"
                                 min="0"
                                 placeholder="0"
-                                class="w-full pl-9 text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                             />
                         </div>
-                        <div v-if="form.errors.impact_amount" class="text-red-600 text-[11px] mt-1">{{ form.errors.impact_amount }}</div>
+                        <div v-if="form.errors.impact_amount" class="mt-1 text-xs text-red-600">{{ form.errors.impact_amount }}</div>
                     </div>
                 </div>
 
-                <!-- STEP 4: Root Cause & Isu Sistemik -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Root Cause / Analisis Penyebab Utama <span class="text-red-500">*</span>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Root cause <span class="text-red-600">*</span>
                         </label>
                         <textarea
                             v-model="form.root_cause"
                             rows="4"
                             required
-                            placeholder="Jelaskan akar penyebab terjadinya temuan, mengapa kontrol tidak berfungsi..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         ></textarea>
-                        <div v-if="form.errors.root_cause" class="text-red-600 text-[11px] mt-1">{{ form.errors.root_cause }}</div>
+                        <div v-if="form.errors.root_cause" class="mt-1 text-xs text-red-600">{{ form.errors.root_cause }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Kelemahan Sistemik / Celah Prosedur
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Kelemahan sistemik
                         </label>
                         <textarea
                             v-model="form.systemic_issue"
                             rows="4"
-                            placeholder="Potensi keterulangan di unit/cabang lain atau kelemahan validasi sistem..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         ></textarea>
-                        <div v-if="form.errors.systemic_issue" class="text-red-600 text-[11px] mt-1">{{ form.errors.systemic_issue }}</div>
+                        <div v-if="form.errors.systemic_issue" class="mt-1 text-xs text-red-600">{{ form.errors.systemic_issue }}</div>
                     </div>
                 </div>
 
-                <!-- STEP 5: Rekomendasi Strategis & Catatan -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Rekomendasi Perbaikan Strategis <span class="text-red-500">*</span>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Rekomendasi <span class="text-red-600">*</span>
                         </label>
                         <textarea
                             v-model="form.recommendation"
                             rows="3"
                             required
-                            placeholder="Langkah perbaikan dan mitigasi yang direkomendasikan..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         ></textarea>
-                        <div v-if="form.errors.recommendation" class="text-red-600 text-[11px] mt-1">{{ form.errors.recommendation }}</div>
+                        <div v-if="form.errors.recommendation" class="mt-1 text-xs text-red-600">{{ form.errors.recommendation }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">
-                            Catatan Khusus Auditor
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Catatan auditor
                         </label>
                         <textarea
                             v-model="form.auditor_notes"
                             rows="3"
-                            placeholder="Catatan tambahan atau temuan pendukung..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         ></textarea>
                     </div>
                 </div>
+                </div>
 
                 <!-- Buttons -->
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
                     <Link
                         :href="route(`${currentPrefix}finding-qualities.index`)"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
+                        class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                     >
-                        <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <svg v-if="form.processing" class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Laporan' }}</span>
+                        <span>{{ form.processing ? 'Menyimpan…' : 'Simpan laporan' }}</span>
                     </button>
                 </div>
-            </form>
-        </div>
+            </section>
+        </form>
     </AppLayout>
 </template>

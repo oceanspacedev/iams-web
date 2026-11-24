@@ -28,9 +28,11 @@ class Finding extends Model
         'severity_notes',
         'is_severity_locked',
         'status',
+        'closed_at',
     ];
 
     protected $casts = [
+        'closed_at'            => 'datetime',
         'loss_amount'          => 'decimal:2',
         'surplus_amount'       => 'decimal:2',
         'severity'             => 'string',
@@ -55,6 +57,22 @@ class Finding extends Model
     // Legacy fallback
     const SEVERITY_CRITICAL    = 'CRITICAL';
     const SEVERITY_OBSERVATION = 'OBSERVATION';
+
+    protected static function booted(): void
+    {
+        // closed_at selalu mengikuti status: diisi saat menjadi CLOSED, dikosongkan saat keluar dari CLOSED.
+        static::saving(function (Finding $finding) {
+            if (! $finding->isDirty('status')) {
+                return;
+            }
+
+            if ($finding->status === self::STATUS_CLOSED) {
+                $finding->closed_at ??= now();
+            } elseif ($finding->closed_at !== null) {
+                $finding->closed_at = null;
+            }
+        });
+    }
 
     public static function severityOptions(): array
     {
@@ -104,7 +122,7 @@ class Finding extends Model
 
     public function sop(): BelongsTo
     {
-        return $this->belongsTo(Sop::class, 'sop_id');
+        return $this->belongsTo(Sop::class, 'sop_id')->withTrashed();
     }
 
     public function actionPlan(): HasOne
@@ -152,6 +170,9 @@ class Finding extends Model
             })->whereNotIn('status', [self::STATUS_VERIFIED, self::STATUS_CLOSED]);
     }
 
+    // Tanggal penutupan: closed_at, fallback ke updated_at untuk baris yang ditutup di luar Eloquent.
+    private const CLOSED_DATE_SQL = 'DATE(COALESCE(findings.closed_at, findings.updated_at))';
+
     public function scopeClosedOnTime($query)
     {
         return $query->where('status', self::STATUS_CLOSED)
@@ -160,7 +181,7 @@ class Finding extends Model
                   ->orWhereDoesntHave('actionPlan')
                   ->orWhereHas('actionPlan', function ($ap) {
                       $ap->whereNull('deadline')
-                         ->orWhereRaw('DATE(findings.updated_at) <= action_plans.deadline');
+                         ->orWhereRaw(self::CLOSED_DATE_SQL . ' <= action_plans.deadline');
                   });
             });
     }
@@ -171,7 +192,7 @@ class Finding extends Model
             ->where('severity', '!=', self::SEVERITY_CONTINUOUS)
             ->whereHas('actionPlan', function ($ap) {
                 $ap->whereNotNull('deadline')
-                   ->whereRaw('DATE(findings.updated_at) > action_plans.deadline');
+                   ->whereRaw(self::CLOSED_DATE_SQL . ' > action_plans.deadline');
             });
     }
 
@@ -181,13 +202,70 @@ class Finding extends Model
         return $this->severity === self::SEVERITY_CONTINUOUS;
     }
 
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
+
+    /** Temuan hanya bisa ditutup setelah bukti diverifikasi. */
     public function isCloseable(): bool
     {
-        return $this->status !== self::STATUS_CLOSED;
+        return $this->status === self::STATUS_VERIFIED;
     }
 
     public function canUploadEvidence(): bool
     {
-        return $this->status !== self::STATUS_CLOSED;
+        return in_array($this->status, [
+            self::STATUS_OPEN,
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_WAITING_VERIFICATION,
+        ], true);
+    }
+
+    /** Auditee hanya boleh mengisi/mengubah action plan sebelum bukti dikirim. */
+    public function canEditActionPlan(): bool
+    {
+        return in_array($this->status, [self::STATUS_OPEN, self::STATUS_IN_PROGRESS], true);
+    }
+
+    /**
+     * Hitung ulang status dari bukti yang tersisa (dipakai setelah bukti dihapus).
+     * Tidak mengubah temuan yang sudah CLOSED.
+     */
+    public function recalculateStatusFromEvidence(): void
+    {
+        if ($this->isClosed()) {
+            return;
+        }
+
+        $evidences = $this->evidences();
+
+        if ((clone $evidences)->where('verification_status', 'PENDING')->exists()) {
+            $status = self::STATUS_WAITING_VERIFICATION;
+        } elseif ((clone $evidences)->where('verification_status', 'APPROVED')->exists()) {
+            $status = self::STATUS_VERIFIED;
+        } elseif (! empty($this->actionPlan?->action_plan)) {
+            $status = self::STATUS_IN_PROGRESS;
+        } else {
+            $status = self::STATUS_OPEN;
+        }
+
+        $this->update(['status' => $status]);
+    }
+
+    /**
+     * Tutup temuan: status CLOSED, action plan COMPLETED, dan audit IN_PROGRESS
+     * menjadi COMPLETED bila semua temuannya sudah CLOSED.
+     */
+    public function markClosed(): void
+    {
+        $this->update(['status' => self::STATUS_CLOSED]);
+        $this->actionPlan?->update(['status' => 'COMPLETED']);
+
+        $audit = $this->audit;
+        if ($audit && $audit->status === 'IN_PROGRESS'
+            && ! $audit->findings()->where('status', '!=', self::STATUS_CLOSED)->exists()) {
+            $audit->update(['status' => 'COMPLETED']);
+        }
     }
 }

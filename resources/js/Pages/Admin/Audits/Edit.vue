@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -48,8 +48,27 @@ const selectedStore = computed(() => {
 });
 
 const availableAuditors = computed(() => {
-    return props.auditors.filter(a => !form.auditor_ids.some(id => Number(id) === Number(a.id)));
+    // Pilihan pertama = lead, jadi hanya tampilkan yang boleh jadi lead
+    return props.auditors
+        .filter(a => !form.auditor_ids.some(id => Number(id) === Number(a.id)))
+        .filter(a => form.auditor_ids.length > 0 || a.can_lead !== false);
 });
+
+// Lead (urutan pertama) wajib ber-role auditor (can_lead dari controller).
+// Kalau lead dihapus dan urutan pertama jadi non-auditor, naikkan auditor pertama yang memenuhi syarat.
+const ensureLeadFirst = () => {
+    const ids = form.auditor_ids;
+    if (!ids.length) return;
+    const canLead = (id) => props.auditors.find(a => Number(a.id) === Number(id))?.can_lead !== false;
+    if (!canLead(ids[0])) {
+        const idx = ids.findIndex(canLead);
+        if (idx > 0) {
+            const [lead] = ids.splice(idx, 1);
+            ids.unshift(lead);
+        }
+    }
+};
+watch(() => form.auditor_ids.slice(), ensureLeadFirst);
 
 const addAuditor = (event) => {
     const val = Number(event.target.value);
@@ -113,253 +132,273 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout :title="`Edit Audit - ${audit.audit_number}`">
-        <Head :title="`Edit Audit - ${audit.audit_number} — Admin`" />
+    <AppLayout :title="`Edit audit ${audit.audit_number}`">
+        <Head :title="`Edit audit ${audit.audit_number}`" />
 
+        <!-- Header -->
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('admin.audits.index')" class="hover:text-blue-600">Audits</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route('admin.audits.index')" class="transition-colors duration-150 hover:text-blue-600">Audit</Link>
                 <span>/</span>
-                <Link :href="route('admin.audits.show', audit.id)" class="hover:text-blue-600">{{ audit.audit_number }}</Link>
+                <Link :href="route('admin.audits.show', audit.id)" class="tabular-nums transition-colors duration-150 hover:text-blue-600">{{ audit.audit_number }}</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">Edit</span>
+                <span class="font-medium text-gray-900">Edit</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Pelaksanaan Audit</h1>
-            <p class="text-xs text-gray-500 mt-1">Perbarui kategori audit, unit toko/badan usaha, dan tim auditor bertugas.</p>
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Edit audit</h1>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-3xl text-xs">
-            <form @submit.prevent="submit" class="space-y-5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Nomor Audit <span class="text-red-500">*</span></label>
-                        <input
-                            v-model="form.audit_number"
-                            type="text"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
-                        />
-                        <div v-if="form.errors.audit_number" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_number }}</div>
+        <form @submit.prevent="submit" class="grid grid-cols-1 items-start gap-6 text-sm lg:grid-cols-3">
+            <!-- Kolom utama -->
+            <div class="space-y-6 lg:col-span-2">
+                <!-- Informasi audit -->
+                <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Informasi audit</h2>
                     </div>
+                    <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">No. surat tugas <span class="text-red-600">*</span></label>
+                            <input
+                                v-model="form.audit_number"
+                                type="text"
+                                required
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            />
+                            <div v-if="form.errors.audit_number" class="mt-1 text-xs text-red-600">{{ form.errors.audit_number }}</div>
+                        </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Kategori Audit <span class="text-red-500">*</span></label>
-                        <select
-                            v-model="form.category_id"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-semibold text-blue-900 bg-blue-50/40"
-                        >
-                            <option value="" disabled>-- Pilih Kategori Audit --</option>
-                            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                {{ cat.name }}
-                            </option>
-                        </select>
-                        <div v-if="form.errors.category_id" class="text-red-600 text-[11px] mt-1">{{ form.errors.category_id }}</div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Kategori <span class="text-red-600">*</span></label>
+                            <select
+                                v-model="form.category_id"
+                                required
+                                class="h-10 w-full rounded-lg border-gray-300 bg-blue-50/40 pl-3 pr-9 text-sm font-medium text-blue-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            >
+                                <option value="" disabled>Pilih kategori</option>
+                                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                    {{ cat.name }}
+                                </option>
+                            </select>
+                            <div v-if="form.errors.category_id" class="mt-1 text-xs text-red-600">{{ form.errors.category_id }}</div>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Judul</label>
+                            <input
+                                v-model="form.title"
+                                type="text"
+                                placeholder="Audit Stock Opname Bulanan"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            />
+                            <div v-if="form.errors.title" class="mt-1 text-xs text-red-600">{{ form.errors.title }}</div>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Judul / Uraian Rencana Audit</label>
-                    <input
-                        v-model="form.title"
-                        type="text"
-                        placeholder="Contoh: Audit Stock Opname Bulanan"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <div v-if="form.errors.title" class="text-red-600 text-[11px] mt-1">{{ form.errors.title }}</div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Tanggal Pelaksanaan <span class="text-red-500">*</span></label>
-                        <input
-                            v-model="form.audit_date"
-                            type="date"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                        <div v-if="form.errors.audit_date" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_date }}</div>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Waktu / Jam Mulai</label>
-                        <input
-                            v-model="form.audit_time"
-                            type="text"
-                            placeholder="09:00"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
-                        />
-                        <div v-if="form.errors.audit_time" class="text-red-600 text-[11px] mt-1">{{ form.errors.audit_time }}</div>
-                    </div>
-                </div>
-
-                <!-- Unit Toko / Badan Usaha -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="block font-medium text-gray-700">
-                            Unit Toko / Badan Usaha <span class="text-red-500">*</span>
-                        </label>
-                        <div class="inline-flex rounded border border-gray-300 bg-gray-100 p-0.5 text-[11px]">
+                <!-- Lokasi -->
+                <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Lokasi</h2>
+                        <div class="inline-flex rounded-lg border border-gray-300 bg-gray-100 p-0.5 text-xs">
                             <button
                                 type="button"
                                 @click="useCustomStore = false"
                                 :class="!useCustomStore ? 'bg-white text-gray-900 font-medium shadow-xs' : 'text-gray-600 hover:text-gray-900'"
-                                class="px-2.5 py-1 rounded transition-colors cursor-pointer"
+                                class="cursor-pointer rounded-md px-3 py-1 transition-colors duration-150"
                             >
-                                Pilih dari Master Data
+                                Master data
                             </button>
                             <button
                                 type="button"
                                 @click="useCustomStore = true"
                                 :class="useCustomStore ? 'bg-white text-gray-900 font-medium shadow-xs' : 'text-gray-600 hover:text-gray-900'"
-                                class="px-2.5 py-1 rounded transition-colors cursor-pointer"
+                                class="cursor-pointer rounded-md px-3 py-1 transition-colors duration-150"
                             >
-                                Input Manual 
+                                Manual
                             </button>
                         </div>
                     </div>
+                    <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+                        <div class="md:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-gray-900">
+                                Unit toko <span class="text-red-600">*</span>
+                            </label>
 
-                    <!-- Dropdown selection mode -->
-                    <div v-if="!useCustomStore">
+                            <!-- Pilih dari master data -->
+                            <div v-if="!useCustomStore">
+                                <select
+                                    v-model="form.store_id"
+                                    aria-label="Unit toko / badan usaha"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                >
+                                    <option value="" disabled>Pilih toko</option>
+                                    <option v-for="s in stores" :key="s.id" :value="s.id">
+                                        [{{ s.code }}] {{ s.name }} {{ s.area ? `• ${s.area}` : '' }}
+                                    </option>
+                                </select>
+                                <div v-if="selectedStore && selectedStore.address" class="mt-2 flex items-start gap-2 rounded-lg border border-gray-100 bg-gray-50 p-2 text-xs text-gray-600">
+                                    <span class="shrink-0 font-medium text-blue-600">Alamat</span>
+                                    <span>{{ selectedStore.address }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Input manual -->
+                            <div v-else>
+                                <input
+                                    v-model="form.custom_store_name"
+                                    type="text"
+                                    placeholder="Nama toko / badan usaha"
+                                    aria-label="Nama toko atau badan usaha baru"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
+
+                            <div v-if="form.errors.store_id" class="mt-1 text-xs text-red-600">{{ form.errors.store_id }}</div>
+                            <div v-if="form.errors.custom_store_name" class="mt-1 text-xs text-red-600">{{ form.errors.custom_store_name }}</div>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Lokasi khusus <span class="font-normal text-gray-400">opsional</span></label>
+                            <input
+                                v-model="form.location"
+                                type="text"
+                                placeholder="Kosong = alamat toko"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tim auditor -->
+                <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Tim auditor <span class="text-red-600">*</span></h2>
+                        <span class="text-sm text-gray-500 tabular-nums" title="Maksimal 5 auditor, urutan pertama Lead Auditor">{{ form.auditor_ids.length }}/5</span>
+                    </div>
+                    <div class="p-5">
                         <select
-                            v-model="form.store_id"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            @change="addAuditor"
+                            aria-label="Tambah auditor bertugas"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            :disabled="form.auditor_ids.length >= 5"
                         >
-                            <option value="" disabled>-- Pilih Unit Toko / Cabang CSA --</option>
-                            <option v-for="s in stores" :key="s.id" :value="s.id">
-                                [{{ s.code }}] {{ s.name }} {{ s.area ? `• ${s.area}` : '' }}
+                            <option value="" selected>
+                                {{ form.auditor_ids.length === 0 ? 'Pilih Lead Auditor' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor' : 'Tambah anggota') }}
+                            </option>
+                            <option
+                                v-for="auditor in availableAuditors"
+                                :key="auditor.id"
+                                :value="auditor.id"
+                            >
+                                {{ auditor.name }} ({{ auditor.email }})
                             </option>
                         </select>
-                        <div v-if="selectedStore && selectedStore.address" class="mt-1.5 text-[11px] text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 flex items-start gap-1.5">
-                            <span class="text-blue-600 font-semibold shrink-0">📍 Alamat Toko:</span>
-                            <span>{{ selectedStore.address }}</span>
+
+                        <!-- Auditor terpilih -->
+                        <div v-if="form.auditor_ids.length > 0" class="mt-3 flex flex-wrap gap-2">
+                            <div
+                                v-for="(auditorId, index) in form.auditor_ids"
+                                :key="auditorId"
+                                class="inline-flex items-center gap-2 rounded-md border py-1 pl-2 pr-1 text-xs"
+                                :class="index === 0 ? 'bg-blue-50 border-blue-200 text-blue-900 font-medium' : 'bg-gray-50 border-gray-200 text-gray-700'"
+                            >
+                                <span
+                                    v-if="index === 0"
+                                    class="rounded-md bg-blue-600 px-2 py-0.5 text-xs font-medium text-white"
+                                >
+                                    Lead
+                                </span>
+                                <span>{{ getAuditor(auditorId)?.name || auditorId }}</span>
+                                <button
+                                    type="button"
+                                    @click="removeAuditor(auditorId)"
+                                    class="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-md text-sm leading-none text-gray-400 transition-colors duration-150 hover:text-red-600"
+                                    title="Hapus dari tim"
+                                    aria-label="Hapus dari tim"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="form.errors.auditor_ids" class="mt-1 text-xs text-red-600">{{ form.errors.auditor_ids }}</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Kolom samping -->
+            <div class="space-y-6 lg:sticky lg:top-6">
+                <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Jadwal</h2>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 p-5">
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Tanggal <span class="text-red-600">*</span></label>
+                            <input
+                                v-model="form.audit_date"
+                                type="date"
+                                required
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            />
+                            <div v-if="form.errors.audit_date" class="mt-1 text-xs text-red-600">{{ form.errors.audit_date }}</div>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Jam</label>
+                            <input
+                                v-model="form.audit_time"
+                                type="text"
+                                placeholder="09:00"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            />
+                            <div v-if="form.errors.audit_time" class="mt-1 text-xs text-red-600">{{ form.errors.audit_time }}</div>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Status</label>
+                            <select
+                                v-model="form.status"
+                                class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            >
+                                <option value="PLANNED">Terjadwal</option>
+                                <option value="IN_PROGRESS">Dalam proses</option>
+                                <option value="COMPLETED">Selesai</option>
+                                <option value="CLOSED">Ditutup</option>
+                            </select>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Catatan</label>
+                            <textarea
+                                v-model="form.notes"
+                                rows="4"
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
                         </div>
                     </div>
 
-                    <!-- Free text input mode -->
-                    <div v-else>
-                        <input
-                            v-model="form.custom_store_name"
-                            type="text"
-                            placeholder="Ketik nama toko atau badan usaha baru..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div v-if="form.errors.store_id" class="text-red-600 text-[11px] mt-1">{{ form.errors.store_id }}</div>
-                    <div v-if="form.errors.custom_store_name" class="text-red-600 text-[11px] mt-1">{{ form.errors.custom_store_name }}</div>
-                </div>
-
-                <!-- TIM AUDITOR: DROPDOWN SELECTOR -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block font-medium text-gray-700">
-                            Tim Auditor Bertugas <span class="text-red-500">*</span>
-                        </label>
-                        <span class="text-[11px] text-gray-500">
-                            {{ form.auditor_ids.length }} / 5 Dipilih (Urutan pertama: Lead Auditor)
-                        </span>
-                    </div>
-
-                    <select
-                        @change="addAuditor"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
-                        :disabled="form.auditor_ids.length >= 5"
-                    >
-                        <option value="" selected>
-                            {{ form.auditor_ids.length === 0 ? '-- Pilih Auditor Bertugas (Lead Auditor) --' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor tercapai' : '+ Tambah Anggota Auditor...') }}
-                        </option>
-                        <option
-                            v-for="auditor in availableAuditors"
-                            :key="auditor.id"
-                            :value="auditor.id"
+                    <!-- Footer -->
+                    <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
+                        <Link
+                            :href="route('admin.audits.show', audit.id)"
+                            class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
-                            {{ auditor.name }} ({{ auditor.email }})
-                        </option>
-                    </select>
-
-                    <!-- Tags Auditor Terpilih -->
-                    <div v-if="form.auditor_ids.length > 0" class="flex flex-wrap gap-2 mt-2">
-                        <div
-                            v-for="(auditorId, index) in form.auditor_ids"
-                            :key="auditorId"
-                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border"
-                            :class="index === 0 ? 'bg-blue-50 border-blue-200 text-blue-900 font-medium' : 'bg-gray-50 border-gray-200 text-gray-700'"
+                            Batal
+                        </Link>
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                         >
-                            <span
-                                v-if="index === 0"
-                                class="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]"
-                            >
-                                Lead
-                            </span>
-                            <span>{{ getAuditor(auditorId)?.name || auditorId }}</span>
-                            <button
-                                type="button"
-                                @click="removeAuditor(auditorId)"
-                                class="text-gray-400 hover:text-red-600 font-bold ml-1 cursor-pointer text-sm leading-none"
-                                title="Hapus dari tim"
-                            >
-                                &times;
-                            </button>
-                        </div>
+                            <svg v-if="form.processing" class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>{{ form.processing ? 'Menyimpan…' : 'Perbarui audit' }}</span>
+                        </button>
                     </div>
-                    <div v-if="form.errors.auditor_ids" class="text-red-600 text-[11px] mt-1">{{ form.errors.auditor_ids }}</div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Lokasi Khusus (Opsional)</label>
-                        <input
-                            v-model="form.location"
-                            type="text"
-                            placeholder="Biarkan kosong untuk default alamat toko"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Status Audit</label>
-                        <select
-                            v-model="form.status"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
-                        >
-                            <option value="PLANNED">Planned (Terencana)</option>
-                            <option value="IN_PROGRESS">In Progress (Sedang Berjalan)</option>
-                            <option value="COMPLETED">Completed (Selesai)</option>
-                            <option value="CLOSED">Closed (Ditutup)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Catatan Tambahan</label>
-                    <textarea
-                        v-model="form.notes"
-                        rows="3"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    ></textarea>
-                </div>
-
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
-                    <Link
-                        :href="route('admin.audits.show', audit.id)"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
-                    >
-                        Batal
-                    </Link>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
-                    >
-                        <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <span>{{ form.processing ? 'Menyimpan...' : 'Perbarui Audit' }}</span>
-                    </button>
-                </div>
-            </form>
-        </div>
+                </section>
+            </div>
+        </form>
     </AppLayout>
 </template>

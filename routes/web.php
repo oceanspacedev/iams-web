@@ -11,6 +11,11 @@ use App\Http\Controllers\Admin\SopController as AdminSopController;
 use App\Http\Controllers\Admin\StoreController as AdminStoreController;
 use App\Http\Controllers\Admin\SystemSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auditee\ActionPlanController as AuditeeActionPlanController;
+use App\Http\Controllers\Auditee\AuditController as AuditeeAuditController;
+use App\Http\Controllers\Auditee\DashboardController as AuditeeDashboardController;
+use App\Http\Controllers\Auditee\EvidenceController as AuditeeEvidenceController;
+use App\Http\Controllers\Auditee\FindingController as AuditeeFindingController;
 use App\Http\Controllers\Auditor\AuditController as AuditorAuditController;
 use App\Http\Controllers\Auditor\AuditDocumentController as AuditorAuditDocumentController;
 use App\Http\Controllers\Auditor\DashboardController as AuditorDashboardController;
@@ -35,6 +40,12 @@ Route::get('/', function () {
 
     return redirect()->route('login');
 });
+
+// Nama route 'dashboard' dipakai controller bawaan Breeze (konfirmasi kata sandi, verifikasi email).
+// Arahkan ke dashboard portal sesuai role user.
+Route::get('/dashboard', function () {
+    return redirect(auth()->user()->getRedirectRoute());
+})->middleware('auth')->name('dashboard');
 
 // --- Profile (Breeze default) ---
 Route::middleware('auth')->group(function () {
@@ -230,6 +241,25 @@ Route::middleware(['auth', 'role:auditor'])->prefix('auditor')->name('auditor.')
     Route::get('/verification', [EvidenceVerificationController::class, 'index'])->name('verification.index');
     Route::patch('/evidences/{evidence}/approve', [EvidenceVerificationController::class, 'approve'])->name('evidences.approve');
     Route::patch('/evidences/{evidence}/reject', [EvidenceVerificationController::class, 'reject'])->name('evidences.reject');
+});
+
+// ==========================================
+// AUDITEE / STORE TEAM ROUTES
+// Akses data dibatasi per toko lewat policy (authorize) di masing-masing controller.
+// ==========================================
+Route::middleware(['auth', 'role:auditee'])->prefix('auditee')->name('auditee.')->group(function () {
+    Route::get('/dashboard', [AuditeeDashboardController::class, 'index'])->name('dashboard');
+
+    // Audits toko
+    Route::get('/audits', [AuditeeAuditController::class, 'index'])->name('audits.index');
+    Route::get('/audits/{audit}', [AuditeeAuditController::class, 'show'])->name('audits.show');
+
+    // Findings, action plan & evidence
+    Route::get('/findings/{finding}', [AuditeeFindingController::class, 'show'])->name('findings.show');
+    Route::post('/findings/{finding}/action-plan', [AuditeeActionPlanController::class, 'store'])->name('action-plans.store');
+    Route::patch('/findings/{finding}/action-plan', [AuditeeActionPlanController::class, 'update'])->name('action-plans.update');
+    Route::post('/findings/{finding}/evidences', [AuditeeEvidenceController::class, 'store'])->name('evidences.store');
+    Route::delete('/evidences/{evidence}', [AuditeeEvidenceController::class, 'destroy'])->name('evidences.destroy');
 });
 
 require __DIR__ . '/auth.php';
