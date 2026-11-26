@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -16,13 +17,31 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    stores: {
+        type: Array,
+        default: () => [],
+    },
+    periods: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const searchQuery = ref('');
 const statusFilter = ref('');
 const severityFilter = ref('');
 const categoryFilter = ref('');
+const storeFilter = ref('');
+const periodFilter = ref('');
 const currentPage = ref(1);
+
+// Excel mengikuti pilihan toko dan bulan
+const exportUrl = computed(() => {
+    const params = {};
+    if (storeFilter.value) params.store_id = storeFilter.value;
+    if (periodFilter.value) params.period = periodFilter.value;
+    return route('admin.findings.export', params);
+});
 
 const formatRupiah = (number) => {
     if (!number) return 'Rp 0';
@@ -46,12 +65,15 @@ const filteredFindings = computed(() => {
         const matchesSeverity = !severityFilter.value || f.severity === severityFilter.value;
         const matchesCategory = !categoryFilter.value || f.category === categoryFilter.value;
 
-        return matchesSearch && matchesStatus && matchesSeverity && matchesCategory;
+        const matchesStore = !storeFilter.value || String(f.store_id) === storeFilter.value;
+        const matchesPeriod = !periodFilter.value || f.period === periodFilter.value;
+
+        return matchesSearch && matchesStatus && matchesSeverity && matchesCategory && matchesStore && matchesPeriod;
     });
 });
 
 // Reset pagination when filter changes
-watch([searchQuery, statusFilter, severityFilter, categoryFilter], () => {
+watch([searchQuery, statusFilter, severityFilter, categoryFilter, storeFilter, periodFilter], () => {
     currentPage.value = 1;
 });
 
@@ -96,6 +118,12 @@ const deleteFinding = (finding) => {
         action: () => router.delete(route('admin.findings.destroy', finding.id)),
     });
 };
+
+const storeOptions = computed(() => [
+    { value: '', label: 'Semua toko' },
+    ...props.stores.map((s) => ({ value: String(s.id), label: s.name, hint: s.code })),
+]);
+const periodOptions = computed(() => [{ value: '', label: 'Semua bulan' }, ...props.periods]);
 </script>
 
 <template>
@@ -103,9 +131,35 @@ const deleteFinding = (finding) => {
         <Head title="Temuan" />
 
         <!-- Header: judul + jumlah -->
-        <div class="mb-6 flex items-baseline gap-3">
-            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Temuan</h1>
-            <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ filteredFindings.length }}</span>
+        <div class="mb-6 flex flex-wrap items-center gap-3">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Temuan</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ filteredFindings.length }}</span>
+            </div>
+            <div class="flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto">
+                <SearchableSelect
+                    v-model="storeFilter"
+                    :options="storeOptions"
+                    size="sm"
+                    aria-label="Toko"
+                    class="min-w-0 flex-1 sm:w-52 sm:flex-none"
+                />
+                <SearchableSelect
+                    v-model="periodFilter"
+                    :options="periodOptions"
+                    size="sm"
+                    aria-label="Bulan"
+                    class="min-w-0 flex-1 sm:w-44 sm:flex-none"
+                />
+                <a
+                    :href="exportUrl"
+                    class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-emerald-800 px-4 text-sm font-medium text-white shadow-sm transition-colors duration-150 hover:bg-emerald-900"
+                    title="Unduh rekap temuan sesuai toko dan bulan"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16" /></svg>
+                    <span>Excel</span>
+                </a>
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

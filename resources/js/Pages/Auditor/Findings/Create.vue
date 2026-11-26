@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     audit: {
@@ -31,6 +33,11 @@ const form = useForm({
 const submit = () => {
     form.post(route('auditor.findings.store', props.audit.id));
 };
+
+const sopSelectOptions = computed(() => [
+    { value: '', label: 'Tanpa SOP / SE' },
+    ...(props.sops || []).map((sop) => ({ value: sop.id, label: `${sop.code} - ${sop.title}` })),
+]);
 </script>
 
 <template>
@@ -132,16 +139,13 @@ const submit = () => {
                         <label for="finding-sop" class="mb-2 block text-sm font-medium text-gray-900">
                             SOP / SE
                         </label>
-                        <select
+                        <SearchableSelect
                             id="finding-sop"
                             v-model="form.sop_id"
-                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
-                        >
-                            <option value="">Opsional</option>
-                            <option v-for="sop in sops" :key="sop.id" :value="sop.id">
-                                {{ sop.code }} - {{ sop.title }}
-                            </option>
-                        </select>
+                            :options="sopSelectOptions"
+                            placeholder="Pilih SOP / SE"
+                            :invalid="!!form.errors.sop_id"
+                        />
                         <div v-if="form.errors.sop_id" class="mt-1 text-xs text-red-600">{{ form.errors.sop_id }}</div>
                     </div>
 

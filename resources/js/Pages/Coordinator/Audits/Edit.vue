@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     audit: {
@@ -129,6 +130,17 @@ const submit = () => {
     }
     form.put(route('coordinator.audits.update', props.audit.id));
 };
+
+const storeOptions = computed(() =>
+    props.stores.map((s) => ({ value: s.id, label: `[${s.code}] ${s.name}`, hint: s.area || '' }))
+);
+const auditorOptions = computed(() =>
+    availableAuditors.value.map((a) => ({ value: a.id, label: a.name, hint: a.email }))
+);
+const auditorPlaceholder = computed(() =>
+    form.auditor_ids.length === 0 ? 'Pilih lead auditor' : form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor' : 'Tambah anggota'
+);
+const addAuditorId = (id) => addAuditor({ target: { value: id } });
 </script>
 
 <template>
@@ -226,16 +238,14 @@ const submit = () => {
 
                             <!-- Pilih dari master data -->
                             <div v-if="!useCustomStore">
-                                <select
+                                <SearchableSelect
+                                    v-if="!useCustomStore"
                                     v-model="form.store_id"
+                                    :options="storeOptions"
+                                    placeholder="Pilih toko"
                                     aria-label="Unit toko / badan usaha"
-                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
-                                >
-                                    <option value="" disabled>Pilih toko</option>
-                                    <option v-for="s in stores" :key="s.id" :value="s.id">
-                                        [{{ s.code }}] {{ s.name }} {{ s.area ? `• ${s.area}` : '' }}
-                                    </option>
-                                </select>
+                                    :invalid="!!form.errors.store_id"
+                                />
                                 <div v-if="selectedStore && selectedStore.address" class="mt-2 flex items-start gap-2 rounded-lg border border-gray-100 bg-gray-50 p-2 text-xs text-gray-600">
                                     <span class="shrink-0 font-medium text-blue-600">Alamat</span>
                                     <span>{{ selectedStore.address }}</span>
@@ -276,23 +286,14 @@ const submit = () => {
                         <span class="text-sm text-gray-500 tabular-nums" title="Maksimal 5 auditor, urutan pertama Lead Auditor">{{ form.auditor_ids.length }}/5</span>
                     </div>
                     <div class="p-5">
-                        <select
-                            @change="addAuditor"
-                            aria-label="Tambah auditor bertugas"
-                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                        <SearchableSelect
+                            id="auditor_select"
+                            model-value=""
+                            :options="auditorOptions"
+                            :placeholder="auditorPlaceholder"
                             :disabled="form.auditor_ids.length >= 5"
-                        >
-                            <option value="" selected>
-                                {{ form.auditor_ids.length === 0 ? 'Pilih Lead Auditor' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor' : 'Tambah anggota') }}
-                            </option>
-                            <option
-                                v-for="auditor in availableAuditors"
-                                :key="auditor.id"
-                                :value="auditor.id"
-                            >
-                                {{ auditor.name }} ({{ auditor.email }})
-                            </option>
-                        </select>
+                            @update:model-value="addAuditorId"
+                        />
 
                         <!-- Auditor terpilih -->
                         <div v-if="form.auditor_ids.length > 0" class="mt-3 flex flex-wrap gap-2">

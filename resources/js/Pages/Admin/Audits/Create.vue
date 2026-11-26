@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
@@ -157,6 +158,17 @@ const submit = () => {
     }
     form.post(route('admin.audits.store'));
 };
+
+const storeOptions = computed(() =>
+    props.stores.map((s) => ({ value: s.id, label: `[${s.code}] ${s.name}`, hint: s.area || '' }))
+);
+const auditorOptions = computed(() =>
+    availableAuditors.value.map((a) => ({ value: a.id, label: a.name, hint: a.email }))
+);
+const auditorPlaceholder = computed(() =>
+    form.auditor_ids.length === 0 ? 'Pilih lead auditor' : form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor' : 'Tambah anggota'
+);
+const addAuditorId = (id) => addAuditor({ target: { value: id } });
 </script>
 
 <template>
@@ -252,17 +264,14 @@ const submit = () => {
                             <label class="mb-2 block text-sm font-medium text-gray-900">
                                 Unit toko <span class="text-red-600">*</span>
                             </label>
-                            <select
+                            <SearchableSelect
                                 v-if="!useCustomStore"
                                 v-model="form.store_id"
+                                :options="storeOptions"
+                                placeholder="Pilih toko"
                                 aria-label="Unit toko / badan usaha"
-                                class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
-                            >
-                                <option value="" disabled>Pilih toko</option>
-                                <option v-for="s in stores" :key="s.id" :value="s.id">
-                                    [{{ s.code }}] {{ s.name }} {{ s.area ? `• ${s.area}` : '' }}
-                                </option>
-                            </select>
+                                :invalid="!!form.errors.store_id"
+                            />
                             <input
                                 v-else
                                 v-model="form.custom_store_name"
@@ -300,23 +309,14 @@ const submit = () => {
                     </div>
                     <div class="p-5">
                         <label for="auditor_select" class="sr-only">Auditor bertugas</label>
-                        <select
+                        <SearchableSelect
                             id="auditor_select"
-                            @change="addAuditor"
-                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            model-value=""
+                            :options="auditorOptions"
+                            :placeholder="auditorPlaceholder"
                             :disabled="form.auditor_ids.length >= 5"
-                        >
-                            <option value="" selected>
-                                {{ form.auditor_ids.length === 0 ? 'Pilih Lead Auditor' : (form.auditor_ids.length >= 5 ? 'Maksimal 5 auditor' : 'Tambah anggota') }}
-                            </option>
-                            <option
-                                v-for="auditor in availableAuditors"
-                                :key="auditor.id"
-                                :value="auditor.id"
-                            >
-                                {{ auditor.name }} ({{ auditor.email }})
-                            </option>
-                        </select>
+                            @update:model-value="addAuditorId"
+                        />
 
                         <div v-if="form.auditor_ids.length > 0" class="mt-3 flex flex-wrap gap-2">
                             <div

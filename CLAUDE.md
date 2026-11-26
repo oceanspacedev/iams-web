@@ -16,6 +16,8 @@ npm run dev                    # vite only (port 5173; .claude/launch.json "vite
 npm run build                  # production assets
 
 php artisan migrate:fresh --seed   # reset DB with roles, sample data, demo users, CSA stores
+php artisan db:seed --class=ReportDummySeeder   # ~65 dummy audits / ~300 findings Jan..current month (tagged DMY), re-runnable
+# remove dummy only: $env:REPORT_DUMMY_CLEAN_ONLY=1; php artisan db:seed --class=ReportDummySeeder
 
 composer test                  # config:clear + php artisan test
 php artisan test --filter=AuthenticationTest          # single test class
@@ -71,6 +73,9 @@ User registration is self-service with admin approval: `approval_status` (`pendi
 - `WhatsAppService` — static methods; `send()` posts to the WagHub gateway (`config('services.waghub.*')` ← `WAG_URL`, `WAG_TOKEN`) and returns bool, never throws. All notification message templates (`notifyFindingCreated`, `notifySeverityReviewed`, `notifyActionPlanReminder`, OTP, account approval, etc.) live here and are called synchronously from controllers/commands. With no `WAG_TOKEN` it just logs a warning and returns false.
 - `AuditNotificationService::dispatch()` — sends a queued `AuditNotification` row (generated from admin-configured `NotificationRule`s, e.g. H-7/H-3/H-1) and updates its status (`SENT`/`FAILED`/`INACTIVE`).
 - `ReportExportService` — streamed `.xls` exports (`exportFindings`, `exportStores`, `exportSummary`), shared by the admin/coordinator/auditor report controllers.
+- `FindingRecapExcelService` — real `.xlsx` (OpenSpout) in the owner's operational recap format. Status labels are OPEN / ON PROGRES / CLOSED: IN_PROGRESS, WAITING_VERIFICATION and VERIFIED all count as ON PROGRES. Periods use `audits.audit_date`.
+  - `findings()` is the "Rekap temuan audit retail" sheet: summary tables, then findings grouped per audit and category. The Excel button on the Findings pages calls it, with optional `store_id` and `period` (Y-m).
+  - `periodRecap()` builds a "RESUME {year}" sheet (monthly status blocks per store type, TOKO/GUDANG/HO always shown) plus one recap sheet per month. It sits in the Reports page Excel menu.
 
 ### File storage
 Uploads (SOP documents, evidence photos, audit documents) use `config('filesystems.default')` as the disk (S3-compatible supported via `league/flysystem-aws-s3-v3` and `AWS_*` env), with fallback cleanup on the `public` disk for older files. Follow this pattern rather than hardcoding a disk. `FILESYSTEM_DISK` must be `public` or `s3`. With Laravel 12's `local` disk, files land in `storage/app/private`, and every `/storage/...` link returns 403. The Docker volume and nginx also serve only `storage/app/public`. Locally, `APP_URL` must include the port (`http://localhost:8000`), or file links point to port 80.
@@ -89,6 +94,10 @@ The owner wants little text ("jangan kebanyakan text"), so pages follow these co
   - The desktop table wrapper gets `v-stable-table="<list>.length"` (directive in `resources/js/directives/stableTable.js`). It locks column widths and stops the table from shrinking between pages.
   - The `<tbody>` gets `:key="currentPage" class="page-fade"` for a short fade.
   - The Reports "Rekap per cabang" table uses a fixed `<colgroup>` and a spacer row instead.
+- Dropdowns with long or growing lists (stores, auditors, SOP/SE, findings, months) use `Components/SearchableSelect.vue` instead of `<select>`.
+  - It takes `options` as `[{ value, label, hint? }]`, plus `size="sm"` for filter bars and `invalid` for error borders.
+  - The panel is teleported to `body`, so it is not clipped by `overflow-hidden` cards.
+  - Short fixed lists (status, severity, role, year) stay native `<select>`.
 
 Reference pages: `Pages/Auditor/Dashboard.vue`, `Pages/Auditor/Audits/Index.vue`.
 

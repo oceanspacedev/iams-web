@@ -95,24 +95,24 @@ const navSections = computed(() => {
         sections.push(
             { items: [{ label: 'Dashboard', route: 'admin.dashboard', active: ['admin.dashboard'], icon: 'home' }] },
             {
-                label: 'Manajemen audit',
+                label: 'Audit management',
                 items: [
-                    { label: 'Audit', route: 'admin.audits.index', active: ['admin.audits.*'], icon: 'clipboard' },
-                    { label: 'Temuan', route: 'admin.findings.index', active: ['admin.findings.*'], icon: 'alert' },
-                    { label: 'Kualitas temuan', route: 'coordinator.finding-qualities.index', active: ['coordinator.finding-qualities.*'], icon: 'document' },
+                    { label: 'Audits', route: 'admin.audits.index', active: ['admin.audits.*'], icon: 'clipboard' },
+                    { label: 'Findings', route: 'admin.findings.index', active: ['admin.findings.*'], icon: 'alert' },
+                    { label: 'Finding quality', route: 'coordinator.finding-qualities.index', active: ['coordinator.finding-qualities.*'], icon: 'document' },
                     { label: 'Action plan', route: 'admin.action-plans.index', active: ['admin.action-plans.*'], icon: 'check' },
-                    { label: 'Laporan', route: 'admin.reports.index', active: ['admin.reports.*'], icon: 'chart' },
+                    { label: 'Reports', route: 'admin.reports.index', active: ['admin.reports.*'], icon: 'chart' },
                 ],
             },
             {
                 label: 'Master data',
                 items: [
-                    { label: 'Pengguna', route: 'admin.users.index', active: ['admin.users.*'], icon: 'users' },
-                    { label: 'Toko & gudang', route: 'admin.stores.index', active: ['admin.stores.*'], icon: 'building' },
-                    { label: 'Kategori audit', route: 'admin.audit-categories.index', active: ['admin.audit-categories.*'], icon: 'tag' },
+                    { label: 'Users', route: 'admin.users.index', active: ['admin.users.*'], icon: 'users' },
+                    { label: 'Stores & warehouses', route: 'admin.stores.index', active: ['admin.stores.*'], icon: 'building' },
+                    { label: 'Audit categories', route: 'admin.audit-categories.index', active: ['admin.audit-categories.*'], icon: 'tag' },
                     { label: 'SOP / SE', route: 'admin.sops.index', active: ['admin.sops.*'], icon: 'document' },
-                    { label: 'Jadwal notifikasi', route: 'admin.notification-rules.index', active: ['admin.notification-rules.*'], icon: 'bell' },
-                    { label: 'Pengaturan sistem', route: 'admin.settings.index', active: ['admin.settings.*'], icon: 'cog' },
+                    { label: 'Notification schedule', route: 'admin.notification-rules.index', active: ['admin.notification-rules.*'], icon: 'bell' },
+                    { label: 'System settings', route: 'admin.settings.index', active: ['admin.settings.*'], icon: 'cog' },
                 ],
             },
         );
@@ -120,19 +120,19 @@ const navSections = computed(() => {
         sections.push(
             { items: [{ label: 'Dashboard', route: 'coordinator.dashboard', active: ['coordinator.dashboard'], icon: 'home' }] },
             {
-                label: 'Manajemen audit',
+                label: 'Audit management',
                 items: [
-                    { label: 'Audit', route: 'coordinator.audits.index', active: ['coordinator.audits.*'], icon: 'clipboard' },
-                    { label: 'Temuan', route: 'coordinator.findings.index', active: ['coordinator.findings.*'], icon: 'alert' },
-                    { label: 'Kualitas temuan', route: 'coordinator.finding-qualities.index', active: ['coordinator.finding-qualities.*'], icon: 'document' },
+                    { label: 'Audits', route: 'coordinator.audits.index', active: ['coordinator.audits.*'], icon: 'clipboard' },
+                    { label: 'Findings', route: 'coordinator.findings.index', active: ['coordinator.findings.*'], icon: 'alert' },
+                    { label: 'Finding quality', route: 'coordinator.finding-qualities.index', active: ['coordinator.finding-qualities.*'], icon: 'document' },
                     { label: 'Action plan', route: 'coordinator.action-plans.index', active: ['coordinator.action-plans.*'], icon: 'check' },
-                    { label: 'Laporan', route: 'coordinator.reports.index', active: ['coordinator.reports.*'], icon: 'chart' },
+                    { label: 'Reports', route: 'coordinator.reports.index', active: ['coordinator.reports.*'], icon: 'chart' },
                 ],
             },
             {
                 label: 'Master data',
                 items: [
-                    { label: 'Toko & gudang', route: 'coordinator.stores.index', active: ['coordinator.stores.*'], icon: 'building' },
+                    { label: 'Stores & warehouses', route: 'coordinator.stores.index', active: ['coordinator.stores.*'], icon: 'building' },
                 ],
             },
         );
@@ -143,20 +143,20 @@ const navSections = computed(() => {
             label: 'Auditor',
             items: [
                 { label: 'Dashboard', route: 'auditor.dashboard', active: ['auditor.dashboard'], icon: 'home' },
-                { label: 'Audit saya', route: 'auditor.audits.index', active: ['auditor.audits.*', 'auditor.findings.*'], icon: 'clipboard' },
-                { label: 'Kualitas temuan', route: 'auditor.finding-qualities.index', active: ['auditor.finding-qualities.*'], icon: 'document' },
-                { label: 'Laporan', route: 'auditor.reports.index', active: ['auditor.reports.*'], icon: 'chart' },
-                { label: 'Antrean verifikasi', route: 'auditor.verification.index', active: ['auditor.verification.*'], icon: 'badgeCheck' },
+                { label: 'My audits', route: 'auditor.audits.index', active: ['auditor.audits.*', 'auditor.findings.*'], icon: 'clipboard' },
+                { label: 'Finding quality', route: 'auditor.finding-qualities.index', active: ['auditor.finding-qualities.*'], icon: 'document' },
+                { label: 'Reports', route: 'auditor.reports.index', active: ['auditor.reports.*'], icon: 'chart' },
+                { label: 'Verification queue', route: 'auditor.verification.index', active: ['auditor.verification.*'], icon: 'badgeCheck' },
             ],
         });
     }
 
     if (isAuditee.value) {
         sections.push({
-            label: 'Toko',
+            label: 'Store',
             items: [
                 { label: 'Dashboard', route: 'auditee.dashboard', active: ['auditee.dashboard'], icon: 'home' },
-                { label: 'Audit toko', route: 'auditee.audits.index', active: ['auditee.audits.*', 'auditee.findings.*'], icon: 'clipboard' },
+                { label: 'Store audits', route: 'auditee.audits.index', active: ['auditee.audits.*', 'auditee.findings.*'], icon: 'clipboard' },
             ],
         });
     }
@@ -245,8 +245,8 @@ const logout = () => {
                 <button
                     v-if="!isCollapsed"
                     @click="toggleSidebar"
-                    title="Ciutkan menu"
-                    aria-label="Ciutkan menu"
+                    title="Collapse menu"
+                    aria-label="Collapse menu"
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-800 hover:text-white"
                 >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -258,8 +258,8 @@ const logout = () => {
             <div v-if="isCollapsed" class="flex justify-center border-b border-gray-800/60 py-2">
                 <button
                     @click="toggleSidebar"
-                    title="Perluas menu"
-                    aria-label="Perluas menu"
+                    title="Expand menu"
+                    aria-label="Expand menu"
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-800 hover:text-white"
                 >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -295,7 +295,7 @@ const logout = () => {
                 <div class="mt-6 border-t border-gray-800 pt-4">
                     <button
                         @click="logout"
-                        :title="isCollapsed ? 'Keluar' : ''"
+                        :title="isCollapsed ? 'Log out' : ''"
                         type="button"
                         class="flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm text-gray-300 transition-colors duration-150 hover:bg-gray-800 hover:text-white"
                         :class="isCollapsed ? 'justify-center px-0' : ''"
@@ -303,7 +303,7 @@ const logout = () => {
                         <svg class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" :d="icons.logout[0]" />
                         </svg>
-                        <span v-if="!isCollapsed" class="truncate">Keluar</span>
+                        <span v-if="!isCollapsed" class="truncate">Log out</span>
                     </button>
                 </div>
             </nav>
@@ -360,7 +360,7 @@ const logout = () => {
                             <svg class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" :d="icons.logout[0]" />
                             </svg>
-                            <span>Keluar</span>
+                            <span>Log out</span>
                         </button>
                     </div>
                 </nav>

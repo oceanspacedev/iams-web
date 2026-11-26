@@ -51,6 +51,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    years: {
+        type: Array,
+        default: () => [],
+    },
     selected_category: {
         type: [String, Number],
         default: 'all',
@@ -71,6 +75,7 @@ const paginatedStoreLosses = computed(() => storeLossList.value.slice((currentPa
 const fillerRows = computed(() => (storeLossList.value.length > perPage ? perPage - paginatedStoreLosses.value.length : 0));
 
 const exportDropdownOpen = ref(false);
+const selectedYear = ref(props.years[0] ?? new Date().getFullYear());
 const selectedCategory = ref(String(props.selected_category || 'all'));
 
 watch(() => props.selected_category, (newVal) => {
@@ -284,15 +289,26 @@ const topLossStores = computed(() => {
                     >
                         <div
                             v-if="exportDropdownOpen"
-                            class="absolute right-0 z-30 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white py-1 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+                            class="absolute right-0 z-30 mt-2 w-64 origin-top-right divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white py-1 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
                         >
-                            <a
-                                :href="route('admin.reports.export-findings', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
-                                @click="exportDropdownOpen = false"
-                                class="block px-4 py-2 font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
-                            >
-                                Rekap temuan
-                            </a>
+                            <div class="px-4 py-3">
+                                <label class="flex items-center justify-between gap-3 text-sm text-gray-500">
+                                    <span>Tahun</span>
+                                    <select
+                                        v-model="selectedYear"
+                                        class="h-8 rounded-lg border-gray-300 bg-white py-0 pl-3 pr-8 text-sm text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                                    >
+                                        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                                    </select>
+                                </label>
+                                <a
+                                    :href="route('admin.reports.export-period', { year: selectedYear })"
+                                    @click="exportDropdownOpen = false"
+                                    class="mt-3 flex h-9 items-center justify-center rounded-lg bg-emerald-800 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-900"
+                                >
+                                    Rekap status {{ selectedYear }}
+                                </a>
+                            </div>
 
                             <a
                                 :href="route('admin.reports.export-stores', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"

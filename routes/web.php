@@ -118,6 +118,7 @@ Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')
 
     // Findings
     Route::get('/findings', [AdminFindingController::class, 'index'])->name('findings.index');
+    Route::get('/findings/export', [AdminFindingController::class, 'export'])->name('findings.export');
     Route::get('/findings/{finding}', [AdminFindingController::class, 'show'])->name('findings.show');
     Route::patch('/findings/{finding}/review-severity', [AdminFindingController::class, 'reviewSeverity'])->name('findings.review-severity');
     Route::patch('/findings/{finding}/recommendation', [AdminFindingController::class, 'updateRecommendation'])->name('findings.recommendation.update');
@@ -133,6 +134,7 @@ Route::middleware(['auth', 'role:admin|chief'])->prefix('admin')->name('admin.')
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-findings', [AdminReportController::class, 'exportFindings'])->name('reports.export-findings');
+    Route::get('/reports/export-period', [AdminReportController::class, 'exportPeriod'])->name('reports.export-period');
     Route::get('/reports/export-stores', [AdminReportController::class, 'exportStores'])->name('reports.export-stores');
     Route::get('/reports/export-summary', [AdminReportController::class, 'exportSummary'])->name('reports.export-summary');
 
@@ -164,6 +166,7 @@ Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coord
 
     // Severity Reviews / Findings
     Route::get('/findings', [CoordinatorFindingController::class, 'index'])->name('findings.index');
+    Route::get('/findings/export', [CoordinatorFindingController::class, 'export'])->name('findings.export');
     Route::get('/findings/{finding}', [CoordinatorFindingController::class, 'show'])->name('findings.show');
     Route::patch('/findings/{finding}/review-severity', [CoordinatorFindingController::class, 'reviewSeverity'])->name('findings.review-severity');
     Route::patch('/findings/{finding}/recommendation', [CoordinatorFindingController::class, 'updateRecommendation'])->name('findings.recommendation.update');
@@ -195,6 +198,7 @@ Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coord
     // Reports
     Route::get('/reports', [CoordinatorReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-findings', [CoordinatorReportController::class, 'exportFindings'])->name('reports.export-findings');
+    Route::get('/reports/export-period', [CoordinatorReportController::class, 'exportPeriod'])->name('reports.export-period');
     Route::get('/reports/export-stores', [CoordinatorReportController::class, 'exportStores'])->name('reports.export-stores');
     Route::get('/reports/export-summary', [CoordinatorReportController::class, 'exportSummary'])->name('reports.export-summary');
 });
@@ -234,6 +238,7 @@ Route::middleware(['auth', 'role:auditor'])->prefix('auditor')->name('auditor.')
     // Reports
     Route::get('/reports', [AuditorReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-findings', [AuditorReportController::class, 'exportFindings'])->name('reports.export-findings');
+    Route::get('/reports/export-period', [AuditorReportController::class, 'exportPeriod'])->name('reports.export-period');
     Route::get('/reports/export-stores', [AuditorReportController::class, 'exportStores'])->name('reports.export-stores');
     Route::get('/reports/export-summary', [AuditorReportController::class, 'exportSummary'])->name('reports.export-summary');
 

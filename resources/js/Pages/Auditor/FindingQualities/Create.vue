@@ -2,6 +2,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { qualityCategoryColor } from '@/Utils/qualityCategoryColors';
 
 const props = defineProps({
@@ -90,6 +91,10 @@ const selectedFindingObj = computed(() => {
 const submit = () => {
     form.post(route(`${currentPrefix.value}finding-qualities.store`));
 };
+
+const findingOptions = computed(() =>
+    (props.findings || []).map((f) => ({ value: f.id, label: f.display_label }))
+);
 </script>
 
 <template>
@@ -112,17 +117,13 @@ const submit = () => {
                     <h2 class="text-base font-semibold text-gray-900">Temuan <span class="text-red-600">*</span></h2>
                 </div>
                 <div class="p-5">
-                    <select
+                    <SearchableSelect
                         v-model="form.finding_id"
-                        required
+                        :options="findingOptions"
+                        placeholder="Pilih temuan"
                         aria-label="Temuan audit"
-                        class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
-                    >
-                        <option value="" disabled>Pilih temuan</option>
-                        <option v-for="f in findings" :key="f.id" :value="f.id">
-                            {{ f.display_label }}
-                        </option>
-                    </select>
+                        :invalid="!!form.errors.finding_id"
+                    />
                     <div v-if="form.errors.finding_id" class="mt-1 text-xs text-red-600">{{ form.errors.finding_id }}</div>
 
                     <!-- Highlight box for selected finding -->

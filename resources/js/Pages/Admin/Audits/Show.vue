@@ -1,7 +1,8 @@
 <script setup>
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
@@ -108,6 +109,11 @@ const sendNotificationNow = (notif) => {
         action: () => router.post(route('admin.audits.notifications.send-now', notif.id), {}, { preserveScroll: true }),
     });
 };
+
+const sopSelectOptions = computed(() => [
+    { value: '', label: 'Tanpa SOP / SE' },
+    ...(props.sops || []).map((sop) => ({ value: sop.id, label: `${sop.code} - ${sop.title}` })),
+]);
 </script>
 
 <template>
@@ -325,15 +331,11 @@ const sendNotificationNow = (notif) => {
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-gray-900">SOP / SE (opsional)</label>
-                                <select
+                                <SearchableSelect
                                     v-model="findingForm.sop_id"
-                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
-                                >
-                                    <option value="">Pilih SOP / SE</option>
-                                    <option v-for="s in sops" :key="s.id" :value="s.id">
-                                        {{ s.code }} - {{ s.title }}
-                                    </option>
-                                </select>
+                                    :options="sopSelectOptions"
+                                    placeholder="Pilih SOP / SE"
+                                />
                             </div>
                         </div>
 

@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use App\Services\FindingRecapExcelService;
 use App\Services\ReportExportService;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -113,12 +115,25 @@ class ReportController extends Controller
             'closed_overdue'    => $closedOverdue,
             'categories'        => $categories,
             'selected_category' => $categoryId ? (string) $categoryId : 'all',
+            'years'             => FindingRecapExcelService::availableYears(),
         ]);
     }
 
     public function exportFindings(Request $request): StreamedResponse
     {
         return $this->exportService->exportFindings($request->query('category_id'));
+    }
+
+    /**
+     * Excel resume status per bulan (OPEN / ON PROGRES / CLOSED) + sheet rekap temuan per bulan.
+     */
+    public function exportPeriod(Request $request, FindingRecapExcelService $excel): BinaryFileResponse
+    {
+        $validated = $request->validate([
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        return $excel->periodRecap((int) ($validated['year'] ?? now()->year));
     }
 
     public function exportStores(Request $request): StreamedResponse
