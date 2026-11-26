@@ -30,7 +30,7 @@ const config = computed(() => {
         case 'CONTINUOUS':
             return {
                 label: 'Continuous',
-                timeline: 'Dalam Monitoring',
+                timeline: 'Dalam monitoring',
                 style: 'bg-purple-50 text-purple-700 border-purple-200 font-medium',
             };
         case 'MINOR':
@@ -52,7 +52,7 @@ const config = computed(() => {
 
 <template>
     <span
-        class="inline-block px-2 py-0.5 rounded text-[11px] border"
+        class="inline-block whitespace-nowrap rounded-md border px-2 py-0.5 text-xs"
         :class="config.style"
     >
         {{ config.label }}

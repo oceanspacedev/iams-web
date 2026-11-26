@@ -17,7 +17,8 @@ class EvidenceVerificationController extends Controller
         $user = $request->user();
 
         $pendingEvidences = Evidence::where('verification_status', 'PENDING')
-            ->whereHas('finding.audit', fn ($q) => $q->where('auditor_id', $user->id))
+            ->whereHas('finding', fn ($q) => $q->where('status', '!=', Finding::STATUS_CLOSED))
+            ->whereHas('finding.audit', fn ($q) => $q->forAuditor($user->id))
             ->with(['finding.audit.store', 'uploader'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -42,6 +43,10 @@ class EvidenceVerificationController extends Controller
     {
         $this->authorize('verify', $evidence);
 
+        if ($error = $this->verificationError($evidence)) {
+            return back()->with('error', $error);
+        }
+
         $evidence->update([
             'verification_status' => 'APPROVED',
             'verified_by'         => $request->user()->id,
@@ -49,23 +54,22 @@ class EvidenceVerificationController extends Controller
             'rejection_reason'    => null,
         ]);
 
-        // A finding moves to VERIFIED if there are NO PENDING evidences and at least one APPROVED evidence
         $finding = $evidence->finding;
-        $hasPending = $finding->evidences()->where('verification_status', 'PENDING')->exists();
-        $hasApproved = $finding->evidences()->where('verification_status', 'APPROVED')->exists();
-
-        if (!$hasPending && $hasApproved) {
-            $finding->update(['status' => Finding::STATUS_VERIFIED]);
-        }
+        $finding->update(['status' => Finding::STATUS_VERIFIED]);
+        $finding->actionPlan?->update(['status' => 'COMPLETED']);
 
         \App\Services\WhatsAppService::notifyEvidenceVerified($evidence);
 
-        return back()->with('success', 'Evidence disetujui & notifikasi WhatsApp terkirim ke Toko.');
+        return back()->with('success', 'Bukti disetujui.');
     }
 
     public function reject(Request $request, Evidence $evidence): RedirectResponse
     {
         $this->authorize('verify', $evidence);
+
+        if ($error = $this->verificationError($evidence)) {
+            return back()->with('error', $error);
+        }
 
         $request->validate([
             'rejection_reason' => 'required|string|max:500',
@@ -78,18 +82,30 @@ class EvidenceVerificationController extends Controller
             'rejection_reason'    => $request->rejection_reason,
         ]);
 
+        // Kembali ke IN_PROGRESS; tetap WAITING_VERIFICATION bila masih ada bukti lain yang menunggu.
         $finding = $evidence->finding;
         $hasPending = $finding->evidences()->where('verification_status', 'PENDING')->exists();
-
-        // If there are no other pending evidences, move finding status back to IN_PROGRESS
-        if (!$hasPending) {
-            $finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
-        } else {
-            $finding->update(['status' => Finding::STATUS_WAITING_VERIFICATION]);
-        }
+        $finding->update(['status' => $hasPending ? Finding::STATUS_WAITING_VERIFICATION : Finding::STATUS_IN_PROGRESS]);
+        $finding->actionPlan?->update(['status' => 'IN_PROGRESS']);
 
         \App\Services\WhatsAppService::notifyEvidenceVerified($evidence);
 
-        return back()->with('success', 'Evidence ditolak & notifikasi WhatsApp terkirim ke Toko.');
+        return back()->with('success', 'Bukti ditolak.');
+    }
+
+    /**
+     * Hanya bukti PENDING pada temuan yang belum CLOSED yang bisa diverifikasi.
+     */
+    private function verificationError(Evidence $evidence): ?string
+    {
+        if (! $evidence->isPending()) {
+            return 'Bukti ini sudah diverifikasi.';
+        }
+
+        if ($evidence->finding?->isClosed()) {
+            return 'Temuan sudah ditutup.';
+        }
+
+        return null;
     }
 }

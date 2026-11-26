@@ -11,6 +11,7 @@ use App\Services\AuditNotificationService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -89,10 +90,7 @@ class AuditController extends Controller
         return Inertia::render('Coordinator/Audits/Create', [
             'stores'          => Store::active()->orderBy('name')->get(['id', 'name', 'code', 'business_entity', 'type', 'address', 'area']),
             'categories'      => \App\Models\AuditCategory::active()->orderBy('name')->get(['id', 'name']),
-            'auditors'        => User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'email']),
+            'auditors'        => $this->auditorOptions(),
             'suggested_number' => Audit::generateNumber(),
             'upcoming_audits'  => $upcomingAudits,
         ]);
@@ -136,6 +134,9 @@ class AuditController extends Controller
         }
 
         $leadAuditorId = $validated['auditor_ids'][0];
+        if (!$this->isAuditorRole($leadAuditorId)) {
+            return back()->withErrors(['auditor_ids' => 'Lead auditor harus pengguna dengan peran auditor.'])->withInput();
+        }
 
         $audit = Audit::create([
             'audit_number' => $validated['audit_number'],
@@ -157,7 +158,7 @@ class AuditController extends Controller
 
         WhatsAppService::notifyAuditScheduled($audit);
 
-        return redirect()->route('coordinator.audits.show', $audit)->with('success', 'Data saved! Audit berhasil dijadwalkan dengan ' . count($validated['auditor_ids']) . ' auditor.');
+        return redirect()->route('coordinator.audits.show', $audit)->with('success', 'Audit berhasil dijadwalkan dengan ' . count($validated['auditor_ids']) . ' auditor.');
     }
 
     public function show(Audit $audit): Response
@@ -249,15 +250,12 @@ class AuditController extends Controller
             $stores->prepend($audit->store);
         }
 
-        $auditors = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+        $auditors = $this->auditorOptions();
 
         $missingAuditorIds = array_diff($selectedAuditorIds, $auditors->pluck('id')->toArray());
         if (!empty($missingAuditorIds)) {
-            $extraAuditors = User::whereIn('id', $missingAuditorIds)->get(['id', 'name', 'email']);
-            $auditors = $auditors->concat($extraAuditors);
+            $extraAuditors = $this->auditorOptions(User::whereIn('id', $missingAuditorIds));
+            $auditors = $auditors->concat($extraAuditors)->values();
         }
 
         return Inertia::render('Coordinator/Audits/Edit', [
@@ -318,6 +316,9 @@ class AuditController extends Controller
         }
 
         $leadAuditorId = $validated['auditor_ids'][0];
+        if (!$this->isAuditorRole($leadAuditorId)) {
+            return back()->withErrors(['auditor_ids' => 'Lead auditor harus pengguna dengan peran auditor.'])->withInput();
+        }
 
         $audit->update([
             'audit_number' => $validated['audit_number'],
@@ -337,12 +338,17 @@ class AuditController extends Controller
         // Resync schedules with updated audit_date
         $audit->syncNotificationSchedules();
 
-        return redirect()->route('coordinator.audits.show', $audit)->with('success', 'Data saved! Audit berhasil diperbarui.');
+        return redirect()->route('coordinator.audits.show', $audit)->with('success', 'Audit berhasil diperbarui.');
     }
 
     public function destroy(Audit $audit): RedirectResponse
     {
-        $audit->delete();
+        DB::transaction(function () use ($audit) {
+            // Soft-delete child findings so shared readers never see orphans
+            $audit->findings()->delete();
+            $audit->notifications()->where('status', 'PENDING')->delete();
+            $audit->delete();
+        });
 
         return redirect()->route('coordinator.audits.index')->with('success', 'Audit berhasil dihapus.');
     }
@@ -352,5 +358,33 @@ class AuditController extends Controller
         $ok = AuditNotificationService::dispatch($notification);
 
         return back()->with($ok ? 'success' : 'error', $ok ? 'Notifikasi WhatsApp berhasil dikirim.' : ($notification->error_message ?: 'Gagal mengirim notifikasi.'));
+    }
+
+    /**
+     * Active auditors and coordinators for the team picker. `can_lead` marks users
+     * with the auditor role, the only ones allowed as lead auditor.
+     */
+    private function auditorOptions($query = null)
+    {
+        $query ??= User::whereHas('roles', fn ($q) => $q->whereIn('name', ['auditor', 'coordinator']))
+            ->where('is_active', true);
+
+        return $query->with('roles:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->map(fn ($u) => [
+                'id'       => $u->id,
+                'name'     => $u->name,
+                'email'    => $u->email,
+                'can_lead' => $u->roles->contains('name', 'auditor'),
+            ])
+            ->values();
+    }
+
+    private function isAuditorRole($userId): bool
+    {
+        return User::whereKey($userId)
+            ->whereHas('roles', fn ($q) => $q->where('name', 'auditor'))
+            ->exists();
     }
 }

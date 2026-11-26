@@ -151,12 +151,19 @@ class WhatsAppService
      */
     public static function notifyEvidenceUploaded(Evidence $evidence): void
     {
-        $evidence->loadMissing(['finding.audit.auditor', 'finding.audit.store', 'uploader']);
+        $evidence->loadMissing(['finding.audit.auditor', 'finding.audit.auditors', 'finding.audit.store', 'uploader']);
 
-        $auditor = $evidence->finding->audit->auditor ?? null;
-        $store   = $evidence->finding->audit->store ?? null;
+        $audit = $evidence->finding->audit ?? null;
+        $store = $audit->store ?? null;
+        if (!$audit) return;
 
-        if ($auditor && !empty($auditor->phone)) {
+        // Lead auditor + anggota tim audit, tanpa duplikat, hanya yang punya nomor HP
+        $recipients = collect([$audit->auditor])
+            ->merge($audit->auditors)
+            ->filter(fn ($u) => $u && !empty($u->phone))
+            ->unique('id');
+
+        foreach ($recipients as $auditor) {
             $msg = "📤 *BUKTI PERBAIKAN DIUNGGAH*\n\n"
                 . "Halo *{$auditor->name}*,\n"
                 . "Toko *{$store->name}* telah mengunggah bukti perbaikan:\n\n"

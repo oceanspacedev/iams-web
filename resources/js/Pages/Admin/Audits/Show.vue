@@ -1,7 +1,8 @@
 <script setup>
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
@@ -74,9 +75,9 @@ const confirmModal = ref({
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
-        title: config.title || 'Konfirmasi Tindakan',
+        title: config.title || 'Konfirmasi tindakan',
         message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
-        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        confirmText: config.confirmText || 'Ya, lanjutkan',
         type: config.type || 'primary',
         action: config.action,
     };
@@ -91,9 +92,9 @@ const handleConfirm = () => {
 
 const deleteAudit = () => {
     openConfirm({
-        title: 'Hapus Penugasan Audit',
+        title: 'Hapus penugasan audit',
         message: `Apakah Anda yakin ingin menghapus audit ${props.audit.audit_number}? Seluruh temuan terkait akan ikut terhapus.`,
-        confirmText: 'Ya, Hapus Audit',
+        confirmText: 'Ya, hapus audit',
         type: 'danger',
         action: () => router.delete(route('admin.audits.destroy', props.audit.id)),
     });
@@ -101,350 +102,324 @@ const deleteAudit = () => {
 
 const sendNotificationNow = (notif) => {
     openConfirm({
-        title: `Kirim Notifikasi ${notif.rule_name}`,
+        title: `Kirim notifikasi ${notif.rule_name}`,
         message: `Kirim notifikasi WhatsApp sekarang untuk aturan "${notif.rule_name}" ke penerima terkait?`,
-        confirmText: 'Kirim Sekarang',
+        confirmText: 'Kirim sekarang',
         type: 'primary',
         action: () => router.post(route('admin.audits.notifications.send-now', notif.id), {}, { preserveScroll: true }),
     });
 };
+
+const sopSelectOptions = computed(() => [
+    { value: '', label: 'Tanpa SOP / SE' },
+    ...(props.sops || []).map((sop) => ({ value: sop.id, label: `${sop.code} - ${sop.title}` })),
+]);
 </script>
 
 <template>
-    <AppLayout :title="`Detail Audit ${audit.audit_number}`">
-        <Head :title="`Detail Audit ${audit.audit_number}`" />
+    <AppLayout :title="`Audit ${audit.audit_number}`">
+        <Head :title="`Audit ${audit.audit_number}`" />
 
-        <!-- Breadcrumb & Top Actions -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                    <Link :href="route('admin.audits.index')" class="hover:text-blue-600">Audits</Link>
-                    <span>/</span>
-                    <span class="text-gray-900 font-medium">{{ audit.audit_number }}</span>
-                </div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
-                    {{ audit.audit_number }}
-                    <StatusBadge :status="audit.status" />
-                </h1>
+        <!-- Header: breadcrumb + judul + status + aksi dalam satu baris -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex min-w-0 flex-wrap items-center gap-3">
+                <Link :href="route('admin.audits.index')" class="text-2xl leading-8 text-gray-400 transition-colors duration-150 hover:text-blue-600">Audit</Link>
+                <span class="text-2xl leading-8 text-gray-400" aria-hidden="true">/</span>
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900 tabular-nums">{{ audit.audit_number }}</h1>
+                <StatusBadge :status="audit.status" />
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <button
                     @click="openFindingModal"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                    class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
                 >
-                    + Tambah Finding
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Tambah finding
                 </button>
                 <Link
                     :href="route('admin.audits.edit', audit.id)"
-                    class="px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                    title="Edit audit"
+                    aria-label="Edit audit"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                 >
-                    Edit Audit
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
                 </Link>
                 <button
                     @click="deleteAudit"
-                    class="px-3 py-2 text-xs font-medium rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                    title="Hapus audit"
+                    aria-label="Hapus audit"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 transition-colors duration-150 hover:bg-red-50"
                 >
-                    Hapus
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                 </button>
             </div>
         </div>
 
-        <!-- Grid Audit Info & Jadwal Notifikasi -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Audit Information (2 cols) -->
-            <div class="lg:col-span-2 bg-white rounded border border-gray-200 p-5 text-xs">
-                <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4 pb-2 border-b border-gray-100">
-                    Informasi Pelaksanaan Audit
-                </h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                    <div>
-                        <div class="text-gray-500 font-medium">Toko Sasaran</div>
-                        <div class="text-gray-900 font-semibold mt-1">{{ audit.store.name }}</div>
-                        <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store.code }} ({{ audit.store.area || '-' }})</div>
-                    </div>
-
-                    <div>
-                        <div class="text-gray-500 font-medium">Tanggal Audit</div>
-                        <div class="text-gray-900 font-semibold mt-1">{{ audit.audit_date }}</div>
-                        <div class="text-[11px] text-gray-500">Pukul {{ audit.audit_time }} WIB</div>
-                    </div>
-
-                    <div>
-                        <div class="text-gray-500 font-medium">Auditor Ditugaskan</div>
-                        <div class="text-gray-900 font-semibold mt-1">{{ audit.auditor.name }}</div>
-                        <div class="text-[11px] text-gray-500">{{ audit.auditor.email }}</div>
-                    </div>
-                </div>
-
-                <div v-if="audit.location" class="mt-4 pt-3 border-t border-gray-100">
-                    <span class="text-gray-500 font-medium">Lokasi: </span>
-                    <span class="text-gray-800 font-medium">{{ audit.location }}</span>
-                </div>
-
-                <div v-if="audit.notes" class="mt-2">
-                    <span class="text-gray-500 font-medium">Catatan: </span>
-                    <span class="text-gray-700">{{ audit.notes }}</span>
-                </div>
-            </div>
-
-            <!-- Jadwal Notifikasi Otomatis (1 col) -->
-            <div class="bg-white rounded border border-gray-200 p-5 text-xs flex flex-col justify-between">
+        <!-- Fakta audit -->
+        <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
                 <div>
-                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                            Jadwal Notifikasi
-                        </h2>
-                        <span class="text-[11px] text-gray-400">Otomatis (H-N)</span>
-                    </div>
+                    <dt class="text-xs text-gray-500">Toko</dt>
+                    <dd class="mt-1 text-sm font-medium text-gray-900">{{ audit.store.name }}</dd>
+                    <dd class="text-xs text-gray-500 tabular-nums">{{ audit.store.code }} · {{ audit.store.area || '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500">Tanggal</dt>
+                    <dd class="mt-1 text-sm font-medium text-gray-900 tabular-nums">{{ audit.audit_date }}</dd>
+                    <dd class="text-xs text-gray-500 tabular-nums">{{ audit.audit_time }} WIB</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500">Auditor</dt>
+                    <dd class="mt-1 text-sm font-medium text-gray-900">{{ audit.auditor.name }}</dd>
+                    <dd class="truncate text-xs text-gray-500">{{ audit.auditor.email }}</dd>
+                </div>
+                <div v-if="audit.location">
+                    <dt class="text-xs text-gray-500">Lokasi</dt>
+                    <dd class="mt-1 text-sm font-medium text-gray-800">{{ audit.location }}</dd>
+                </div>
+                <div v-if="audit.notes" class="col-span-2 md:col-span-4">
+                    <dt class="text-xs text-gray-500">Catatan</dt>
+                    <dd class="mt-1 text-sm text-gray-700">{{ audit.notes }}</dd>
+                </div>
+            </dl>
+        </div>
 
-                    <div v-if="!audit.notifications || audit.notifications.length === 0" class="text-center py-6 text-gray-400">
-                        Belum ada jadwal notifikasi.
-                    </div>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <!-- Temuan -->
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white lg:col-span-2 shadow-sm">
+                <div class="flex h-14 items-center gap-3 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Temuan</h2>
+                    <span class="text-base text-gray-400 tabular-nums">{{ audit.findings.length }}</span>
+                </div>
 
-                    <div v-else class="space-y-3">
+                <div v-if="audit.findings.length === 0" class="p-8 text-center text-sm text-gray-500">
+                    Belum ada temuan
+                </div>
+
+                <div v-else class="divide-y">
+                    <Link
+                        v-for="(finding, index) in audit.findings"
+                        :key="finding.id"
+                        :href="route('admin.findings.show', finding.id)"
+                        class="group block px-5 py-4 transition-colors duration-150 hover:bg-gray-50"
+                    >
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-400 tabular-nums">#{{ String(index + 1).padStart(3, '0') }}</span>
+                            <span class="min-w-0 truncate text-sm font-medium text-gray-900">{{ finding.category }}</span>
+                            <SeverityBadge :severity="finding.severity" />
+                            <StatusBadge :status="finding.status" />
+                            <svg class="ml-auto h-4 w-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                        </div>
+
+                        <p class="mt-2 text-sm leading-relaxed text-gray-900">{{ finding.finding }}</p>
+                        <p v-if="finding.recommendation" class="mt-1 text-sm leading-relaxed text-gray-700">
+                            <span class="text-gray-500">Rekomendasi · </span>{{ finding.recommendation }}
+                        </p>
+
                         <div
-                            v-for="notif in audit.notifications"
-                            :key="notif.id"
-                            class="flex items-center justify-between p-2.5 rounded border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                            v-if="finding.sop || finding.loss_amount > 0 || finding.surplus_amount > 0"
+                            class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tabular-nums"
                         >
-                            <div class="min-w-0 pr-2">
-                                <div class="font-semibold text-gray-900 flex items-center gap-1.5">
-                                    <span>{{ notif.rule_name }}</span>
-                                    <span class="text-[10px] text-gray-400 font-normal uppercase">({{ notif.channel }})</span>
-                                </div>
-                                <div class="text-[11px] text-gray-500 tabular-nums mt-0.5">
-                                    {{ notif.scheduled_at }}
-                                </div>
-                                <div v-if="notif.sent_at" class="text-[10px] text-emerald-600 mt-0.5">
-                                    Terkirim: {{ notif.sent_at }}
-                                </div>
-                                <div v-if="notif.error_message" class="text-[10px] text-red-500 mt-0.5 truncate max-w-[180px]" :title="notif.error_message">
-                                    Error: {{ notif.error_message }}
-                                </div>
-                            </div>
+                            <span v-if="finding.sop" class="text-gray-500">{{ finding.sop.code }} - {{ finding.sop.title }}</span>
+                            <span v-if="finding.loss_amount > 0" class="text-sm font-medium text-red-600">NBH {{ formatRupiah(finding.loss_amount) }}</span>
+                            <span v-if="finding.surplus_amount > 0" class="text-sm font-medium text-blue-700">NBL {{ formatRupiah(finding.surplus_amount) }}</span>
+                        </div>
+                    </Link>
+                </div>
+            </section>
 
-                            <div class="flex items-center gap-2 shrink-0">
-                                <!-- Status Badge -->
-                                <span
-                                    class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold border"
-                                    :class="{
-                                        'bg-emerald-50 text-emerald-700 border-emerald-200': notif.status === 'SENT',
-                                        'bg-amber-50 text-amber-700 border-amber-200': notif.status === 'PENDING',
-                                        'bg-red-50 text-red-700 border-red-200': notif.status === 'FAILED',
-                                        'bg-gray-100 text-gray-500 border-gray-200': notif.status === 'INACTIVE',
-                                    }"
-                                >
-                                    <span v-if="notif.status === 'SENT'">Terkirim</span>
-                                    <span v-else-if="notif.status === 'PENDING'">Menunggu</span>
-                                    <span v-else-if="notif.status === 'FAILED'">Gagal</span>
-                                    <span v-else-if="notif.status === 'INACTIVE'">Nonaktif</span>
-                                    <span v-else>{{ notif.status }}</span>
-                                </span>
+            <!-- Jadwal notifikasi -->
+            <section class="self-start overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Notifikasi</h2>
+                    <span class="text-xs text-gray-400">Otomatis (H-N)</span>
+                </div>
 
-                                <!-- Send Now Trigger Button -->
-                                <button
-                                    v-if="notif.status !== 'SENT' && notif.status !== 'INACTIVE'"
-                                    @click="sendNotificationNow(notif)"
-                                    type="button"
-                                    class="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                                    title="Kirim notifikasi sekarang"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                </button>
+                <div v-if="!audit.notifications || audit.notifications.length === 0" class="p-6 text-center text-sm text-gray-400">
+                    Belum ada jadwal
+                </div>
+
+                <div v-else class="divide-y">
+                    <div
+                        v-for="notif in audit.notifications"
+                        :key="notif.id"
+                        class="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                    >
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 font-medium text-gray-900">
+                                <span>{{ notif.rule_name }}</span>
+                                <span class="text-xs font-normal capitalize text-gray-400">{{ notif.channel }}</span>
                             </div>
+                            <div class="mt-0.5 text-xs text-gray-500 tabular-nums">{{ notif.scheduled_at }}</div>
+                            <div v-if="notif.sent_at" class="mt-0.5 text-xs text-emerald-600 tabular-nums">Terkirim {{ notif.sent_at }}</div>
+                            <div v-if="notif.error_message" class="mt-0.5 max-w-[180px] truncate text-xs text-red-500" :title="notif.error_message">
+                                {{ notif.error_message }}
+                            </div>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                            <span
+                                class="inline-block rounded-md border px-2 py-0.5 text-xs font-medium"
+                                :class="{
+                                    'bg-emerald-50 text-emerald-700 border-emerald-200': notif.status === 'SENT',
+                                    'bg-amber-50 text-amber-700 border-amber-200': notif.status === 'PENDING',
+                                    'bg-red-50 text-red-700 border-red-200': notif.status === 'FAILED',
+                                    'bg-gray-100 text-gray-500 border-gray-200': notif.status === 'INACTIVE',
+                                }"
+                            >
+                                <span v-if="notif.status === 'SENT'">Terkirim</span>
+                                <span v-else-if="notif.status === 'PENDING'">Menunggu</span>
+                                <span v-else-if="notif.status === 'FAILED'">Gagal</span>
+                                <span v-else-if="notif.status === 'INACTIVE'">Nonaktif</span>
+                                <span v-else>{{ notif.status }}</span>
+                            </span>
+
+                            <button
+                                v-if="notif.status !== 'SENT' && notif.status !== 'INACTIVE'"
+                                @click="sendNotificationNow(notif)"
+                                type="button"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600"
+                                title="Kirim sekarang"
+                                aria-label="Kirim notifikasi sekarang"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-3 pt-3 border-t border-gray-100 text-[10px] text-gray-400 text-center">
-                    Jadwal dihitung otomatis dari Tanggal Audit.
-                </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Findings Section -->
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Daftar Temuan Audit ({{ audit.findings.length }})
-            </h2>
-        </div>
-
-        <div v-if="audit.findings.length === 0" class="bg-white rounded border border-gray-200 p-8 text-center text-xs text-gray-500">
-            Belum ada temuan untuk audit ini. Klik tombol "+ Tambah Finding" untuk mencatat temuan baru.
-        </div>
-
-        <div v-else class="space-y-4">
-            <div
-                v-for="(finding, index) in audit.findings"
-                :key="finding.id"
-                class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-3"
-            >
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100">
-                    <div class="flex items-center gap-3">
-                        <span class="tabular-nums font-bold text-gray-400">#{{ String(index + 1).padStart(3, '0') }}</span>
-                        <span class="font-semibold text-gray-900">{{ finding.category }}</span>
-                        <SeverityBadge :severity="finding.severity" />
-                        <StatusBadge :status="finding.status" />
-                    </div>
-
-                    <Link
-                        :href="route('admin.findings.show', finding.id)"
-                        class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium self-start sm:self-auto"
-                    >
-                        Detail Finding & Bukti
-                    </Link>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div class="text-gray-500 font-medium mb-1">Uraian Temuan:</div>
-                        <p class="text-gray-900 leading-relaxed">{{ finding.finding }}</p>
-                    </div>
-
-                    <div>
-                        <div class="text-gray-500 font-medium mb-1">Rekomendasi Perbaikan:</div>
-                        <p class="text-gray-700 leading-relaxed">{{ finding.recommendation }}</p>
-                    </div>
-                </div>
-
-                <div v-if="finding.sop" class="pt-2 text-[11px] text-gray-500">
-                    <span class="font-medium">SOP Terkait: </span>
-                    <span>{{ finding.sop.code }} - {{ finding.sop.title }}</span>
-                </div>
-
-                <div v-if="finding.loss_amount > 0 || finding.surplus_amount > 0" class="pt-1 flex flex-wrap gap-x-4 text-[11px] font-semibold">
-                    <span v-if="finding.loss_amount > 0" class="text-red-600">NBH: {{ formatRupiah(finding.loss_amount) }}</span>
-                    <span v-if="finding.surplus_amount > 0" class="text-blue-700">NBL: {{ formatRupiah(finding.surplus_amount) }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Create Finding -->
+        <!-- Modal tambah finding -->
         <div
             v-if="isFindingModalOpen"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs"
         >
-            <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl border border-gray-200">
-                <div class="flex items-center justify-between mb-4 border-b pb-3">
-                    <h3 class="text-sm font-semibold text-gray-900">Tambah Finding Baru</h3>
-                    <button @click="closeFindingModal" class="text-gray-400 hover:text-gray-600 text-lg leading-none">
+            <div class="w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div class="flex h-14 items-center justify-between border-b border-gray-200 px-5">
+                    <h3 class="text-base font-semibold text-gray-900">Tambah finding</h3>
+                    <button
+                        @click="closeFindingModal"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-gray-400 transition-colors duration-150 hover:text-gray-600"
+                        aria-label="Tutup"
+                    >
                         &times;
                     </button>
                 </div>
 
-                <form @submit.prevent="submitFinding" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Kategori Audit</label>
-                        <select
-                            v-model="findingForm.category_id"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="">Pilih Kategori</option>
-                            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                {{ cat.name }}
-                            </option>
-                        </select>
-                    </div>
+                <form @submit.prevent="submitFinding" class="text-sm">
+                    <div class="space-y-4 p-5">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Kategori</label>
+                                <select
+                                    v-model="findingForm.category_id"
+                                    required
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                >
+                                    <option value="">Pilih kategori</option>
+                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                        {{ cat.name }}
+                                    </option>
+                                </select>
+                            </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">SOP / SE Acuan (Opsional)</label>
-                        <select
-                            v-model="findingForm.sop_id"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="">Pilih SOP / SE</option>
-                            <option v-for="s in sops" :key="s.id" :value="s.id">
-                                {{ s.code }} - {{ s.title }}
-                            </option>
-                        </select>
-                    </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">SOP / SE (opsional)</label>
+                                <SearchableSelect
+                                    v-model="findingForm.sop_id"
+                                    :options="sopSelectOptions"
+                                    placeholder="Pilih SOP / SE"
+                                />
+                            </div>
+                        </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Uraian Temuan (Finding)</label>
-                        <textarea
-                            v-model="findingForm.finding"
-                            rows="3"
-                            required
-                            placeholder="Jelaskan ketidaksesuaian yang ditemukan..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        ></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Rekomendasi Perbaikan</label>
-                        <textarea
-                            v-model="findingForm.recommendation"
-                            rows="2"
-                            required
-                            placeholder="Langkah perbaikan yang disarankan..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        ></textarea>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">Tingkat Severity</label>
-                            <select
-                                v-model="findingForm.severity"
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Uraian temuan</label>
+                            <textarea
+                                v-model="findingForm.finding"
+                                rows="3"
                                 required
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            >
-                                <option value="MINOR">Minor</option>
-                                <option value="MEDIUM">Medium</option>
-                                <option value="MAJOR">Major</option>
-                            </select>
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
                         </div>
 
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">NBH (Rp)</label>
-                            <input
-                                v-model.number="findingForm.loss_amount"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                title="Nilai Barang Hilang"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Rekomendasi</label>
+                            <textarea
+                                v-model="findingForm.recommendation"
+                                rows="2"
+                                required
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
                         </div>
 
-                        <div>
-                            <label class="block font-medium text-gray-700 mb-1">NBL (Rp)</label>
-                            <input
-                                v-model.number="findingForm.surplus_amount"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                title="Nilai Barang Lebih"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Severity</label>
+                                <select
+                                    v-model="findingForm.severity"
+                                    required
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                >
+                                    <option value="MINOR">Minor</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="MAJOR">Major</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">NBH (Rp)</label>
+                                <input
+                                    v-model.number="findingForm.loss_amount"
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    title="Nilai Barang Hilang"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">NBL (Rp)</label>
+                                <input
+                                    v-model.number="findingForm.surplus_amount"
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    title="Nilai Barang Lebih"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
+                    <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
                         <button
                             @click="closeFindingModal"
                             type="button"
-                            class="px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                            class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             :disabled="findingForm.processing"
-                            class="px-3.5 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
+                            class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                         >
-                            Simpan Finding
+                            Simpan finding
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Confirm Modal -->
+        <!-- Konfirmasi -->
         <ConfirmModal
             :show="confirmModal.show"
             :title="confirmModal.title"

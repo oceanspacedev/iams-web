@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
 const props = defineProps({
@@ -26,146 +27,154 @@ const filteredAudits = computed(() => {
         return matchesSearch && matchesStatus;
     });
 });
+
+// Pagination 10 baris per halaman; kembali ke halaman 1 saat filter berubah
+const currentPage = ref(1);
+const perPage = 10;
+watch([searchQuery, statusFilter], () => {
+    currentPage.value = 1;
+});
+watch(() => filteredAudits.value.length, (n) => {
+    const last = Math.max(1, Math.ceil(n / perPage));
+    if (currentPage.value > last) currentPage.value = last;
+});
+const paginatedAudits = computed(() => filteredAudits.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage));
 </script>
 
 <template>
-    <AppLayout title="Audit Toko">
-        <Head title="Audit Toko" />
+    <AppLayout title="Audit toko">
+        <Head title="Audit toko" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6">
-            <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Daftar Audit Toko</h1>
-            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Seluruh riwayat pelaksanaan audit pada toko Anda</p>
+        <!-- Header: judul + jumlah -->
+        <div class="mb-6 flex items-baseline gap-3">
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Audit toko</h1>
+            <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ filteredAudits.length }}</span>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-center justify-between">
-            <div class="w-full sm:w-80">
-                <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Cari nomor audit atau auditor..."
-                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                />
-            </div>
-            <div class="w-full sm:w-auto">
-                <select
-                    v-model="statusFilter"
-                    class="w-full sm:w-auto text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                >
-                    <option value="">Semua Status</option>
-                    <option value="PLANNED">Planned</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CLOSED">Closed</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="filteredAudits.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Tidak ada data audit yang ditemukan.
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <!-- Filter di dalam kartu tabel -->
+            <div class="flex flex-col gap-3 border-b border-gray-200 p-3 text-sm sm:flex-row sm:items-center">
+                <div class="relative w-full sm:w-80">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Cari"
+                        aria-label="Cari nomor audit, toko, atau auditor"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-9 pr-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
                 </div>
-                <div
-                    v-for="audit in filteredAudits"
+                <div class="w-full sm:ml-auto sm:w-auto">
+                    <select
+                        v-model="statusFilter"
+                        aria-label="Status"
+                        class="h-9 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 sm:w-auto shadow-sm"
+                    >
+                        <option value="">Semua status</option>
+                        <option value="PLANNED">Terjadwal</option>
+                        <option value="IN_PROGRESS">Dalam proses</option>
+                        <option value="COMPLETED">Selesai</option>
+                        <option value="CLOSED">Ditutup</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="filteredAudits.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Tidak ada audit
+                </div>
+                <Link
+                    v-for="audit in paginatedAudits"
                     :key="'m-auditee-audit-' + audit.id"
-                    class="p-4 space-y-2.5"
+                    :href="route('auditee.audits.show', audit.id)"
+                    class="block space-y-3 p-4 transition-colors duration-150 hover:bg-gray-50/70"
                 >
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ audit.store }}</div>
-                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5">{{ audit.store_code }}</div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="truncate text-sm font-medium text-gray-900">{{ audit.store }}</div>
+                            <div class="mt-0.5 text-xs text-gray-500 tabular-nums">{{ audit.store_code }}</div>
                         </div>
                         <StatusBadge :status="audit.status" />
                     </div>
 
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="tabular-nums text-xs font-semibold text-blue-600">
-                            {{ audit.audit_number }}
-                        </span>
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                            {{ audit.findings_count }} temuan
-                        </span>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm font-medium text-blue-600 tabular-nums">{{ audit.audit_number }}</span>
+                        <span class="text-xs text-gray-500 tabular-nums">{{ audit.findings_count }} temuan</span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span>Auditor: <strong class="text-gray-800 font-medium">{{ audit.auditor }}</strong></span>
-                        <span class="tabular-nums text-gray-500 text-[10px]">{{ audit.audit_date }}</span>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span class="font-medium text-gray-800">{{ audit.auditor }}</span>
+                        <span class="tabular-nums">{{ audit.audit_date }}</span>
                     </div>
-
-                    <div class="pt-2 flex justify-end border-t border-gray-100">
-                        <Link
-                            :href="route('auditee.audits.show', audit.id)"
-                            class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium text-xs"
-                        >
-                            Buka Temuan →
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="filteredAudits.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
                         <tr>
-                            <th class="px-5 py-3.5">No. Audit</th>
-                            <th class="px-5 py-3.5">Toko</th>
-                            <th class="px-5 py-3.5">Auditor</th>
-                            <th class="px-5 py-3.5">Tanggal Audit</th>
-                            <th class="px-5 py-3.5">Findings</th>
-                            <th class="px-5 py-3.5">Status</th>
-                            <th class="px-5 py-3.5 text-right">Aksi</th>
+                            <th class="h-10 px-5 font-medium">No. audit</th>
+                            <th class="h-10 px-5 font-medium">Toko</th>
+                            <th class="h-10 px-5 font-medium">Auditor</th>
+                            <th class="h-10 px-5 font-medium">Tanggal</th>
+                            <th class="h-10 px-5 text-right font-medium">Temuan</th>
+                            <th class="h-10 px-5 font-medium">Status</th>
+                            <th class="h-10 w-12 px-5"><span class="sr-only">Buka</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200">
                         <tr v-if="filteredAudits.length === 0">
                             <td colspan="7" class="px-5 py-8 text-center text-gray-500">
-                                Tidak ada data audit yang ditemukan.
+                                Tidak ada audit
                             </td>
                         </tr>
                         <tr
-                            v-for="audit in filteredAudits"
+                            v-for="audit in paginatedAudits"
                             :key="audit.id"
-                            class="hover:bg-gray-50/70 transition-colors"
+                            class="group cursor-pointer transition-colors duration-150 hover:bg-gray-50/70"
+                            @click="router.visit(route('auditee.audits.show', audit.id))"
                         >
-                            <td class="px-5 py-3.5 tabular-nums font-medium text-gray-900">
-                                {{ audit.audit_number }}
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <div class="font-medium text-gray-900">{{ audit.store }}</div>
-                                <div class="text-[11px] text-gray-500 tabular-nums">{{ audit.store_code }}</div>
-                            </td>
-                            <td class="px-5 py-3.5 text-gray-700">
-                                {{ audit.auditor }}
-                            </td>
-                            <td class="px-5 py-3.5 text-gray-600">
-                                {{ audit.audit_date }}
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                    {{ audit.findings_count }} temuan
-                                </span>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <StatusBadge :status="audit.status" />
-                            </td>
-                            <td class="px-5 py-3.5 text-right">
+                            <td class="h-14 whitespace-nowrap px-5">
                                 <Link
                                     :href="route('auditee.audits.show', audit.id)"
-                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                                    class="font-medium text-gray-900 tabular-nums"
+                                    @click.stop
                                 >
-                                    Buka Temuan
+                                    {{ audit.audit_number }}
                                 </Link>
+                            </td>
+                            <td class="px-5 py-3">
+                                <div class="font-medium text-gray-900">{{ audit.store }}</div>
+                                <div class="mt-0.5 text-xs text-gray-500 tabular-nums">{{ audit.store_code }}</div>
+                            </td>
+                            <td class="px-5 py-3 text-gray-700">
+                                {{ audit.auditor }}
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3 text-gray-600 tabular-nums">
+                                {{ audit.audit_date }}
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3 text-right text-gray-800 tabular-nums">
+                                {{ audit.findings_count }}
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3">
+                                <StatusBadge :status="audit.status" />
+                            </td>
+                            <td class="w-12 whitespace-nowrap px-5 py-3 text-right text-gray-400 transition-colors duration-150 group-hover:text-gray-900">
+                                <svg class="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                :current-page="currentPage"
+                :per-page="perPage"
+                :total-items="filteredAudits.length"
+                @update:current-page="currentPage = $event"
+            />
         </div>
     </AppLayout>
 </template>

@@ -78,6 +78,7 @@ class FindingPolicy
             return false;
         }
 
+        // Only VERIFIED findings can be closed
         return $finding->isCloseable();
     }
 }

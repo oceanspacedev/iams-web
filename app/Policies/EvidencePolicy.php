@@ -22,7 +22,7 @@ class EvidencePolicy
         }
 
         if ($user->isAuditor()) {
-            return $evidence->finding->audit->auditor_id === $user->id;
+            return $this->isAuditTeamMember($user, $evidence);
         }
 
         if ($user->isAuditee()) {
@@ -43,18 +43,31 @@ class EvidencePolicy
             return false;
         }
 
-        // Only the assigned auditor can verify
-        return $evidence->finding->audit->auditor_id === $user->id;
+        // Lead auditor or any member of the audit team can verify
+        return $this->isAuditTeamMember($user, $evidence);
     }
 
     public function delete(User $user, Evidence $evidence): bool
     {
-        // Auditee can delete their own pending or rejected evidence
+        // Auditee can delete their own pending or rejected evidence, never on a closed finding
         if ($user->isAuditee()) {
             return $evidence->uploaded_by === $user->id
-                && in_array($evidence->verification_status, ['PENDING', 'REJECTED']);
+                && in_array($evidence->verification_status, ['PENDING', 'REJECTED'], true)
+                && $evidence->finding
+                && ! $evidence->finding->isClosed();
         }
 
         return $user->isAdmin();
+    }
+
+    private function isAuditTeamMember(User $user, Evidence $evidence): bool
+    {
+        $audit = $evidence->finding?->audit;
+        if (! $audit) {
+            return false;
+        }
+
+        return (int) $audit->auditor_id === (int) $user->id
+            ||$audit->auditors()->where('users.id', $user->id)->exists();
     }
 }

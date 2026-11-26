@@ -7,6 +7,7 @@ use App\Models\Audit;
 use App\Models\AuditDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
 
 class AuditDocumentController extends Controller
@@ -15,12 +16,21 @@ class AuditDocumentController extends Controller
     {
         $this->authorize('view', $audit);
 
+        if ($audit->status === 'CLOSED') {
+            return back()->with('error', 'Audit sudah ditutup, dokumen tidak dapat diunggah.');
+        }
+
         $validated = $request->validate([
             'document_type' => 'required|in:LHP,BAP,OTHER',
             'title'         => 'required|string|max:255',
-            'finding_id'    => 'nullable|exists:findings,id',
+            'finding_id'    => [
+                'nullable',
+                Rule::exists('findings', 'id')->where('audit_id', $audit->id)->whereNull('deleted_at'),
+            ],
             'file'          => 'required|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,webp|max:10240', // max 10MB
             'notes'         => 'nullable|string',
+        ], [
+            'finding_id.exists' => 'Temuan tidak termasuk dalam audit ini.',
         ]);
 
         $file = $request->file('file');
@@ -38,11 +48,12 @@ class AuditDocumentController extends Controller
             'uploaded_by'   => $request->user()->id,
         ]);
 
-        return back()->with('success', 'Data saved! Dokumen ' . $validated['document_type'] . ' bertanda tangan berhasil diunggah.');
+        return back()->with('success', 'Dokumen ' . $validated['document_type'] . ' berhasil diunggah.');
     }
 
     public function destroy(AuditDocument $document): RedirectResponse
     {
+        abort_unless($document->audit, 404);
         $this->authorize('view', $document->audit);
 
         $disk = config('filesystems.default');

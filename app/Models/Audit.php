@@ -97,17 +97,44 @@ class Audit extends Model
         $prefix = 'AUD';
         $year   = now()->format('Y');
         $month  = now()->format('m');
-        $count  = static::whereYear('created_at', $year)->whereMonth('created_at', $month)->count() + 1;
+        $base   = "{$prefix}/{$year}/{$month}/";
 
-        return sprintf('%s/%s/%s/%04d', $prefix, $year, $month, $count);
+        // Include soft-deleted audits: their numbers still occupy the unique index.
+        $maxSequence = static::withTrashed()
+            ->where('audit_number', 'like', $base . '%')
+            ->pluck('audit_number')
+            ->map(fn ($number) => preg_match('/(\d+)\s*$/', (string) $number, $m) ? (int) $m[1] : 0)
+            ->max() ?? 0;
+
+        $monthCount = static::withTrashed()
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->count();
+
+        $sequence = max($maxSequence, $monthCount) + 1;
+        $number   = sprintf('%s%04d', $base, $sequence);
+
+        while (static::withTrashed()->where('audit_number', $number)->exists()) {
+            $sequence++;
+            $number = sprintf('%s%04d', $base, $sequence);
+        }
+
+        return $number;
     }
 
     /**
      * Automatically calculate and synchronize notification schedules based on NotificationRules.
+     *
+     * - SENT notifications are never touched.
+     * - FAILED notifications are only rescheduled when their schedule actually changes.
+     * - A schedule that is already in the past when it is (re)created becomes INACTIVE,
+     *   so editing an audit never triggers a burst of overdue reminders.
+     * - Only PLANNED audits keep PENDING notifications.
      */
     public function syncNotificationSchedules(): void
     {
         $rules = NotificationRule::all();
+        $now   = now();
 
         foreach ($rules as $rule) {
             $sendTime = $rule->send_time ?: '08:00';
@@ -123,9 +150,32 @@ class Audit extends Model
                 continue;
             }
 
+            $scheduleChanged = !$notification->exists
+                || !$notification->scheduled_at
+                || !$notification->scheduled_at->equalTo($scheduledAt);
+
+            // Keep failed notifications as they are unless the schedule moved
+            if ($notification->status === 'FAILED' && !$scheduleChanged) {
+                continue;
+            }
+
+            $isPast = $scheduledAt->lte($now);
+
+            if (!$rule->is_active || $this->status !== 'PLANNED') {
+                $status = 'INACTIVE';
+            } elseif ($isPast && ($scheduleChanged || $notification->status !== 'PENDING')) {
+                $status = 'INACTIVE';
+            } else {
+                $status = 'PENDING';
+            }
+
+            if ($status === 'PENDING' && $notification->status !== 'PENDING') {
+                $notification->error_message = null;
+            }
+
             $notification->scheduled_at = $scheduledAt;
             $notification->channel      = $rule->channel ?: 'whatsapp';
-            $notification->status       = $rule->is_active ? 'PENDING' : 'INACTIVE';
+            $notification->status       = $status;
             $notification->save();
         }
     }

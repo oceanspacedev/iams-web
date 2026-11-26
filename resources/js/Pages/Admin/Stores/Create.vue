@@ -6,7 +6,7 @@ const form = useForm({
     code: '',
     name: '',
     business_entity: '',
-    type: 'TOKO',
+    type: 'toko',
     area: '',
     regional: '',
     address: '',
@@ -19,132 +19,138 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Tambah Toko / Gudang (CSA)">
-        <Head title="Tambah Toko / Gudang (CSA) — Admin" />
+    <AppLayout title="Tambah unit">
+        <Head title="Tambah unit" />
 
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('admin.stores.index')" class="hover:text-blue-600">Stores</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route('admin.stores.index')" class="transition-colors duration-150 hover:text-blue-600">Toko & gudang</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">Tambah Toko / CSA</span>
+                <span class="font-medium text-gray-900">Tambah</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Tambah Unit Toko / Gudang Baru</h1>
-            <p class="text-xs text-gray-500 mt-1">Daftarkan data cabang ritel, gudang logistik, atau badan usaha pemeriksaan finance</p>
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Tambah unit</h1>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
-            <form @submit.prevent="submit" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Kode Unit / Toko <span class="text-red-500">*</span></label>
-                        <input
-                            v-model="form.code"
-                            type="text"
-                            required
-                            placeholder="Contoh: STR-001 / WHS-CKR"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 uppercase tabular-nums"
-                        />
-                        <div v-if="form.errors.code" class="text-red-600 text-[11px] mt-1">{{ form.errors.code }}</div>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Nama Toko / Unit <span class="text-red-500">*</span></label>
-                        <input
-                            v-model="form.name"
-                            type="text"
-                            required
-                            placeholder="Contoh: Toko Fatmawati"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                        <div v-if="form.errors.name" class="text-red-600 text-[11px] mt-1">{{ form.errors.name }}</div>
-                    </div>
+        <form @submit.prevent="submit" class="max-w-3xl overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+            <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                <h2 class="text-base font-semibold text-gray-900">Identitas</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-6">
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Kode <span class="text-red-600">*</span></label>
+                    <input
+                        v-model="form.code"
+                        type="text"
+                        required
+                        placeholder="STR-001 / WHS-CKR"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm uppercase tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
+                    <div v-if="form.errors.code" class="mt-1 text-sm text-red-600">{{ form.errors.code }}</div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Badan Usaha (Finance / PT / CV)</label>
-                        <input
-                            v-model="form.business_entity"
-                            type="text"
-                            placeholder="Contoh: PT Sumber Ritel Utama / CV Maju"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                        <div v-if="form.errors.business_entity" class="text-red-600 text-[11px] mt-1">{{ form.errors.business_entity }}</div>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Tipe Unit <span class="text-red-500">*</span></label>
-                        <select
-                            v-model="form.type"
-                            required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
-                        >
-                            <option value="TOKO">TOKO (Cabang Retail)</option>
-                            <option value="GUDANG">GUDANG (Warehouse / DC)</option>
-                            <option value="FINANCE">FINANCE / Kantor Pusat (HO)</option>
-                        </select>
-                    </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Tipe <span class="text-red-600">*</span></label>
+                    <select
+                        v-model="form.type"
+                        required
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    >
+                        <option value="toko">Toko (cabang retail)</option>
+                        <option value="gudang">Gudang (warehouse / DC)</option>
+                        <option value="head_office">Head office</option>
+                        <option value="hub">Hub</option>
+                    </select>
+                    <div v-if="form.errors.type" class="mt-1 text-sm text-red-600">{{ form.errors.type }}</div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Area</label>
-                        <input
-                            v-model="form.area"
-                            type="text"
-                            placeholder="Jakarta Selatan"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                    </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Status</label>
+                    <select
+                        v-model="form.status"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    >
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Nonaktif</option>
+                    </select>
+                    <div v-if="form.errors.status" class="mt-1 text-sm text-red-600">{{ form.errors.status }}</div>
+                </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Regional</label>
-                        <input
-                            v-model="form.regional"
-                            type="text"
-                            placeholder="Jabodetabek"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                    </div>
+                <div class="md:col-span-3">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Nama <span class="text-red-600">*</span></label>
+                    <input
+                        v-model="form.name"
+                        type="text"
+                        required
+                        placeholder="Toko Fatmawati"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
+                    <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</div>
+                </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Status</label>
-                        <select
-                            v-model="form.status"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="active">Aktif</option>
-                            <option value="inactive">Nonaktif</option>
-                        </select>
-                    </div>
+                <div class="md:col-span-3">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Badan usaha</label>
+                    <input
+                        v-model="form.business_entity"
+                        type="text"
+                        placeholder="PT / CV"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
+                    <div v-if="form.errors.business_entity" class="mt-1 text-sm text-red-600">{{ form.errors.business_entity }}</div>
+                </div>
+            </div>
+
+            <div class="flex h-14 items-center justify-between gap-4 border-y border-gray-200 px-5">
+                <h2 class="text-base font-semibold text-gray-900">Lokasi</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Area</label>
+                    <input
+                        v-model="form.area"
+                        type="text"
+                        placeholder="Jakarta Selatan"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
+                    <div v-if="form.errors.area" class="mt-1 text-sm text-red-600">{{ form.errors.area }}</div>
                 </div>
 
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Regional</label>
+                    <input
+                        v-model="form.regional"
+                        type="text"
+                        placeholder="Jabodetabek"
+                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                    />
+                    <div v-if="form.errors.regional" class="mt-1 text-sm text-red-600">{{ form.errors.regional }}</div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-900">Alamat</label>
                     <textarea
                         v-model="form.address"
                         rows="2"
-                        placeholder="Alamat fisik toko / gudang..."
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                     ></textarea>
+                    <div v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</div>
                 </div>
+            </div>
 
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
-                    <Link
-                        :href="route('admin.stores.index')"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
-                    >
-                        Batal
-                    </Link>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
-                    >
-                        {{ form.processing ? 'Menyimpan...' : 'Simpan Toko / CSA' }}
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
+                <Link
+                    :href="route('admin.stores.index')"
+                    class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
+                >
+                    Batal
+                </Link>
+                <button
+                    type="submit"
+                    :disabled="form.processing"
+                    class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
+                >
+                    {{ form.processing ? 'Menyimpan…' : 'Simpan' }}
+                </button>
+            </div>
+        </form>
     </AppLayout>
 </template>

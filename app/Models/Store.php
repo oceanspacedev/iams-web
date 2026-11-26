@@ -35,7 +35,8 @@ class Store extends Model
 
     public function auditees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'store_user');
+        return $this->belongsToMany(User::class, 'store_user')
+            ->whereHas('roles', fn ($q) => $q->where('name', 'auditee'));
     }
 
     // Scopes

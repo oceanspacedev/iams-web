@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Controller;
 use App\Models\AuditCategory;
 use App\Models\Finding;
+use App\Models\Store;
+use App\Services\FindingRecapExcelService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FindingController extends Controller
 {
@@ -23,6 +26,8 @@ class FindingController extends Controller
                 'audit_id'             => $f->audit_id,
                 'audit_number'         => $f->audit?->audit_number ?? '—',
                 'store'                => $f->audit?->store?->name ?? '—',
+                'store_id'             => $f->audit?->store_id,
+                'period'               => $f->audit?->audit_date?->format('Y-m'),
                 'auditor'              => $f->audit?->auditor?->name ?? '—',
                 'category'             => $f->category?->name ?? '—',
                 'finding'              => $f->finding,
@@ -39,7 +44,25 @@ class FindingController extends Controller
         return Inertia::render('Coordinator/Findings/Index', [
             'findings'   => $findings,
             'categories' => AuditCategory::active()->get(['id', 'name']),
+            'stores'     => Store::orderBy('name')->get(['id', 'code', 'name']),
+            'periods'    => FindingRecapExcelService::availablePeriods(),
         ]);
+    }
+
+    /**
+     * Excel rekap temuan (format rekap operasional), filter toko dan bulan opsional.
+     */
+    public function export(Request $request, FindingRecapExcelService $excel): BinaryFileResponse
+    {
+        $validated = $request->validate([
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'period'   => ['nullable', 'date_format:Y-m'],
+        ]);
+
+        return $excel->findings(
+            isset($validated['store_id']) ? (int) $validated['store_id'] : null,
+            $validated['period'] ?? null,
+        );
     }
 
     public function show(Request $request, Finding $finding): Response
@@ -106,21 +129,27 @@ class FindingController extends Controller
 
     public function close(Request $request, Finding $finding): RedirectResponse
     {
+        if (! $finding->isCloseable()) {
+            return back()->with('error', 'Temuan hanya bisa ditutup setelah bukti diverifikasi.');
+        }
+
         $this->authorize('close', $finding);
 
-        $finding->update(['status' => Finding::STATUS_CLOSED]);
-
-        // Update action plan status
-        $finding->actionPlan?->update(['status' => 'COMPLETED']);
+        // CLOSED + action plan COMPLETED, audit ikut COMPLETED bila semua temuan sudah ditutup
+        $finding->markClosed();
 
         WhatsAppService::notifyFindingClosed($finding);
 
         return redirect()->route('coordinator.findings.show', $finding)
-            ->with('success', 'Data tersimpan! Temuan audit resmi ditutup (CLOSED).');
+            ->with('success', 'Temuan ditutup.');
     }
 
     public function updateRecommendation(Request $request, Finding $finding): RedirectResponse
     {
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
+
         $validated = $request->validate([
             'recommendation' => 'required|string|max:2000',
         ]);
@@ -129,11 +158,15 @@ class FindingController extends Controller
             'recommendation' => $validated['recommendation'],
         ]);
 
-        return back()->with('success', 'Rekomendasi perbaikan temuan audit berhasil diperbarui.');
+        return back()->with('success', 'Rekomendasi disimpan.');
     }
 
     public function reviewSeverity(Request $request, Finding $finding): RedirectResponse
     {
+        if ($finding->isClosed()) {
+            return back()->with('error', 'Temuan sudah ditutup.');
+        }
+
         $validated = $request->validate([
             'severity'       => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS',
             'severity_notes' => 'nullable|string|max:500',
@@ -160,6 +193,6 @@ class FindingController extends Controller
 
         WhatsAppService::notifySeverityReviewed($finding, $oldSeverity);
 
-        return back()->with('success', 'Severity & Rekomendasi berhasil disimpan. Notifikasi WhatsApp telah dikirim ke Auditor.');
+        return back()->with('success', 'Severity disimpan.');
     }
 }

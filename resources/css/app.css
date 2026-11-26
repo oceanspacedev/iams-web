@@ -31,3 +31,24 @@
 .animate-toast-in {
     animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Isian otomatis browser (Chrome): pertahankan warna input, bukan latar biru/kuning bawaan */
+.login-shell input:-webkit-autofill,
+.login-shell input:-webkit-autofill:hover,
+.login-shell input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(17 24 39);
+    -webkit-box-shadow: 0 0 0 1000px rgb(255 255 255) inset;
+    transition: background-color 9999s ease-out 0s;
+}
+
+/* Fade halus saat ganti halaman tabel */
+.page-fade {
+    animation: pageFade 180ms ease-out;
+}
+@keyframes pageFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .page-fade { animation: none; }
+}

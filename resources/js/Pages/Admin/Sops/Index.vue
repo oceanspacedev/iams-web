@@ -16,27 +16,30 @@ const isModalOpen = ref(false);
 const editingSop = ref(null);
 const fileInputRef = ref(null);
 
+// Field sesuai tabel `sops` dan validasi SopController (code, title, description, document, is_active)
 const form = useForm({
     code: '',
     title: '',
-    category: '',
-    effective_date: '',
+    description: '',
     document: null,
+    is_active: true,
 });
 
 const openCreateModal = () => {
     editingSop.value = null;
     form.reset();
+    form.clearErrors();
     if (fileInputRef.value) fileInputRef.value.value = '';
     isModalOpen.value = true;
 };
 
 const openEditModal = (sop) => {
     editingSop.value = sop;
+    form.clearErrors();
     form.code = sop.code;
     form.title = sop.title;
-    form.category = sop.category;
-    form.effective_date = sop.effective_date_raw || '';
+    form.description = sop.description || '';
+    form.is_active = Boolean(sop.is_active);
     form.document = null;
     if (fileInputRef.value) fileInputRef.value.value = '';
     isModalOpen.value = true;
@@ -54,12 +57,12 @@ const handleFileChange = (e) => {
 
 const submit = () => {
     if (editingSop.value) {
-        form.post(route('admin.sops.update', editingSop.value.id), {
-            _method: 'put',
+        // Upload file butuh multipart POST; method PUT dikirim lewat field _method (method spoofing Laravel)
+        form.transform((data) => ({ ...data, _method: 'put' })).post(route('admin.sops.update', editingSop.value.id), {
             onSuccess: () => closeModal(),
         });
     } else {
-        form.post(route('admin.sops.store'), {
+        form.transform((data) => data).post(route('admin.sops.store'), {
             onSuccess: () => closeModal(),
         });
     }
@@ -84,9 +87,9 @@ const paginatedSops = computed(() => {
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
-        title: config.title || 'Konfirmasi Tindakan',
+        title: config.title || 'Konfirmasi tindakan',
         message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
-        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        confirmText: config.confirmText || 'Ya, lanjutkan',
         type: config.type || 'primary',
         action: config.action,
     };
@@ -101,9 +104,9 @@ const handleConfirm = () => {
 
 const deleteSop = (sop) => {
     openConfirm({
-        title: 'Hapus Master SOP / SE',
+        title: 'Hapus master SOP / SE',
         message: `Apakah Anda yakin ingin menghapus dokumen "${sop.code} - ${sop.title}"?`,
-        confirmText: 'Ya, Hapus Dokumen',
+        confirmText: 'Ya, hapus dokumen',
         type: 'danger',
         action: () => router.delete(route('admin.sops.destroy', sop.id)),
     });
@@ -111,153 +114,155 @@ const deleteSop = (sop) => {
 </script>
 
 <template>
-    <AppLayout title="SOP & Surat Edaran">
-        <Head title="SOP & Surat Edaran" />
+    <AppLayout title="SOP / SE">
+        <Head title="SOP / SE" />
 
-        <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-                <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">SOP & Surat Edaran (SE)</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Master regulasi internal dan panduan operasional sebagai standar acuan audit</p>
+        <!-- Header: judul + jumlah, aksi di kanan -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">SOP / SE</h1>
+                <span class="text-2xl leading-8 text-gray-400 tabular-nums">{{ sops.length }}</span>
             </div>
-
-            <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-500 tabular-nums hidden sm:inline">
-                    {{ sops.length }} SOP/SE terdaftar
-                </span>
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
-                >
-                    + Tambah SOP / SE
-                </button>
-            </div>
+            <button
+                @click="openCreateModal"
+                class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 shadow-sm"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Tambah SOP / SE
+            </button>
         </div>
 
-        <!-- Clean Dual View (Mobile Cards vs Desktop Table) -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
-            
-            <!-- 1. MOBILE CARD VIEW (Visible on mobile screens) -->
-            <div class="block md:hidden divide-y divide-gray-200">
-                <div v-if="sops.length === 0" class="p-8 text-center text-gray-400 text-xs">
-                    Belum ada master SOP/SE.
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-200 md:hidden">
+                <div v-if="sops.length === 0" class="p-8 text-center text-sm text-gray-400">
+                    Belum ada SOP/SE
                 </div>
                 <div
                     v-for="sop in paginatedSops"
                     :key="'m-sop-' + sop.id"
-                    class="p-4 space-y-2.5"
+                    class="space-y-3 p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-semibold text-gray-900 text-xs">{{ sop.title }}</div>
-                            <div class="tabular-nums text-[10px] text-gray-500 mt-0.5 font-bold">{{ sop.code }}</div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900">{{ sop.title }}</div>
+                            <div class="mt-0.5 text-xs font-medium text-gray-500 tabular-nums">{{ sop.code }}</div>
                         </div>
                         <span
-                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border"
+                            class="inline-flex shrink-0 items-center gap-2 rounded-md border px-2 py-0.5 text-xs font-medium"
                             :class="sop.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                         >
-                            <span class="w-1.5 h-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                            <span class="h-1.5 w-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                             {{ sop.is_active ? 'Aktif' : 'Nonaktif' }}
                         </span>
                     </div>
 
-                    <div v-if="sop.description" class="text-xs text-gray-600 line-clamp-2">
+                    <div v-if="sop.description" class="line-clamp-2 text-sm text-gray-600">
                         {{ sop.description }}
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] text-gray-600 pt-1.5 border-t border-gray-100">
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                            {{ sop.findings_count }} temuan terkait
-                        </span>
-                        <a
-                            v-if="sop.document"
-                            :href="sop.document_url"
-                            target="_blank"
-                            class="inline-flex items-center gap-1 text-blue-600 font-medium hover:underline text-xs"
-                        >
-                            Lihat Dokumen ↗
-                        </a>
-                        <span v-else class="text-gray-400 text-[11px]">Tanpa file</span>
-                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs text-gray-500 tabular-nums">{{ sop.findings_count }} temuan</span>
 
-                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
-                        <button
-                            @click="openEditModal(sop)"
-                            class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] cursor-pointer"
-                        >
-                            Edit
-                        </button>
-                        <button
-                            @click="deleteSop(sop)"
-                            class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium text-[11px] cursor-pointer"
-                        >
-                            Hapus
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <a
+                                v-if="sop.document"
+                                :href="sop.document_url"
+                                target="_blank"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors duration-150 hover:underline"
+                                title="Lihat dokumen"
+                                aria-label="Lihat dokumen"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                            </a>
+                            <button
+                                @click="openEditModal(sop)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors duration-150 hover:bg-slate-200"
+                                title="Edit"
+                                aria-label="Edit"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
+                            </button>
+                            <button
+                                @click="deleteSop(sop)"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition-colors duration-150 hover:bg-red-100"
+                                title="Hapus"
+                                aria-label="Hapus"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. DESKTOP TABLE VIEW (Visible on tablet & desktop) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div v-stable-table="sops.length" class="hidden overflow-x-auto md:block">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-slate-50 text-xs text-slate-700">
                         <tr>
-                            <th class="px-4 py-3 whitespace-nowrap">Kode</th>
-                            <th class="px-4 py-3 min-w-[200px]">Judul Regulasi</th>
-                            <th class="px-4 py-3 min-w-[180px]">Deskripsi</th>
-                            <th class="px-4 py-3 whitespace-nowrap">Dokumen Acuan</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-center">Temuan Terkait</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-center">Status</th>
-                            <th class="px-4 py-3 whitespace-nowrap text-right">Aksi</th>
+                            <th class="h-10 whitespace-nowrap px-5 font-medium">Kode</th>
+                            <th class="h-10 min-w-[240px] px-5 font-medium">Judul</th>
+                            <th class="h-10 whitespace-nowrap px-5 text-center font-medium">File</th>
+                            <th class="h-10 whitespace-nowrap px-5 text-right font-medium">Temuan</th>
+                            <th class="h-10 whitespace-nowrap px-5 text-center font-medium">Status</th>
+                            <th class="h-10 whitespace-nowrap px-5"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-200 bg-white">
                         <tr v-if="sops.length === 0">
-                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">Belum ada master SOP/SE.</td>
+                            <td colspan="6" class="px-5 py-10 text-center text-gray-500">Belum ada SOP/SE</td>
                         </tr>
-                        <tr v-for="sop in paginatedSops" :key="sop.id" class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-4 py-3 tabular-nums font-bold text-gray-900">{{ sop.code }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ sop.title }}</td>
-                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate">{{ sop.description || '—' }}</td>
-                            <td class="px-4 py-3">
+                        <tr v-for="sop in paginatedSops" :key="sop.id" class="transition-colors duration-150 hover:bg-slate-50/70">
+                            <td class="h-14 whitespace-nowrap px-5 py-3 font-medium text-gray-900 tabular-nums">{{ sop.code }}</td>
+                            <td class="px-5 py-3">
+                                <div class="font-medium text-gray-900">{{ sop.title }}</div>
+                                <div v-if="sop.description" class="mt-0.5 max-w-md truncate text-xs text-gray-500">{{ sop.description }}</div>
+                            </td>
+                            <td class="px-5 py-3 text-center">
                                 <a
                                     v-if="sop.document"
                                     :href="sop.document_url"
                                     target="_blank"
-                                    class="inline-flex items-center gap-1 text-slate-700 hover:text-blue-600 font-medium hover:underline"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 transition-colors duration-150 hover:text-blue-600"
+                                    title="Lihat file"
+                                    aria-label="Lihat file"
                                 >
-                                    Lihat File
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                                 </a>
-                                <span v-else class="text-gray-400">Tidak ada file</span>
+                                <span v-else class="text-gray-400" title="Tidak ada file">—</span>
                             </td>
-                            <td class="px-4 py-3 text-center font-medium text-gray-800">
-                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                                    {{ sop.findings_count }} temuan
-                                </span>
+                            <td class="px-5 py-3 text-right font-medium text-gray-800 tabular-nums">
+                                {{ sop.findings_count }}
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-5 py-3 text-center">
                                 <span
-                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border"
+                                    class="inline-flex items-center gap-2 rounded-md border px-2 py-0.5 text-xs font-medium"
                                     :class="sop.is_active ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200' : 'text-gray-500 bg-gray-50 border-gray-200'"
                                 >
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
+                                    <span class="h-1.5 w-1.5 rounded-full" :class="sop.is_active ? 'bg-emerald-600' : 'bg-gray-400'"></span>
                                     {{ sop.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="inline-flex items-center gap-2">
+                            <td class="whitespace-nowrap px-5 py-3 text-right">
+                                <div class="inline-flex items-center gap-1">
                                     <button
                                         @click="openEditModal(sop)"
-                                        class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:text-slate-900"
+                                        title="Edit"
+                                        aria-label="Edit"
                                     >
-                                        Edit
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
                                     </button>
-                                    <span class="text-slate-300">|</span>
                                     <button
                                         @click="deleteSop(sop)"
-                                        class="text-red-600 hover:text-red-800 font-medium hover:underline text-xs cursor-pointer"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors duration-150 hover:text-red-800"
+                                        title="Hapus"
+                                        aria-label="Hapus"
                                     >
-                                        Hapus
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                                     </button>
                                 </div>
                             </td>
@@ -276,93 +281,94 @@ const deleteSop = (sop) => {
         </div>
 
         <!-- Modal Create/Edit -->
-        <div v-if="isModalOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl text-xs space-y-4">
-                <h3 class="text-sm font-semibold text-gray-900">
-                    {{ editingSop ? 'Edit SOP / Surat Edaran' : 'Tambah SOP / Surat Edaran' }}
-                </h3>
+        <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h3 class="text-base font-semibold text-gray-900">
+                        {{ editingSop ? 'Edit SOP / SE' : 'Tambah SOP / SE' }}
+                    </h3>
+                </div>
 
-                <form @submit.prevent="submit" class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <form @submit.prevent="submit">
+                    <div class="space-y-4 p-5">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Kode <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="form.code"
+                                    type="text"
+                                    required
+                                    placeholder="SOP-004"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                                <div v-if="form.errors.code" class="mt-1 text-xs text-red-600">{{ form.errors.code }}</div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Judul <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="form.title"
+                                    type="text"
+                                    required
+                                    placeholder="Prosedur Penerimaan Barang"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                                <div v-if="form.errors.title" class="mt-1 text-xs text-red-600">{{ form.errors.title }}</div>
+                            </div>
+                        </div>
+
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">Kode <span class="text-red-500">*</span></label>
-                            <input
-                                v-model="form.code"
-                                type="text"
-                                required
-                                placeholder="SOP-004"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
-                            />
-                            <div v-if="form.errors.code" class="text-red-600 text-[11px] mt-1">{{ form.errors.code }}</div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Deskripsi</label>
+                            <textarea
+                                v-model="form.description"
+                                rows="3"
+                                class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                            ></textarea>
                         </div>
 
-                        <div class="sm:col-span-2">
-                            <label class="block font-medium text-gray-700 mb-1">Judul SOP / SE <span class="text-red-500">*</span></label>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Dokumen <span class="font-normal text-gray-400">PDF / DOCX</span></label>
                             <input
-                                v-model="form.title"
-                                type="text"
-                                required
-                                placeholder="Contoh: Prosedur Penerimaan Barang"
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                ref="fileInputRef"
+                                type="file"
+                                accept=".pdf,.docx,.xlsx"
+                                @change="handleFileChange"
+                                class="block w-full text-sm text-gray-500 file:mr-3 file:h-9 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50"
                             />
-                            <div v-if="form.errors.title" class="text-red-600 text-[11px] mt-1">{{ form.errors.title }}</div>
+                            <div v-if="form.errors.document" class="mt-1 text-xs text-red-600">{{ form.errors.document }}</div>
                         </div>
-                    </div>
 
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Deskripsi Ringkas</label>
-                        <textarea
-                            v-model="form.description"
-                            rows="3"
-                            placeholder="Penjelasan pokok isi SOP/SE..."
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        ></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">File Dokumen SOP (PDF/DOCX)</label>
-                        <input
-                            ref="fileInputRef"
-                            type="file"
-                            accept=".pdf,.docx,.xlsx"
-                            @change="handleFileChange"
-                            class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-xs file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50"
-                        />
-                        <div v-if="form.errors.document" class="text-red-600 text-[11px] mt-1">{{ form.errors.document }}</div>
-                    </div>
-
-                    <div>
                         <label class="flex items-center gap-2">
                             <input
                                 type="checkbox"
                                 v-model="form.is_active"
-                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 shadow-sm"
                             />
-                            <span class="font-medium text-gray-700">Status Aktif</span>
+                            <span class="text-sm font-medium text-gray-700">Aktif</span>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                    <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
                         <button
                             type="button"
                             @click="closeModal"
-                            class="px-3.5 py-1.5 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium"
+                            class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
+                            class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                         >
-                            {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
+                            {{ form.processing ? 'Menyimpan…' : 'Simpan' }}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Modern Action Confirmation Modal -->
+        <!-- Action Confirmation Modal -->
         <ConfirmModal
             :show="confirmModal.show"
             :title="confirmModal.title"

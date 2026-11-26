@@ -8,32 +8,57 @@ use App\Models\Finding;
 use App\Models\QualityFinding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QualityFindingController extends Controller
 {
-    private function getRoutePrefix(Request $request): string
+    /**
+     * This controller serves both the auditor portal (auditor.*) and the coordinator
+     * portal (coordinator.*, also used by asmen/chief/admin). Only the auditor portal
+     * is scoped to the auditor's own audits (lead or team member).
+     */
+    private function isAuditorPortal(Request $request): bool
     {
-        $user = $request->user();
-        if (!$user) return 'coordinator.';
-        $isAuditorOnly = $user->isAuditor() && ! $user->isAdmin() && ! $user->isCoordinator() && ! $user->isChief() && ! $user->isAsmen();
-        return $isAuditorOnly ? 'auditor.' : 'coordinator.';
+        return $request->routeIs('auditor.*');
+    }
+
+    private function routePrefix(Request $request): string
+    {
+        return $this->isAuditorPortal($request) ? 'auditor.' : 'coordinator.';
+    }
+
+    private function canAccess(Request $request, QualityFinding $qualityFinding): bool
+    {
+        if (!$this->isAuditorPortal($request)) {
+            return true;
+        }
+
+        return Audit::whereKey($qualityFinding->audit_id)
+            ->forAuditor($request->user()->id)
+            ->exists();
     }
 
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $isAuditorOnly = $user->isAuditor() && ! $user->isAdmin() && ! $user->isCoordinator() && ! $user->isChief() && ! $user->isAsmen();
 
-        $query = QualityFinding::with(['finding.category', 'finding.sop', 'audit.store', 'reporter'])
-            ->orderBy('created_at', 'desc');
+        // Hide reports whose finding or audit was deleted
+        $baseQuery = QualityFinding::query()
+            ->whereHas('finding')
+            ->whereHas('audit');
 
-        if ($isAuditorOnly) {
-            $query->whereHas('audit', function ($q) use ($user) {
+        if ($this->isAuditorPortal($request)) {
+            $baseQuery->whereHas('audit', function ($q) use ($user) {
                 $q->forAuditor($user->id);
             });
         }
+
+        $query = (clone $baseQuery)
+            ->with(['finding.category', 'finding.sop', 'audit.store', 'reporter'])
+            ->orderBy('created_at', 'desc');
 
         if ($request->filled('category')) {
             $cat = $request->query('category');
@@ -55,7 +80,7 @@ class QualityFindingController extends Controller
             'recommendation'          => $qf->recommendation,
             'auditor_notes'           => $qf->auditor_notes,
             'status'                  => $qf->status,
-            'reported_by'             => $qf->reporter?->name ?? 'System',
+            'reported_by'             => $qf->reporter?->name ?? '-',
             'created_at'              => $qf->created_at ? $qf->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-',
             'finding'                 => [
                 'id'          => $qf->finding?->id,
@@ -70,17 +95,21 @@ class QualityFindingController extends Controller
                 'audit_number' => $qf->audit?->audit_number ?? '-',
                 'store_name'   => $qf->audit?->store?->name ?? ($qf->audit?->location ?: '-'),
                 'store_code'   => $qf->audit?->store?->code ?? '-',
-                'audit_date'   => $qf->audit?->audit_date ? $qf->audit->audit_date->format('d M Y') : '-',
+                'audit_date'   => $qf->audit?->audit_date?->format('d M Y') ?? '-',
             ],
         ]);
 
+        $countCategory = fn (string $key) => (clone $baseQuery)
+            ->where(fn ($q) => $q->where('quality_category', 'like', '%"' . $key . '"%')->orWhere('quality_category', 'like', '%' . $key . '%'))
+            ->count();
+
         $stats = [
-            'total'          => QualityFinding::count(),
-            'impact_50m'     => QualityFinding::where(fn($q) => $q->where('quality_category', 'like', '%"impact_50m"%')->orWhere('quality_category', 'like', '%impact_50m%'))->count(),
-            'fraud_risk'     => QualityFinding::where(fn($q) => $q->where('quality_category', 'like', '%"fraud_risk"%')->orWhere('quality_category', 'like', '%fraud_risk%'))->count(),
-            'system_control' => QualityFinding::where(fn($q) => $q->where('quality_category', 'like', '%"system_control"%')->orWhere('quality_category', 'like', '%system_control%'))->count(),
-            'org_structure'  => QualityFinding::where(fn($q) => $q->where('quality_category', 'like', '%"org_structure"%')->orWhere('quality_category', 'like', '%org_structure%'))->count(),
-            'total_impact'   => (float) QualityFinding::sum('impact_amount'),
+            'total'          => (clone $baseQuery)->count(),
+            'impact_50m'     => $countCategory('impact_50m'),
+            'fraud_risk'     => $countCategory('fraud_risk'),
+            'system_control' => $countCategory('system_control'),
+            'org_structure'  => $countCategory('org_structure'),
+            'total_impact'   => (float) (clone $baseQuery)->sum('impact_amount'),
         ];
 
         return Inertia::render('Auditor/FindingQualities/Index', [
@@ -88,62 +117,63 @@ class QualityFindingController extends Controller
             'stats'           => $stats,
             'categories'      => QualityFinding::categories(),
             'selectedCategory'=> $request->query('category', ''),
-            'routePrefix'     => $this->getRoutePrefix($request),
+            'routePrefix'     => $this->routePrefix($request),
         ]);
     }
 
     public function create(Request $request): Response
     {
         $user = $request->user();
-        $isAuditorOnly = $user->isAuditor() && ! $user->isAdmin() && ! $user->isCoordinator() && ! $user->isChief() && ! $user->isAsmen();
 
         // Get findings from audits assigned to this auditor (or all if admin/coordinator)
-        // Allow findings that don't have quality reports yet.
-        // If a specific finding_id is preselected, always include it (even if closed)
-        $preselectedFindingId = $request->query('finding_id');
-
         $findingsQuery = Finding::with(['audit.store', 'category'])
+            ->whereHas('audit')
+            ->whereNotIn('status', [Finding::STATUS_CLOSED])
             ->whereDoesntHave('qualityReport')
             ->orderBy('id', 'desc');
 
-        if ($isAuditorOnly) {
+        if ($this->isAuditorPortal($request)) {
             $findingsQuery->whereHas('audit', function ($q) use ($user) {
                 $q->forAuditor($user->id);
             });
         }
 
-        // If a specific finding is requested via query param, ensure it's in the list
-        if ($preselectedFindingId) {
-            $preselectedFinding = Finding::with(['audit.store', 'category'])->find($preselectedFindingId);
-        } else {
-            $preselectedFinding = null;
-        }
-
+        $preselectedFindingId = $request->query('finding_id');
         $findingsList = $findingsQuery->get();
 
-        // If preselected finding exists and isn't already in list, prepend it
-        if ($preselectedFinding && ! $findingsList->contains('id', $preselectedFinding->id)) {
-            $findingsList->prepend($preselectedFinding);
+        // Temuan yang dipilih lewat link (?finding_id=) selalu ikut di daftar,
+        // asalkan belum punya laporan dan (di portal auditor) termasuk audit miliknya.
+        if ($preselectedFindingId && ! $findingsList->contains('id', (int) $preselectedFindingId)) {
+            $preselectedQuery = Finding::with(['audit.store', 'category'])
+                ->whereKey($preselectedFindingId)
+                ->whereDoesntHave('qualityReport');
+
+            if ($this->isAuditorPortal($request)) {
+                $preselectedQuery->whereHas('audit', fn ($q) => $q->forAuditor($user->id));
+            }
+
+            if ($preselected = $preselectedQuery->first()) {
+                $findingsList->prepend($preselected);
+            }
         }
 
         $findings = $findingsList->map(function ($f) {
             $auditNum = $f->audit?->audit_number ?? '-';
-            $storeName = $f->audit?->store?->name ?? ($f->audit?->location ?: 'Unit/Store');
-            $storeCode = $f->audit?->store?->code ?? '-';
-            $catName = $f->category?->name ?? 'General';
+            $storeName = $f->audit?->store?->name ?? ($f->audit?->location ?: '-');
+            $catName = $f->category?->name ?? '-';
             $findingText = $f->finding ?? '-';
 
             return [
-                'id'           => $f->id,
-                'audit_id'     => $f->audit_id,
-                'audit_number' => $auditNum,
-                'store_name'   => $storeName,
-                'store_code'   => $storeCode,
-                'category'     => $catName,
-                'finding'      => $findingText,
-                'severity'     => $f->severity ?? 'MINOR',
-                'loss_amount'  => (float) ($f->loss_amount ?? 0),
-                'display_label'=> "[{$auditNum}] {$storeName} - #{$f->id} {$catName} ({$findingText})",
+                'id'            => $f->id,
+                'audit_id'      => $f->audit_id,
+                'audit_number'  => $auditNum,
+                'store_name'    => $storeName,
+                'store_code'    => $f->audit?->store?->code ?? '-',
+                'category'      => $catName,
+                'finding'       => $findingText,
+                'severity'      => $f->severity ?? 'MINOR',
+                'loss_amount'   => (float) ($f->loss_amount ?? 0),
+                'display_label' => "[{$auditNum}] {$storeName} - #{$f->id} {$catName} ({$findingText})",
             ];
         });
 
@@ -152,7 +182,7 @@ class QualityFindingController extends Controller
             'categories'       => QualityFinding::categories(),
             'preselectedAudit' => $request->query('audit_id'),
             'preselectedFinding' => $preselectedFindingId,
-            'routePrefix'      => $this->getRoutePrefix($request),
+            'routePrefix'      => $this->routePrefix($request),
         ]);
     }
 
@@ -166,7 +196,11 @@ class QualityFindingController extends Controller
         $request->merge(['quality_categories' => $categoriesInput]);
 
         $validated = $request->validate([
-            'finding_id'           => 'required|exists:findings,id|unique:quality_findings,finding_id',
+            'finding_id'           => [
+                'required',
+                Rule::exists('findings', 'id')->whereNull('deleted_at'),
+                Rule::unique('quality_findings', 'finding_id')->whereNull('deleted_at'),
+            ],
             'quality_categories'   => 'required|array|min:1',
             'quality_categories.*' => 'in:impact_50m,fraud_risk,system_control,org_structure',
             'title'                => 'required|string|max:255',
@@ -178,9 +212,21 @@ class QualityFindingController extends Controller
         ], [
             'quality_categories.required' => 'Pilih minimal satu kategori target Finding Quality.',
             'quality_categories.min'      => 'Pilih minimal satu kategori target Finding Quality.',
+            'finding_id.unique'           => 'Temuan ini sudah memiliki laporan finding quality.',
         ]);
 
         $finding = Finding::findOrFail($validated['finding_id']);
+
+        $auditQuery = Audit::whereKey($finding->audit_id);
+        if ($this->isAuditorPortal($request)) {
+            $auditQuery->forAuditor($request->user()->id);
+        }
+
+        if (!$auditQuery->exists()) {
+            throw ValidationException::withMessages([
+                'finding_id' => 'Temuan ini bukan dari audit yang Anda tangani.',
+            ]);
+        }
 
         $qualityFinding = QualityFinding::create([
             'finding_id'       => $validated['finding_id'],
@@ -196,14 +242,14 @@ class QualityFindingController extends Controller
             'status'           => 'REPORTED',
         ]);
 
-        $routePrefix = $this->getRoutePrefix($request);
-
-        return redirect()->route($routePrefix . 'finding-qualities.show', $qualityFinding)
-            ->with('success', 'Data saved! Report Finding Quality berhasil dibuat.');
+        return redirect()->route($this->routePrefix($request) . 'finding-qualities.show', $qualityFinding)
+            ->with('success', 'Laporan finding quality berhasil dibuat.');
     }
 
     public function show(Request $request, QualityFinding $findingQuality): Response
     {
+        abort_unless($this->canAccess($request, $findingQuality), 403);
+
         $findingQuality->load([
             'finding.category',
             'finding.sop',
@@ -213,6 +259,9 @@ class QualityFindingController extends Controller
             'reporter',
         ]);
 
+        $finding = $findingQuality->finding;
+        $audit   = $findingQuality->audit;
+
         return Inertia::render('Auditor/FindingQualities/Show', [
             'qualityFinding' => [
                 'id'                      => $findingQuality->id,
@@ -220,48 +269,48 @@ class QualityFindingController extends Controller
                 'quality_categories'      => $findingQuality->quality_categories,
                 'quality_categories_info' => $findingQuality->quality_categories_info,
                 'title'                   => $findingQuality->title,
-                'impact_amount'           => (float) ($findingQuality->impact_amount ?? 0),
-                'root_cause'              => $findingQuality->root_cause ?? '-',
-                'systemic_issue'          => $findingQuality->systemic_issue ?? '-',
-                'recommendation'          => $findingQuality->recommendation ?? '-',
+                'impact_amount'           => (float) $findingQuality->impact_amount,
+                'root_cause'              => $findingQuality->root_cause,
+                'systemic_issue'          => $findingQuality->systemic_issue,
+                'recommendation'          => $findingQuality->recommendation,
                 'auditor_notes'           => $findingQuality->auditor_notes,
-                'status'                  => $findingQuality->status ?? 'REPORTED',
-                'reported_by'             => $findingQuality->reporter?->name ?? 'System',
+                'status'                  => $findingQuality->status,
+                'reported_by'             => $findingQuality->reporter?->name ?? '-',
                 'created_at'              => $findingQuality->created_at ? $findingQuality->created_at->copy()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-',
                 'categories_info'         => QualityFinding::categories()[$findingQuality->quality_categories[0] ?? ''] ?? [],
                 'finding'          => [
-                    'id'               => $findingQuality->finding?->id,
-                    'category'         => $findingQuality->finding?->category?->name ?? '-',
-                    'sop'              => $findingQuality->finding?->sop ? "{$findingQuality->finding->sop->code} - {$findingQuality->finding->sop->title}" : '-',
-                    'finding'          => $findingQuality->finding?->finding ?? '-',
-                    'severity'         => $findingQuality->finding?->severity ?? 'MINOR',
-                    'status'           => $findingQuality->finding?->status ?? 'OPEN',
-                    'loss_amount'      => (float) ($findingQuality->finding?->loss_amount ?? 0),
-                    'auditor_opinion'  => $findingQuality->finding?->auditor_opinion ?? '-',
-                    'recommendation'   => $findingQuality->finding?->recommendation ?? '-',
+                    'id'               => $finding?->id,
+                    'category'         => $finding?->category?->name ?? '-',
+                    'sop'              => $finding?->sop ? "{$finding->sop->code} - {$finding->sop->title}" : '-',
+                    'finding'          => $finding?->finding ?? '-',
+                    'severity'         => $finding?->severity ?? 'MINOR',
+                    'status'           => $finding?->status ?? 'OPEN',
+                    'loss_amount'      => (float) ($finding?->loss_amount ?? 0),
+                    'auditor_opinion'  => $finding?->auditor_opinion,
+                    'recommendation'   => $finding?->recommendation,
                 ],
                 'audit'            => [
-                    'id'           => $findingQuality->audit?->id,
-                    'audit_number' => $findingQuality->audit?->audit_number ?? '-',
-                    'store_name'   => $findingQuality->audit?->store?->name ?? ($findingQuality->audit?->location ?: '-'),
-                    'store_code'   => $findingQuality->audit?->store?->code ?? '-',
-                    'store_area'   => $findingQuality->audit?->store?->area ?? '-',
-                    'audit_date'   => $findingQuality->audit?->audit_date ? $findingQuality->audit->audit_date->format('d M Y') : '-',
-                    'lead_auditor' => $findingQuality->audit?->auditor?->name ?? '-',
+                    'id'           => $audit?->id,
+                    'audit_number' => $audit?->audit_number ?? '-',
+                    'store_name'   => $audit?->store?->name ?? ($audit?->location ?: '-'),
+                    'store_code'   => $audit?->store?->code ?? '-',
+                    'store_area'   => $audit?->store?->area,
+                    'audit_date'   => $audit?->audit_date?->format('d M Y') ?? '-',
+                    'lead_auditor' => $audit?->auditor?->name ?? '-',
                 ],
             ],
             'categories' => QualityFinding::categories(),
-            'routePrefix' => $this->getRoutePrefix($request),
+            'routePrefix' => $this->routePrefix($request),
         ]);
     }
 
     public function destroy(Request $request, QualityFinding $findingQuality): RedirectResponse
     {
+        abort_unless($this->canAccess($request, $findingQuality), 403);
+
         $findingQuality->delete();
 
-        $routePrefix = $this->getRoutePrefix($request);
-
-        return redirect()->route($routePrefix . 'finding-qualities.index')
-            ->with('success', 'Report Finding Quality berhasil dihapus.');
+        return redirect()->route($this->routePrefix($request) . 'finding-qualities.index')
+            ->with('success', 'Laporan finding quality berhasil dihapus.');
     }
 }

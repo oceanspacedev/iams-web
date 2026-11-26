@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             SampleDataSeeder::class,
             UserSeeder::class,
+            // Dipanggil lagi: audit & temuan contoh butuh user auditor dari UserSeeder,
+            // sedangkan UserSeeder butuh toko dari SampleDataSeeder. Aman karena pakai firstOrCreate.
+            SampleDataSeeder::class,
             CsaStoresSeeder::class,
         ]);
     }

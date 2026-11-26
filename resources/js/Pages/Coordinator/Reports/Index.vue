@@ -2,6 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
@@ -50,13 +51,31 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    years: {
+        type: Array,
+        default: () => [],
+    },
     selected_category: {
         type: [String, Number],
         default: 'all',
     },
 });
 
+const storeLossList = computed(() => props.store_losses || []);
+
+// Pagination 10 baris per halaman; kembali ke halaman 1 saat filter berubah
+const currentPage = ref(1);
+const perPage = 10;
+watch(() => storeLossList.value.length, (n) => {
+    const last = Math.max(1, Math.ceil(n / perPage));
+    if (currentPage.value > last) currentPage.value = last;
+});
+const paginatedStoreLosses = computed(() => storeLossList.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage));
+// Baris kosong di halaman terakhir supaya tinggi tabel tidak berubah saat ganti halaman
+const fillerRows = computed(() => (storeLossList.value.length > perPage ? perPage - paginatedStoreLosses.value.length : 0));
+
 const exportDropdownOpen = ref(false);
+const selectedYear = ref(props.years[0] ?? new Date().getFullYear());
 const selectedCategory = ref(String(props.selected_category || 'all'));
 
 const page = usePage();
@@ -134,11 +153,11 @@ const statusColors = {
 };
 
 const statusLabels = {
-    OPEN: 'Open',
-    IN_PROGRESS: 'In Progress',
-    WAITING_VERIFICATION: 'Waiting Verification',
-    VERIFIED: 'Verified',
-    CLOSED: 'Closed',
+    OPEN: 'Terbuka',
+    IN_PROGRESS: 'Dalam proses',
+    WAITING_VERIFICATION: 'Menunggu verifikasi',
+    VERIFIED: 'Terverifikasi',
+    CLOSED: 'Ditutup',
 };
 
 // SVG Donut Calculations for Severity
@@ -199,38 +218,36 @@ const topLossStores = computed(() => {
 </script>
 
 <template>
-    <AppLayout title="Laporan & Rekapitulasi Audit">
-        <Head title="Laporan & Rekapitulasi Audit" />
+    <AppLayout title="Laporan">
+        <Head title="Laporan" />
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan & Rekapitulasi Audit Retail</h1>
-                <p class="text-xs text-gray-500 mt-1">Ringkasan temuan, NBH/NBL, dan progres tindak lanjut audit.</p>
-                <div v-if="selectedCategory !== 'all'" class="mt-2 flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
-                        <span>Filter aktif: <strong>{{ categories.find(c => String(c.id) === selectedCategory)?.name || selectedCategory }}</strong></span>
-                        <button type="button" @click="setCategory('all')" class="hover:text-blue-950 font-bold ml-1 cursor-pointer" title="Reset filter">✕</button>
-                    </span>
-                </div>
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-semibold leading-8 text-gray-900">Laporan</h1>
+                <span v-if="selectedCategory !== 'all'" class="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 py-0.5 pl-2 pr-1 text-xs font-medium text-blue-800">
+                    <span>{{ categories.find(c => String(c.id) === selectedCategory)?.name || selectedCategory }}</span>
+                    <button type="button" @click="setCategory('all')" class="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 hover:text-blue-950" title="Reset filter" aria-label="Reset filter">
+                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </span>
             </div>
 
-            <!-- Action Controls: Category Filter Box & Download Button -->
-            <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                <!-- Kotak Navigasi Filter Kategori -->
-                <div class="relative flex items-center bg-white border border-gray-300 rounded-md shadow-2xs hover:border-gray-400 transition-colors">
-                    <div class="flex items-center gap-1.5 pl-3 pr-1 py-2 text-xs text-gray-500 pointer-events-none select-none">
-                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        <span class="font-medium text-gray-600 hidden sm:inline">Kategori:</span>
-                    </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Filter kategori -->
+                <div class="relative flex h-9 items-center rounded-lg border border-gray-300 bg-white transition-colors duration-150 hover:border-gray-400">
+                    <svg class="pointer-events-none ml-3 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
                     <select
                         v-model="selectedCategory"
                         @change="handleCategoryChange"
-                        class="text-xs font-semibold text-gray-800 bg-transparent py-2 pl-1 pr-8 border-0 focus:ring-0 focus:outline-hidden cursor-pointer"
+                        aria-label="Kategori"
+                        class="h-full cursor-pointer rounded-lg border-0 bg-transparent py-0 pl-2 pr-9 text-sm font-medium text-gray-800 focus:outline-hidden focus:ring-0"
                     >
-                        <option value="all">Semua Kategori (All)</option>
+                        <option value="all">Semua kategori</option>
                         <option
                             v-for="cat in categories"
                             :key="cat.id"
@@ -241,33 +258,34 @@ const topLossStores = computed(() => {
                     </select>
                 </div>
 
-                <!-- Single Trigger Button & Smooth Dropdown Menu directly underneath -->
+                <!-- Download -->
                 <div class="relative">
                     <button
                         type="button"
                         @click="exportDropdownOpen = !exportDropdownOpen"
-                        class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
+                        class="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-800 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-900"
                     >
-                        <span>Download Laporan Excel</span>
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16" /></svg>
+                        <span>Excel</span>
                         <svg
-                            class="w-3.5 h-3.5 text-emerald-200 transition-transform duration-200"
+                            class="h-4 w-4 text-emerald-200 transition-transform duration-200"
                             :class="{ 'rotate-180': exportDropdownOpen }"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            aria-hidden="true"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 
-                    <!-- Invisible overlay to close dropdown when clicking outside -->
+                    <!-- Overlay untuk menutup dropdown -->
                     <div
                         v-if="exportDropdownOpen"
                         class="fixed inset-0 z-20"
                         @click="exportDropdownOpen = false"
                     ></div>
 
-                    <!-- Smooth Dropdown menu directly below the button -->
                     <Transition
                         enter-active-class="transition ease-out duration-150"
                         enter-from-class="transform opacity-0 scale-95 -translate-y-1"
@@ -278,30 +296,41 @@ const topLossStores = computed(() => {
                     >
                         <div
                             v-if="exportDropdownOpen"
-                            class="absolute right-0 mt-1.5 w-56 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
+                            class="absolute right-0 z-30 mt-2 w-64 origin-top-right divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white py-1 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
                         >
-                            <a
-                                :href="route(`${currentPrefix}reports.export-findings`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
-                                @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                            >
-                                Rekap Seluruh Temuan (.xls)
-                            </a>
+                            <div class="px-4 py-3">
+                                <label class="flex items-center justify-between gap-3 text-sm text-gray-500">
+                                    <span>Tahun</span>
+                                    <select
+                                        v-model="selectedYear"
+                                        class="h-8 rounded-lg border-gray-300 bg-white py-0 pl-3 pr-8 text-sm text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                                    >
+                                        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                                    </select>
+                                </label>
+                                <a
+                                    :href="route(`${currentPrefix}reports.export-period`, { year: selectedYear })"
+                                    @click="exportDropdownOpen = false"
+                                    class="mt-3 flex h-9 items-center justify-center rounded-lg bg-emerald-800 px-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-900"
+                                >
+                                    Rekap status {{ selectedYear }}
+                                </a>
+                            </div>
 
                             <a
                                 :href="route(`${currentPrefix}reports.export-stores`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
                                 @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                                class="block px-4 py-2 font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
                             >
-                                Rekapitulasi per Toko (.xls)
+                                Rekap per toko
                             </a>
 
                             <a
                                 :href="route(`${currentPrefix}reports.export-summary`, selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
                                 @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
+                                class="block px-4 py-2 font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
                             >
-                                Ringkasan Eksekutif (.xls)
+                                Ringkasan eksekutif
                             </a>
                         </div>
                     </Transition>
@@ -309,50 +338,62 @@ const topLossStores = computed(() => {
             </div>
         </div>
 
-        <!-- Key Metrics: flat tinted cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
-            <div class="rounded-lg border border-rose-100 bg-rose-50/70 p-4">
-                <div class="text-xs font-medium text-rose-700">Total NBH</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_loss) }}</div>
-                <div class="mt-1 text-[11px] text-rose-700/70">Nilai Barang Hilang</div>
+        <!-- Satu panel angka -->
+        <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white sm:grid-cols-3 xl:grid-cols-5 shadow-sm">
+            <div class="-mb-px -mr-px min-w-0 border-b border-r border-gray-200 px-5 py-5" title="Nilai barang hilang">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-rose-700"></span>
+                    NBH
+                </div>
+                <div class="mt-3 truncate text-2xl font-medium leading-10 text-gray-900 tabular-nums">{{ formatRupiah(total_loss) }}</div>
             </div>
 
-            <div class="rounded-lg border border-indigo-100 bg-indigo-50/70 p-4">
-                <div class="text-xs font-medium text-indigo-700">Total NBL</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_surplus) }}</div>
-                <div class="mt-1 text-[11px] text-indigo-700/70">Nilai Barang Lebih</div>
+            <div class="-mb-px -mr-px min-w-0 border-b border-r border-gray-200 px-5 py-5" title="Nilai barang lebih">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-indigo-700"></span>
+                    NBL
+                </div>
+                <div class="mt-3 truncate text-2xl font-medium leading-10 text-gray-900 tabular-nums">{{ formatRupiah(total_surplus) }}</div>
             </div>
 
-            <div class="rounded-lg border border-sky-100 bg-sky-50/70 p-4">
-                <div class="text-xs font-medium text-sky-700">Total Temuan</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ totalFindingsCount }}</div>
-                <div class="mt-1 text-[11px] text-sky-700/70 tabular-nums">{{ by_status.OPEN || 0 }} masih open</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-sky-700"></span>
+                    Temuan
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ totalFindingsCount }}</div>
+                <div class="mt-1 text-xs text-gray-500 tabular-nums">{{ by_status.OPEN || 0 }} terbuka</div>
             </div>
 
-            <div class="rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
-                <div class="text-xs font-medium text-emerald-700">Tingkat Closed</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ calculatedCompletionRate }}%</div>
-                <div class="mt-1 text-[11px] text-emerald-700/70 tabular-nums">{{ closed_on_time || 0 }} on time · {{ closed_overdue || 0 }} overdue</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-700"></span>
+                    Ditutup
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ calculatedCompletionRate }}%</div>
+                <div class="mt-1 text-xs text-gray-500 tabular-nums">{{ closed_on_time || 0 }} tepat · {{ closed_overdue || 0 }} telat</div>
             </div>
 
-            <div class="rounded-lg border border-amber-100 bg-amber-50/70 p-4">
-                <div class="text-xs font-medium text-amber-700">Risiko Tinggi</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ highRiskCount }}</div>
-                <div class="mt-1 text-[11px] text-amber-700/70">Temuan major</div>
+            <div class="-mb-px -mr-px border-b border-r border-gray-200 px-5 py-5" title="Temuan major">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-700"></span>
+                    Risiko tinggi
+                </div>
+                <div class="mt-3 text-4xl font-medium leading-10 text-gray-900 tabular-nums">{{ highRiskCount }}</div>
             </div>
         </div>
 
         <!-- Severity & Status -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 text-xs">
-            <section class="bg-white rounded-lg border border-gray-200 p-5">
-                <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-sm font-semibold text-gray-900">Severity Temuan</h2>
-                    <span class="text-[11px] text-gray-500 tabular-nums">{{ totalFindingsCount }} total</span>
+        <div class="mt-6 grid grid-cols-1 gap-6 text-sm lg:grid-cols-2">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Severity</h2>
+                    <span class="text-xs text-gray-500 tabular-nums">{{ totalFindingsCount }} total</span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center gap-8">
-                    <div class="relative w-32 h-32 shrink-0">
-                        <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
+                <div class="flex flex-col items-center gap-8 p-5 sm:flex-row">
+                    <div class="relative h-32 w-32 shrink-0">
+                        <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90 transform">
                             <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-100" />
                             <circle
                                 v-for="seg in severitySegments"
@@ -366,22 +407,22 @@ const topLossStores = computed(() => {
                                 stroke-width="10"
                                 :stroke-dasharray="seg.dasharray"
                                 :stroke-dashoffset="seg.dashoffset"
-                                class="transition-all duration-500"
+                                class="transition-[stroke-dasharray,stroke-dashoffset] duration-500"
                             />
                         </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span class="text-xl font-semibold text-gray-900 tabular-nums leading-none">{{ totalFindingsCount }}</span>
-                            <span class="text-[10px] text-gray-400 mt-1">temuan</span>
+                        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-medium leading-none text-gray-900 tabular-nums">{{ totalFindingsCount }}</span>
+                            <span class="mt-1 text-xs text-gray-400">temuan</span>
                         </div>
                     </div>
 
-                    <ul class="flex-1 w-full divide-y divide-gray-100">
+                    <ul class="w-full flex-1 divide-y divide-gray-100">
                         <li v-for="seg in severitySegments" :key="seg.key" class="flex items-center justify-between py-2">
                             <span class="flex items-center gap-2 text-gray-700">
-                                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                <span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: seg.color }"></span>
                                 <span class="capitalize">{{ seg.key.toLowerCase() }}</span>
                             </span>
-                            <span class="tabular-nums font-medium text-gray-900">
+                            <span class="font-medium text-gray-900 tabular-nums">
                                 {{ seg.count }}<span class="ml-2 font-normal text-gray-400">{{ seg.percent }}%</span>
                             </span>
                         </li>
@@ -389,15 +430,15 @@ const topLossStores = computed(() => {
                 </div>
             </section>
 
-            <section class="bg-white rounded-lg border border-gray-200 p-5">
-                <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-sm font-semibold text-gray-900">Status Penyelesaian</h2>
-                    <span class="text-[11px] text-gray-500 tabular-nums">{{ calculatedCompletionRate }}% selesai</span>
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Status</h2>
+                    <span class="text-xs text-gray-500 tabular-nums">{{ calculatedCompletionRate }}% selesai</span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center gap-8">
-                    <div class="relative w-32 h-32 shrink-0">
-                        <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90 transform">
+                <div class="flex flex-col items-center gap-8 p-5 sm:flex-row">
+                    <div class="relative h-32 w-32 shrink-0">
+                        <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90 transform">
                             <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-100" />
                             <circle
                                 v-for="seg in statusSegments"
@@ -411,22 +452,22 @@ const topLossStores = computed(() => {
                                 stroke-width="10"
                                 :stroke-dasharray="seg.dasharray"
                                 :stroke-dashoffset="seg.dashoffset"
-                                class="transition-all duration-500"
+                                class="transition-[stroke-dasharray,stroke-dashoffset] duration-500"
                             />
                         </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span class="text-xl font-semibold text-gray-900 tabular-nums leading-none">{{ calculatedCompletionRate }}%</span>
-                            <span class="text-[10px] text-gray-400 mt-1">closed</span>
+                        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-medium leading-none text-gray-900 tabular-nums">{{ calculatedCompletionRate }}%</span>
+                            <span class="mt-1 text-xs text-gray-400">ditutup</span>
                         </div>
                     </div>
 
-                    <ul class="flex-1 w-full divide-y divide-gray-100">
+                    <ul class="w-full flex-1 divide-y divide-gray-100">
                         <li v-for="seg in statusSegments" :key="seg.key" class="flex items-center justify-between py-2">
                             <span class="flex items-center gap-2 text-gray-700">
-                                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                <span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: seg.color }"></span>
                                 {{ statusLabels[seg.key] || seg.key }}
                             </span>
-                            <span class="tabular-nums font-medium text-gray-900">
+                            <span class="font-medium text-gray-900 tabular-nums">
                                 {{ seg.count }}<span class="ml-2 font-normal text-gray-400">{{ seg.percent }}%</span>
                             </span>
                         </li>
@@ -435,128 +476,148 @@ const topLossStores = computed(() => {
             </section>
         </div>
 
-        <!-- NBH per Cabang & Kategori Audit -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 text-xs">
-            <section class="lg:col-span-7 bg-white rounded-lg border border-gray-200 p-5">
-                <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-sm font-semibold text-gray-900">NBH per Cabang</h2>
-                    <span class="text-[11px] text-gray-500">Top 5</span>
+        <!-- NBH per cabang & kategori audit -->
+        <div class="mt-6 grid grid-cols-1 gap-6 text-sm lg:grid-cols-12">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white lg:col-span-7 shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">NBH per cabang</h2>
+                    <span class="text-xs text-gray-500">Top 5</span>
                 </div>
 
-                <div v-if="topLossStores.length > 0" class="space-y-4">
+                <div v-if="topLossStores.length > 0" class="space-y-4 p-5">
                     <div v-for="store in topLossStores" :key="store.store_code">
-                        <div class="flex items-center justify-between gap-3 mb-1.5">
-                            <span class="font-medium text-gray-900 truncate">
+                        <div class="mb-2 flex items-center justify-between gap-3">
+                            <span class="truncate font-medium text-gray-900">
                                 {{ store.store_name }} <span class="font-normal text-gray-400 tabular-nums">{{ store.store_code }}</span>
                             </span>
-                            <span class="tabular-nums font-semibold text-gray-900 shrink-0">{{ formatRupiah(store.total_loss) }}</span>
+                            <span class="shrink-0 font-medium text-gray-900 tabular-nums">{{ formatRupiah(store.total_loss) }}</span>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                             <div
-                                class="h-full rounded-full bg-rose-400 transition-all duration-500"
+                                class="h-full rounded-full bg-rose-400 transition-[width] duration-500"
                                 :style="{ width: `${Math.max(5, (store.total_loss / maxStoreLoss) * 100)}%` }"
                             ></div>
                         </div>
                     </div>
                 </div>
-                <div v-else class="py-8 text-center text-gray-400">
-                    Belum ada data NBH.
+                <div v-else class="py-10 text-center text-gray-400">
+                    Belum ada data NBH
                 </div>
             </section>
 
-            <section class="lg:col-span-5 bg-white rounded-lg border border-gray-200 p-5">
-                <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-sm font-semibold text-gray-900">Kategori Audit</h2>
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white lg:col-span-5 shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Kategori</h2>
                 </div>
 
-                <div v-if="by_category.length > 0" class="space-y-2.5">
+                <div v-if="by_category.length > 0" class="space-y-2 p-5">
                     <button
                         v-for="cat in by_category"
                         :key="cat.id"
                         type="button"
                         @click="setCategory(cat.id)"
-                        class="w-full text-left p-3 rounded-lg border transition-colors cursor-pointer select-none"
+                        class="w-full cursor-pointer select-none rounded-lg border p-3 text-left transition-colors duration-150"
                         :class="selectedCategory === String(cat.id) ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'"
                     >
                         <div class="flex items-center justify-between gap-3">
                             <span class="font-medium text-gray-900">{{ cat.name }}</span>
-                            <span class="tabular-nums text-gray-500 shrink-0"><span class="font-semibold text-gray-900">{{ cat.count }}</span> temuan</span>
+                            <span class="shrink-0 text-gray-500 tabular-nums"><span class="font-medium text-gray-900">{{ cat.count }}</span> temuan</span>
                         </div>
-                        <div class="mt-2 w-full bg-gray-100 rounded-full h-1 overflow-hidden">
+                        <div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-100">
                             <div
-                                class="h-full rounded-full bg-blue-500 transition-all duration-500"
+                                class="h-full rounded-full bg-blue-500 transition-[width] duration-500"
                                 :style="{ width: `${totalFindingsCount > 0 ? (cat.count / totalFindingsCount) * 100 : 0}%` }"
                             ></div>
                         </div>
-                        <div class="mt-2 flex flex-wrap gap-x-4 text-[11px] text-gray-500 tabular-nums">
+                        <div class="mt-2 flex flex-wrap gap-x-4 text-xs text-gray-500 tabular-nums">
                             <span>NBH <span class="font-medium text-gray-800">{{ formatRupiah(cat.total_loss) }}</span></span>
                             <span>NBL <span class="font-medium text-gray-800">{{ formatRupiah(cat.total_surplus) }}</span></span>
                         </div>
                     </button>
                 </div>
-                <div v-else class="py-8 text-center text-gray-400">
-                    Belum ada data kategori.
+                <div v-else class="py-10 text-center text-gray-400">
+                    Belum ada data kategori
                 </div>
             </section>
         </div>
 
-        <!-- Rekap per Cabang -->
-        <section class="bg-white rounded-lg border border-gray-200 overflow-hidden text-xs">
-            <div class="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h2 class="text-sm font-semibold text-gray-900">Rekap per Cabang</h2>
-                <div class="flex flex-wrap items-center gap-x-4 text-[11px] text-gray-500 tabular-nums">
-                    <span>NBH <span class="font-semibold text-gray-900">{{ formatRupiah(total_loss) }}</span></span>
-                    <span>NBL <span class="font-semibold text-gray-900">{{ formatRupiah(total_surplus) }}</span></span>
+        <!-- Rekap per cabang -->
+        <section class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-gray-200 px-5 py-4 sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+                <h2 class="text-base font-semibold text-gray-900">Rekap per cabang</h2>
+                <div class="flex flex-wrap items-center gap-x-4 text-xs text-gray-500 tabular-nums">
+                    <span>NBH <span class="font-medium text-gray-900">{{ formatRupiah(total_loss) }}</span></span>
+                    <span>NBL <span class="font-medium text-gray-900">{{ formatRupiah(total_surplus) }}</span></span>
                 </div>
             </div>
 
-            <!-- Mobile list -->
-            <div class="block md:hidden divide-y divide-gray-100">
-                <div v-if="store_losses.length === 0" class="p-5 text-center text-gray-400">
-                    Belum ada data cabang.
+            <!-- Mobile -->
+            <div class="block divide-y divide-gray-100 md:hidden">
+                <div v-if="storeLossList.length === 0" class="p-6 text-center text-gray-400">
+                    Belum ada data cabang
                 </div>
-                <div v-for="s in store_losses" :key="'m-sl-' + s.store_code" class="px-4 py-3">
+                <div v-for="s in paginatedStoreLosses" :key="'m-sl-' + currentPage + '-' + s.store_code" class="page-fade p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <div class="font-medium text-gray-900">{{ s.store_name }}</div>
-                            <div class="text-[11px] text-gray-400 tabular-nums mt-0.5">{{ s.store_code }} · {{ s.area || '-' }}</div>
+                            <div class="mt-0.5 text-xs text-gray-400 tabular-nums">{{ s.store_code }} · {{ s.area || '-' }}</div>
                         </div>
-                        <div class="text-right tabular-nums shrink-0">
-                            <div class="font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</div>
-                            <div class="text-[11px] text-gray-500">NBL {{ formatRupiah(s.total_surplus) }}</div>
+                        <div class="shrink-0 text-right tabular-nums">
+                            <div class="font-medium text-gray-900">{{ formatRupiah(s.total_loss) }}</div>
+                            <div class="text-xs text-gray-500">NBL {{ formatRupiah(s.total_surplus) }}</div>
                         </div>
                     </div>
-                    <div class="mt-1.5 text-[11px] text-gray-500 tabular-nums">{{ s.total_audits }} audit · {{ s.total_findings }} temuan</div>
+                    <div class="mt-2 text-xs text-gray-500 tabular-nums">{{ s.total_audits }} audit · {{ s.total_findings }} temuan</div>
                 </div>
             </div>
 
-            <!-- Desktop table -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <!-- Desktop -->
+            <div class="hidden overflow-x-auto md:block">
+                <table class="w-full table-fixed text-left text-sm">
+                    <!-- Lebar kolom dikunci supaya tidak bergeser antar halaman -->
+                    <colgroup>
+                        <col />
+                        <col class="w-40" />
+                        <col class="w-24" />
+                        <col class="w-24" />
+                        <col class="w-44" />
+                        <col class="w-40" />
+                    </colgroup>
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
                         <tr>
-                            <th class="px-5 py-3 font-medium">Toko</th>
-                            <th class="px-5 py-3 font-medium">Area</th>
-                            <th class="px-5 py-3 font-medium text-right">Audit</th>
-                            <th class="px-5 py-3 font-medium text-right">Temuan</th>
-                            <th class="px-5 py-3 font-medium text-right">NBH</th>
-                            <th class="px-5 py-3 font-medium text-right">NBL</th>
+                            <th class="h-10 px-5 font-medium">Toko</th>
+                            <th class="h-10 px-5 font-medium">Area</th>
+                            <th class="h-10 px-5 text-right font-medium">Audit</th>
+                            <th class="h-10 px-5 text-right font-medium">Temuan</th>
+                            <th class="h-10 px-5 text-right font-medium">NBH</th>
+                            <th class="h-10 px-5 text-right font-medium">NBL</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr v-for="s in store_losses" :key="s.store_code" class="hover:bg-gray-50/70">
-                            <td class="px-5 py-3 font-medium text-gray-900">
+                    <tbody :key="currentPage" class="page-fade divide-y divide-gray-100">
+                        <tr v-for="s in paginatedStoreLosses" :key="s.store_code" class="transition-colors duration-150 hover:bg-gray-50/70">
+                            <td class="h-14 truncate px-5 font-medium text-gray-900" :title="s.store_name + ' · ' + s.store_code">
                                 {{ s.store_name }} <span class="font-normal text-gray-400 tabular-nums">{{ s.store_code }}</span>
                             </td>
-                            <td class="px-5 py-3 text-gray-600">{{ s.area || '-' }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums text-gray-600">{{ s.total_audits }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-medium text-gray-900">{{ s.total_findings }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_surplus) }}</td>
+                            <td class="h-14 truncate px-5 text-gray-600">{{ s.area || '-' }}</td>
+                            <td class="h-14 px-5 text-right text-gray-600 tabular-nums">{{ s.total_audits }}</td>
+                            <td class="h-14 px-5 text-right font-medium text-gray-900 tabular-nums">{{ s.total_findings }}</td>
+                            <td class="h-14 whitespace-nowrap px-5 text-right font-medium text-gray-900 tabular-nums">{{ formatRupiah(s.total_loss) }}</td>
+                            <td class="h-14 whitespace-nowrap px-5 text-right font-medium text-gray-900 tabular-nums">{{ formatRupiah(s.total_surplus) }}</td>
+                        </tr>
+                        <!-- Satu ruang kosong (tanpa garis) setinggi baris yang tidak terisi -->
+                        <tr v-if="fillerRows" aria-hidden="true">
+                            <td colspan="6" :style="{ height: fillerRows * 56 + 'px' }"></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                :current-page="currentPage"
+                :per-page="perPage"
+                :total-items="storeLossList.length"
+                @update:current-page="currentPage = $event"
+            />
         </section>
     </AppLayout>
 </template>

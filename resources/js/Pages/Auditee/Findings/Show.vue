@@ -53,8 +53,21 @@ const getInitialDeadline = () => {
 // Check if action plan has already been filled with content
 const hasActionPlan = computed(() => Boolean(props.finding.action_plan && props.finding.action_plan.action_plan));
 
+// Action plan hanya bisa diisi/diubah saat status OPEN atau IN_PROGRESS
+const canEditActionPlan = computed(() =>
+    Boolean(props.finding.can_edit_action_plan) && ['OPEN', 'IN_PROGRESS'].includes(props.finding.status)
+);
+
+// Setelah action plan ada, deadline dikunci (backend mempertahankan deadline tersimpan)
+const isDeadlineLocked = computed(() => Boolean(props.finding.deadline_locked));
+
+// Evidence tidak bisa diunggah lagi setelah VERIFIED / CLOSED
+const canUploadEvidence = computed(() =>
+    Boolean(props.finding.can_upload_evidence) && !['VERIFIED', 'CLOSED'].includes(props.finding.status)
+);
+
 // Action Plan State & Form
-const isEditing = ref(!hasActionPlan.value);
+const isEditing = ref(!hasActionPlan.value && canEditActionPlan.value);
 
 const actionPlanForm = useForm({
     action_plan: props.finding.action_plan?.action_plan || '',
@@ -140,9 +153,9 @@ const confirmModal = ref({
 const openConfirm = (config) => {
     confirmModal.value = {
         show: true,
-        title: config.title || 'Konfirmasi Tindakan',
+        title: config.title || 'Konfirmasi tindakan',
         message: config.message || 'Apakah Anda yakin ingin melanjutkan?',
-        confirmText: config.confirmText || 'Ya, Lanjutkan',
+        confirmText: config.confirmText || 'Ya, lanjutkan',
         type: config.type || 'primary',
         action: config.action,
     };
@@ -157,9 +170,9 @@ const handleConfirm = () => {
 
 const deleteEvidence = (evidenceId) => {
     openConfirm({
-        title: 'Hapus Bukti Perbaikan (Evidence)',
-        message: 'Apakah Anda yakin ingin menghapus file foto bukti perbaikan ini?',
-        confirmText: 'Ya, Hapus Bukti',
+        title: 'Hapus evidence',
+        message: 'Hapus file bukti perbaikan ini?',
+        confirmText: 'Ya, hapus',
         type: 'danger',
         action: () => router.delete(route('auditee.evidences.destroy', evidenceId), { preserveScroll: true }),
     });
@@ -167,353 +180,349 @@ const deleteEvidence = (evidenceId) => {
 </script>
 
 <template>
-    <AppLayout :title="`Tindak Lanjut Finding #${finding.id}`">
-        <Head :title="`Tindak Lanjut Finding #${finding.id}`" />
+    <AppLayout :title="`Tindak lanjut temuan #${finding.id}`">
+        <Head :title="`Tindak lanjut temuan #${finding.id}`" />
 
-        <!-- Breadcrumb & Header -->
+        <!-- Breadcrumb + judul + badge -->
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('auditee.audits.index')" class="hover:text-blue-600">Audit Toko</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route('auditee.audits.index')" class="transition-colors duration-150 hover:text-blue-600">Audit toko</Link>
                 <span>/</span>
-                <Link :href="route('auditee.audits.show', finding.audit.id)" class="hover:text-blue-600">{{ finding.audit.audit_number }}</Link>
+                <Link :href="route('auditee.audits.show', finding.audit.id)" class="tabular-nums transition-colors duration-150 hover:text-blue-600">{{ finding.audit.audit_number }}</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">Finding Detail & Tindak Lanjut</span>
+                <span class="font-medium text-gray-900">Tindak lanjut</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
-                Finding #{{ String(finding.id).padStart(4, '0') }}
+            <h1 class="flex flex-wrap items-center gap-3 text-2xl font-semibold leading-8 text-gray-900">
+                <span class="tabular-nums">Temuan #{{ String(finding.id).padStart(4, '0') }}</span>
                 <SeverityBadge :severity="finding.severity" />
                 <StatusBadge :status="finding.status" />
             </h1>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left 2 Cols: Finding Info (Read-Only) + Action Plan Form + Evidence Form -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- 1. Detail Temuan Auditor (Read Only) -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-4">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 flex items-center justify-between">
-                        <span>1. Informasi Temuan Auditor (Read-Only)</span>
-                        <span class="text-[11px] text-gray-400 font-normal">Ditetapkan oleh Auditor</span>
-                    </h2>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="space-y-6 lg:col-span-2">
+                <!-- Temuan (read-only) -->
+                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Temuan</h2>
+                    </div>
 
-                    <div class="grid grid-cols-2 gap-4 bg-gray-50/70 p-3 rounded border border-gray-100">
-                        <div>
-                            <span class="text-gray-500 font-medium">Kategori:</span>
-                            <div class="font-semibold text-gray-900 mt-0.5">{{ finding.category }}</div>
-                        </div>
-                        <div>
-                            <span class="text-gray-500 font-medium">SOP / SE Acuan:</span>
-                            <div class="font-semibold text-gray-900 mt-0.5">
-                                {{ finding.sop ? `${finding.sop.code} - ${finding.sop.title}` : '—' }}
+                    <div class="space-y-4 p-5">
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div>
+                                <dt class="text-xs text-gray-500">Kategori</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ finding.category }}</dd>
                             </div>
+                            <div>
+                                <dt class="text-xs text-gray-500">SOP / SE</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {{ finding.sop ? `${finding.sop.code} - ${finding.sop.title}` : '—' }}
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div>
+                            <div class="mb-1 text-xs text-gray-500">Uraian</div>
+                            <p class="leading-relaxed text-gray-900">{{ finding.finding }}</p>
                         </div>
-                    </div>
 
-                    <div>
-                        <div class="text-gray-500 font-medium mb-1">Uraian Temuan:</div>
-                        <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium">{{ finding.finding }}</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div v-if="finding.auditor_opinion">
-                            <div class="text-gray-500 font-medium mb-1">Opini Auditor:</div>
-                            <p class="text-gray-800 leading-relaxed bg-gray-50/50 p-2.5 rounded border border-gray-100">{{ finding.auditor_opinion }}</p>
+                            <div class="mb-1 text-xs text-gray-500">Opini auditor</div>
+                            <p class="leading-relaxed text-gray-800">{{ finding.auditor_opinion }}</p>
                         </div>
 
                         <div>
-                            <div class="text-gray-500 font-medium mb-1">Rekomendasi Perbaikan:</div>
-                            <p class="text-blue-900 font-medium leading-relaxed bg-blue-50/40 p-2.5 rounded border border-blue-100">{{ finding.recommendation }}</p>
+                            <div class="mb-1 text-xs text-gray-500">Rekomendasi</div>
+                            <p class="rounded-lg border border-blue-100 bg-blue-50/40 p-3 font-medium leading-relaxed text-blue-900">{{ finding.recommendation }}</p>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- 2. Formulir Action Plan & Response Toko -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-4">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 flex items-center justify-between">
-                        <span>2. Rencana Tindak Lanjut (Action Plan)</span>
+                <!-- Action plan -->
+                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Action plan</h2>
                         <div class="flex items-center gap-2">
                             <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
                             <button
-                                v-if="hasActionPlan && !isEditing && finding.can_edit_action_plan"
+                                v-if="hasActionPlan && !isEditing && canEditActionPlan"
                                 type="button"
                                 @click="startEditing"
-                                class="px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
+                                title="Edit action plan"
+                                aria-label="Edit action plan"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 text-blue-600 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-700"
                             >
-                                Edit Action Plan
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 7.5 3 3" /></svg>
                             </button>
-                        </div>
-                    </h2>
-
-                    <!-- View Mode (Read-Only setelah disimpan) -->
-                    <div v-if="hasActionPlan && !isEditing" class="space-y-4">
-                        <div>
-                            <div class="text-gray-500 font-medium mb-1">Rencana Perbaikan (Action Plan):</div>
-                            <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium whitespace-pre-line">{{ finding.action_plan.action_plan }}</p>
-                        </div>
-
-                        <div>
-                            <div class="text-gray-500 font-medium mb-1">Tanggapan / Response Toko:</div>
-                            <p class="text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200/70 font-medium whitespace-pre-line">{{ finding.action_plan.response }}</p>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4 bg-gray-50/70 p-3 rounded border border-gray-100">
-                            <div>
-                                <span class="text-gray-500 font-medium">PIC Perbaikan:</span>
-                                <div class="font-semibold text-gray-900 mt-0.5">{{ finding.action_plan.pic }}</div>
-                            </div>
-
-                            <div>
-                                <span class="text-gray-500 font-medium">Target Deadline:</span>
-                                <div class="font-semibold text-gray-900 mt-0.5">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam Monitoring' : '—') }}</div>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Edit / Input Form Mode -->
-                    <form v-else-if="finding.can_edit_action_plan" @submit.prevent="submitActionPlan" class="space-y-4">
+                    <!-- View mode (read-only setelah disimpan) -->
+                    <div v-if="hasActionPlan && !isEditing" class="space-y-4 p-5">
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1.5">
-                                Rencana Perbaikan (Action Plan) <span class="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                v-model="actionPlanForm.action_plan"
-                                rows="3"
-                                required
-                                :disabled="!finding.can_edit_action_plan"
-                                placeholder="Jelaskan langkah konkret perbaikan yang akan/sedang dilakukan toko..."
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                            ></textarea>
-                            <div v-if="actionPlanForm.errors.action_plan" class="text-red-600 text-[11px] mt-1">{{ actionPlanForm.errors.action_plan }}</div>
+                            <div class="mb-1 text-xs text-gray-500">Rencana perbaikan</div>
+                            <p class="whitespace-pre-line font-medium leading-relaxed text-gray-900">{{ finding.action_plan.action_plan }}</p>
                         </div>
 
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1.5">
-                                Tanggapan / Response Toko <span class="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                v-model="actionPlanForm.response"
-                                rows="3"
-                                required
-                                :disabled="!finding.can_edit_action_plan"
-                                placeholder="Tanggapan toko mengenai temuan ini..."
-                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                            ></textarea>
-                            <div v-if="actionPlanForm.errors.response" class="text-red-600 text-[11px] mt-1">{{ actionPlanForm.errors.response }}</div>
+                            <div class="mb-1 text-xs text-gray-500">Tanggapan toko</div>
+                            <p class="whitespace-pre-line leading-relaxed text-gray-900">{{ finding.action_plan.response }}</p>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-gray-100 pt-4">
                             <div>
-                                <label class="block font-medium text-gray-700 mb-1.5">
-                                    PIC Perbaikan <span class="text-red-500">*</span>
+                                <dt class="text-xs text-gray-500">PIC</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ finding.action_plan.pic }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs text-gray-500">Deadline</dt>
+                                <dd class="mt-1 text-sm text-gray-900 tabular-nums">{{ formatDate(finding.action_plan.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam monitoring' : '—') }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Edit / input mode -->
+                    <form v-else-if="canEditActionPlan" @submit.prevent="submitActionPlan">
+                        <div class="space-y-4 p-5">
+                            <div>
+                                <label for="ap-action-plan" class="mb-2 block text-sm font-medium text-gray-900">
+                                    Rencana perbaikan <span class="text-red-600">*</span>
                                 </label>
-                                <input
-                                    v-model="actionPlanForm.pic"
-                                    type="text"
+                                <textarea
+                                    id="ap-action-plan"
+                                    v-model="actionPlanForm.action_plan"
+                                    rows="3"
                                     required
-                                    :disabled="!finding.can_edit_action_plan"
-                                    placeholder="Nama penanggung jawab toko..."
-                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                                <div v-if="actionPlanForm.errors.pic" class="text-red-600 text-[11px] mt-1">{{ actionPlanForm.errors.pic }}</div>
+                                    class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-gray-100 shadow-sm"
+                                ></textarea>
+                                <div v-if="actionPlanForm.errors.action_plan" class="mt-1 text-xs text-red-600">{{ actionPlanForm.errors.action_plan }}</div>
                             </div>
 
                             <div>
-                                <label class="block font-medium text-gray-700 mb-1.5">
-                                    Target Deadline <span v-if="finding.severity !== 'CONTINUOUS'" class="text-red-500">*</span>
-                                    <span v-else class="text-purple-600 font-normal text-[11px]">(Opsional - Dalam Monitoring)</span>
+                                <label for="ap-response" class="mb-2 block text-sm font-medium text-gray-900">
+                                    Tanggapan toko <span class="text-red-600">*</span>
                                 </label>
-                                <input
-                                    v-model="actionPlanForm.deadline"
-                                    type="date"
-                                    :required="finding.severity !== 'CONTINUOUS'"
-                                    :disabled="!finding.can_edit_action_plan"
-                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                                <div v-if="actionPlanForm.errors.deadline" class="text-red-600 text-[11px] mt-1">{{ actionPlanForm.errors.deadline }}</div>
+                                <textarea
+                                    id="ap-response"
+                                    v-model="actionPlanForm.response"
+                                    rows="3"
+                                    required
+                                    class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-gray-100 shadow-sm"
+                                ></textarea>
+                                <div v-if="actionPlanForm.errors.response" class="mt-1 text-xs text-red-600">{{ actionPlanForm.errors.response }}</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="ap-pic" class="mb-2 block text-sm font-medium text-gray-900">
+                                        PIC <span class="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        id="ap-pic"
+                                        v-model="actionPlanForm.pic"
+                                        type="text"
+                                        required
+                                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-gray-100 shadow-sm"
+                                    />
+                                    <div v-if="actionPlanForm.errors.pic" class="mt-1 text-xs text-red-600">{{ actionPlanForm.errors.pic }}</div>
+                                </div>
+
+                                <div v-if="isDeadlineLocked">
+                                    <div class="mb-2 block text-sm font-medium text-gray-900">Deadline</div>
+                                    <div class="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 tabular-nums">
+                                        <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                        </svg>
+                                        <span>{{ formatDate(finding.action_plan?.deadline, finding.severity === 'CONTINUOUS' ? 'Dalam monitoring' : '—') }}</span>
+                                    </div>
+                                </div>
+
+                                <div v-else>
+                                    <label for="ap-deadline" class="mb-2 block text-sm font-medium text-gray-900">
+                                        Deadline <span v-if="finding.severity !== 'CONTINUOUS'" class="text-red-600">*</span>
+                                        <span v-else class="text-xs font-normal text-purple-600">(opsional, dalam monitoring)</span>
+                                    </label>
+                                    <input
+                                        id="ap-deadline"
+                                        v-model="actionPlanForm.deadline"
+                                        type="date"
+                                        :required="finding.severity !== 'CONTINUOUS'"
+                                        class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-gray-100 shadow-sm"
+                                    />
+                                    <div v-if="actionPlanForm.errors.deadline" class="mt-1 text-xs text-red-600">{{ actionPlanForm.errors.deadline }}</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="pt-2 flex items-center justify-end gap-2">
+                        <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
                             <button
                                 v-if="hasActionPlan"
                                 type="button"
                                 @click="cancelEditing"
-                                class="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                                class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
                                 :disabled="actionPlanForm.processing"
-                                class="px-4 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-xs"
+                                class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                             >
-                                {{ actionPlanForm.processing ? 'Menyimpan...' : (hasActionPlan ? 'Simpan Perubahan' : 'Simpan Action Plan') }}
+                                {{ actionPlanForm.processing ? 'Menyimpan…' : (hasActionPlan ? 'Simpan perubahan' : 'Simpan action plan') }}
                             </button>
                         </div>
                     </form>
 
-                    <!-- Empty state jika tidak bisa edit dan belum pernah diisi -->
-                    <div v-else class="p-4 bg-gray-50 rounded border border-dashed border-gray-200 text-center text-gray-500 text-xs">
-                        Belum ada rencana tindak lanjut yang diisi.
+                    <!-- Kosong: tidak bisa edit dan belum pernah diisi -->
+                    <div v-else class="p-8 text-center text-sm text-gray-500">
+                        Belum ada action plan
                     </div>
-                </div>
+                </section>
 
-                <!-- 3. Upload & Bukti Perbaikan (Evidences) -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-4">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100">
-                        3. Bukti Perbaikan (Evidence)
-                    </h2>
+                <!-- Evidence -->
+                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+                    <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                        <h2 class="text-base font-semibold text-gray-900">Evidence</h2>
+                        <span v-if="canUploadEvidence" class="text-xs text-gray-500">JPG, PNG, PDF, XLSX, DOCX · maks 10 MB</span>
+                    </div>
 
-                    <!-- Upload Form (if open/in progress) -->
-                    <div v-if="finding.can_upload_evidence" class="bg-gray-50/70 p-4 rounded-lg border border-gray-200 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="font-semibold text-gray-900">Unggah Bukti Perbaikan (Foto / Dokumen)</div>
-                            <span class="text-[11px] text-gray-500">Maks. 10 MB (JPG, PNG, PDF, XLSX, DOCX)</span>
-                        </div>
-
-                        <!-- Rejected Notice Banner if any evidence rejected -->
+                    <!-- Form unggah (jika masih terbuka) -->
+                    <div v-if="canUploadEvidence" class="space-y-4 border-b border-gray-200 bg-gray-50/70 p-5">
+                        <!-- Ada evidence yang ditolak -->
                         <div
                             v-if="finding.evidences.some(e => e.verification_status === 'REJECTED')"
-                            class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 text-amber-900"
+                            class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900"
                         >
-                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <div class="text-xs">
-                                <strong class="font-bold">Bukti Sebelumnya Ditolak Auditor:</strong> Silakan tinjau catatan penolakan pada daftar bukti di bawah, lalu unggah file bukti perbaikan baru yang telah disesuaikan.
+                            <div class="text-sm">
+                                <span class="font-medium">Bukti sebelumnya ditolak.</span> Cek catatan penolakan di bawah, lalu unggah bukti baru.
                             </div>
                         </div>
 
-                        <form @submit.prevent="submitEvidence" class="space-y-3">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block font-medium text-gray-700 mb-1">Pilih File Bukti <span class="text-red-500">*</span></label>
-                                    <input
-                                        ref="fileInputRef"
-                                        type="file"
-                                        required
-                                        accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx"
-                                        @change="handleFileChange"
-                                        class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-xs file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50 cursor-pointer"
-                                    />
-                                    <div v-if="evidenceForm.errors.file" class="text-red-600 text-[11px] mt-1">{{ evidenceForm.errors.file }}</div>
-                                </div>
-
-                                <div>
-                                    <label class="block font-medium text-gray-700 mb-1">Keterangan Bukti</label>
-                                    <input
-                                        v-model="evidenceForm.description"
-                                        type="text"
-                                        placeholder="Contoh: Foto fisik stok ulang revisi, Berita Acara..."
-                                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                    <div v-if="evidenceForm.errors.description" class="text-red-600 text-[11px] mt-1">{{ evidenceForm.errors.description }}</div>
-                                </div>
+                        <form @submit.prevent="submitEvidence" class="flex flex-col gap-4 sm:flex-row sm:items-end">
+                            <div class="min-w-0 flex-1">
+                                <label for="evidence-file" class="mb-2 block text-sm font-medium text-gray-900">File <span class="text-red-600">*</span></label>
+                                <input
+                                    id="evidence-file"
+                                    ref="fileInputRef"
+                                    type="file"
+                                    required
+                                    accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+                                    @change="handleFileChange"
+                                    class="block w-full cursor-pointer text-sm text-gray-500 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50"
+                                />
+                                <div v-if="evidenceForm.errors.file" class="mt-1 text-xs text-red-600">{{ evidenceForm.errors.file }}</div>
                             </div>
 
-                            <div class="flex justify-end">
-                                <button
-                                    type="submit"
-                                    :disabled="evidenceForm.processing"
-                                    class="px-4 py-1.5 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-xs inline-flex items-center gap-1.5"
-                                >
-                                    <svg v-if="evidenceForm.processing" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>{{ evidenceForm.processing ? 'Mengunggah...' : 'Unggah Bukti Baru' }}</span>
-                                </button>
+                            <div class="min-w-0 flex-1">
+                                <label for="evidence-description" class="mb-2 block text-sm font-medium text-gray-900">Keterangan</label>
+                                <input
+                                    id="evidence-description"
+                                    v-model="evidenceForm.description"
+                                    type="text"
+                                    class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                                <div v-if="evidenceForm.errors.description" class="mt-1 text-xs text-red-600">{{ evidenceForm.errors.description }}</div>
                             </div>
+
+                            <button
+                                type="submit"
+                                :disabled="evidenceForm.processing"
+                                class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                                <svg v-if="evidenceForm.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>{{ evidenceForm.processing ? 'Mengunggah…' : 'Unggah' }}</span>
+                            </button>
                         </form>
                     </div>
 
-                    <!-- Evidences List -->
-                    <div v-if="finding.evidences.length === 0" class="text-center py-6 text-gray-400 italic bg-gray-50 rounded border border-dashed border-gray-200">
-                        Belum ada bukti perbaikan yang diunggah.
+                    <!-- Daftar evidence -->
+                    <div v-if="finding.evidences.length === 0" class="p-8 text-center text-gray-400">
+                        Belum ada evidence
                     </div>
 
-                    <div v-else class="space-y-3">
+                    <div v-else>
                         <div
                             v-for="e in finding.evidences"
                             :key="e.id"
-                            class="p-3.5 rounded border border-gray-200 bg-gray-50/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                            class="flex items-start gap-4 border-b border-gray-100 px-5 py-4 last:border-b-0"
                         >
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-semibold text-gray-900">{{ e.description || 'Bukti Perbaikan' }}</span>
+                            <div class="min-w-0 flex-1 space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-medium text-gray-900">{{ e.description || 'Bukti perbaikan' }}</span>
                                     <StatusBadge :status="e.verification_status" />
                                 </div>
-                                <div class="text-[11px] text-gray-500">
-                                    Diupload pada: {{ e.uploaded_at }}
+                                <div class="text-xs text-gray-500 tabular-nums">
+                                    {{ e.uploaded_at }}<template v-if="e.verified_by"> · Diverifikasi {{ e.verified_by }}</template>
                                 </div>
-                                <div v-if="e.rejection_reason" class="text-[11px] text-red-600 font-medium">
-                                    Catatan Penolakan Auditor: {{ e.rejection_reason }}
-                                </div>
-                                <div v-if="e.verified_by" class="text-[11px] text-gray-600">
-                                    Diverifikasi oleh: {{ e.verified_by }}
+                                <div v-if="e.rejection_reason" class="text-xs font-medium text-red-600">
+                                    Catatan penolakan: {{ e.rejection_reason }}
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2">
+                            <div class="flex shrink-0 items-center gap-2">
                                 <a
                                     :href="e.file_url"
                                     target="_blank"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                                    rel="noopener noreferrer"
+                                    title="Lihat file"
+                                    aria-label="Lihat file"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                                 >
-                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                    Lihat File
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                                 </a>
                                 <button
                                     v-if="e.can_delete"
                                     @click="deleteEvidence(e.id)"
-                                    class="px-2.5 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 font-medium transition-colors"
+                                    title="Hapus evidence"
+                                    aria-label="Hapus evidence"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 text-red-600 transition-colors duration-150 hover:bg-red-50"
                                 >
-                                    Hapus
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
 
-            <!-- Right 1 Col: Metadata & Workflow Status -->
+            <!-- Kolom kanan: info audit + alur -->
             <div class="space-y-6">
-                <!-- Meta -->
-                <div class="bg-white rounded border border-gray-200 p-5 shadow-xs text-xs space-y-4">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100">
-                        Informasi Toko & Audit
-                    </h3>
-
-                    <div>
-                        <div class="text-gray-500">Nomor Audit</div>
-                        <div class="tabular-nums font-semibold text-gray-900 mt-0.5">{{ finding.audit.audit_number }}</div>
+                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm">
+                    <div class="flex h-14 items-center border-b border-gray-200 px-5">
+                        <h3 class="text-base font-semibold text-gray-900">Audit</h3>
                     </div>
 
-                    <div>
-                        <div class="text-gray-500">Toko</div>
-                        <div class="font-semibold text-gray-900 mt-0.5">{{ finding.store.name }} ({{ finding.store.code }})</div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <div class="text-gray-500">NBH (Nilai Barang Hilang)</div>
-                            <div class="text-base font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.loss_amount) }}</div>
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-4 p-5">
+                        <div class="col-span-2">
+                            <dt class="text-xs text-gray-500">No. audit</dt>
+                            <dd class="mt-1 text-sm text-gray-900 tabular-nums">{{ finding.audit.audit_number }}</dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-xs text-gray-500">Toko</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ finding.store.name }} ({{ finding.store.code }})</dd>
                         </div>
                         <div>
-                            <div class="text-gray-500">NBL (Nilai Barang Lebih)</div>
-                            <div class="text-base font-bold text-gray-900 mt-0.5">{{ formatRupiah(finding.surplus_amount) }}</div>
+                            <dt class="text-xs text-gray-500" title="Nilai barang hilang">NBH</dt>
+                            <dd class="mt-1 text-base font-medium text-gray-900 tabular-nums">{{ formatRupiah(finding.loss_amount) }}</dd>
                         </div>
-                    </div>
+                        <div>
+                            <dt class="text-xs text-gray-500" title="Nilai barang lebih">NBL</dt>
+                            <dd class="mt-1 text-base font-medium text-gray-900 tabular-nums">{{ formatRupiah(finding.surplus_amount) }}</dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-xs text-gray-500">Status</dt>
+                            <dd class="mt-1"><StatusBadge :status="finding.status" /></dd>
+                        </div>
+                    </dl>
+                </section>
 
-                    <div>
-                        <div class="text-gray-500">Status Finding Saat Ini</div>
-                        <div class="mt-1"><StatusBadge :status="finding.status" /></div>
-                    </div>
-                </div>
-
-                <!-- Workflow Step Tracker (Live Animated) -->
+                <!-- Workflow Step Tracker -->
                 <WorkflowTracker
                     :status="finding.status"
                     :has-documents="finding.has_documents || (finding.audit && finding.audit.documents_count > 0)"
@@ -523,7 +532,7 @@ const deleteEvidence = (evidenceId) => {
             </div>
         </div>
 
-        <!-- Modern Action Confirmation Modal -->
+        <!-- Action Confirmation Modal -->
         <ConfirmModal
             :show="confirmModal.show"
             :title="confirmModal.title"

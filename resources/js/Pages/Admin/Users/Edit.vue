@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -8,6 +9,10 @@ const props = defineProps({
         required: true,
     },
     roles: {
+        type: Array,
+        default: () => [],
+    },
+    stores: {
         type: Array,
         default: () => [],
     },
@@ -20,6 +25,31 @@ const form = useForm({
     password: '',
     role: props.user.role || 'auditor',
     is_active: Boolean(props.user.is_active),
+    stores: props.user.stores || [],
+});
+
+const roleLabels = {
+    admin: 'Admin',
+    chief: 'Chief Auditor',
+    asmen: 'Asisten Manager',
+    coordinator: 'Koordinator Audit',
+    auditor: 'Staff Audit',
+    auditee: 'Auditee toko',
+};
+
+const storeSearch = ref('');
+const filteredStores = computed(() => {
+    const q = storeSearch.value.toLowerCase().trim();
+    if (!q) return props.stores;
+    return props.stores.filter((s) =>
+        (s.name && s.name.toLowerCase().includes(q)) || (s.code && s.code.toLowerCase().includes(q)),
+    );
+});
+
+const storesError = computed(() => {
+    if (form.errors.stores) return form.errors.stores;
+    const key = Object.keys(form.errors).find((k) => k.startsWith('stores.'));
+    return key ? form.errors[key] : '';
 });
 
 const submit = () => {
@@ -28,111 +58,155 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout :title="`Edit User - ${user.name}`">
-        <Head :title="`Edit User - ${user.name} — Admin`" />
+    <AppLayout :title="`Edit pengguna ${user.name}`">
+        <Head :title="`Edit pengguna ${user.name}`" />
 
+        <!-- Header -->
         <div class="mb-6">
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('admin.users.index')" class="hover:text-blue-600">Users</Link>
+            <div class="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                <Link :href="route('admin.users.index')" class="transition-colors duration-150 hover:text-blue-600">Pengguna</Link>
                 <span>/</span>
-                <span class="text-gray-900 font-medium">{{ user.name }}</span>
+                <span class="font-medium text-gray-900">{{ user.name }}</span>
             </div>
-            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Data Pengguna</h1>
-            <p class="text-xs text-gray-500 mt-1">Perbarui informasi profil, role jabatan, dan status akun</p>
+            <h1 class="text-2xl font-semibold leading-8 text-gray-900">Edit pengguna</h1>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
-            <form @submit.prevent="submit" class="space-y-4">
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
-                    <input
-                        v-model="form.name"
-                        type="text"
-                        required
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <div v-if="form.errors.name" class="text-red-600 text-[11px] mt-1">{{ form.errors.name }}</div>
+        <form @submit.prevent="submit" class="max-w-3xl space-y-6 text-sm">
+            <!-- Profil -->
+            <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Profil</h2>
                 </div>
+                <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium text-gray-900">Nama lengkap <span class="text-red-600">*</span></label>
+                        <input
+                            v-model="form.name"
+                            type="text"
+                            required
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                        />
+                        <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</div>
+                    </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">Email <span class="text-red-600">*</span></label>
                         <input
                             v-model="form.email"
                             type="email"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         />
-                        <div v-if="form.errors.email" class="text-red-600 text-[11px] mt-1">{{ form.errors.email }}</div>
+                        <div v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">No. WhatsApp</label>
                         <input
                             v-model="form.phone"
                             type="text"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm tabular-nums focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         />
-                        <div v-if="form.errors.phone" class="text-red-600 text-[11px] mt-1">{{ form.errors.phone }}</div>
+                        <div v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</div>
                     </div>
                 </div>
+            </section>
 
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Password Baru (Biarkan kosong jika tidak diubah)</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        placeholder="••••••••"
-                        class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <div v-if="form.errors.password" class="text-red-600 text-[11px] mt-1">{{ form.errors.password }}</div>
+            <!-- Akses -->
+            <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex h-14 items-center justify-between gap-4 border-b border-gray-200 px-5">
+                    <h2 class="text-base font-semibold text-gray-900">Akses</h2>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4 pt-1">
+                <div class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Role / Jabatan <span class="text-red-500">*</span></label>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">Role <span class="text-red-600">*</span></label>
                         <select
                             v-model="form.role"
                             required
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         >
-                            <option value="admin">Admin (Administrator - Full Access)</option>
-                            <option value="chief">Chief Auditor (Head of Audit)</option>
-                            <option value="asmen">Asisten Manager (Asmen)</option>
-                            <option value="coordinator">Koordinator Audit</option>
-                            <option value="auditor">Staff Audit</option>
+                            <option v-for="r in roles" :key="r" :value="r">{{ roleLabels[r] || r }}</option>
                         </select>
-                        <div v-if="form.errors.role" class="text-red-600 text-[11px] mt-1">{{ form.errors.role }}</div>
+                        <div v-if="form.errors.role" class="mt-1 text-sm text-red-600">{{ form.errors.role }}</div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Status Akun</label>
+                        <label class="mb-2 block text-sm font-medium text-gray-900">Status</label>
                         <select
                             v-model="form.is_active"
-                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white pl-3 pr-9 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
                         >
                             <option :value="true">Aktif</option>
                             <option :value="false">Nonaktif</option>
                         </select>
                     </div>
+
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium text-gray-900">Password baru <span class="font-normal text-gray-500">kosongkan jika tidak diubah</span></label>
+                        <input
+                            v-model="form.password"
+                            type="password"
+                            autocomplete="new-password"
+                            placeholder="••••••••"
+                            class="h-10 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                        />
+                        <div v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</div>
+                    </div>
+
+                    <div v-if="form.role === 'auditee'" class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium text-gray-900">
+                            Toko <span class="text-red-600">*</span>
+                            <span class="ml-1 font-normal text-gray-500 tabular-nums">{{ form.stores.length }} dipilih</span>
+                        </label>
+                        <div class="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+                            <div class="border-b border-gray-200 p-2">
+                                <input
+                                    v-model="storeSearch"
+                                    type="text"
+                                    placeholder="Cari"
+                                    aria-label="Cari toko"
+                                    class="h-9 w-full rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-sm"
+                                />
+                            </div>
+                            <div class="max-h-60 overflow-y-auto py-1">
+                                <label
+                                    v-for="s in filteredStores"
+                                    :key="s.id"
+                                    class="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 hover:bg-gray-50"
+                                >
+                                    <input
+                                        v-model="form.stores"
+                                        type="checkbox"
+                                        :value="s.id"
+                                        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600/20"
+                                    />
+                                    <span class="w-20 shrink-0 text-gray-500 tabular-nums">{{ s.code }}</span>
+                                    <span class="min-w-0 truncate text-gray-900">{{ s.name }}</span>
+                                </label>
+                                <div v-if="!filteredStores.length" class="px-3 py-2 text-sm text-gray-500">Tidak ada toko</div>
+                            </div>
+                        </div>
+                        <div v-if="storesError" class="mt-1 text-sm text-red-600">{{ storesError }}</div>
+                    </div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                <!-- Footer -->
+                <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
                     <Link
                         :href="route('admin.users.index')"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 shadow-sm"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
+                        class="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                     >
-                        {{ form.processing ? 'Menyimpan...' : 'Perbarui User' }}
+                        {{ form.processing ? 'Menyimpan…' : 'Perbarui user' }}
                     </button>
                 </div>
-            </form>
-        </div>
+            </section>
+        </form>
     </AppLayout>
 </template>

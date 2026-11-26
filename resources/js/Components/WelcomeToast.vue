@@ -59,27 +59,27 @@ const closeToast = () => {
 <template>
     <div
         v-if="isVisible && welcomeData"
-        class="fixed top-5 right-5 z-50 max-w-sm w-full bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-toast-in text-slate-800"
+        class="animate-toast-in fixed right-5 top-5 z-50 w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
     >
-        <div class="p-4 flex items-start gap-3.5">
+        <div class="flex items-start gap-3 p-4">
             <!-- Icon Badge -->
-            <div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
 
             <!-- Content -->
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Login Berhasil</span>
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span class="text-xs font-medium text-emerald-700">Login berhasil</span>
+                    
                 </div>
-                <h3 class="text-sm font-bold text-slate-900 truncate mt-0.5">
-                    Selamat Datang, {{ welcomeData.name }}!
+                <h3 class="mt-0.5 truncate text-sm font-medium text-slate-900">
+                    Selamat datang, {{ welcomeData.name }}
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Masuk sebagai <span class="font-semibold text-slate-700">{{ welcomeData.role }}</span>
+                    Masuk sebagai <span class="font-medium text-slate-700">{{ welcomeData.role }}</span>
                 </p>
             </div>
 
@@ -87,10 +87,10 @@ const closeToast = () => {
             <button
                 @click="closeToast"
                 type="button"
-                class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+                class="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors duration-150 hover:text-slate-600" aria-label="Tutup"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
@@ -98,8 +98,8 @@ const closeToast = () => {
         <!-- Progress Countdown Bar -->
         <div class="h-1 w-full bg-slate-100">
             <div
-                class="h-full bg-emerald-600 transition-all duration-75 ease-linear"
-                :style="{ width: progress + '%' }"
+                class="h-full origin-left bg-emerald-600 transition-transform duration-75 ease-linear"
+                :style="{ transform: 'scaleX(' + progress / 100 + ')' }"
             ></div>
         </div>
     </div>

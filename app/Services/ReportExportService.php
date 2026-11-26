@@ -9,6 +9,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportService
 {
+    // Label Indonesia untuk kolom status di file Excel (nilai di database tetap kode)
+    private const STATUS_LABELS = [
+        'OPEN'                 => 'Terbuka',
+        'IN_PROGRESS'          => 'Dalam proses',
+        'WAITING_VERIFICATION' => 'Menunggu verifikasi',
+        'VERIFIED'             => 'Terverifikasi',
+        'CLOSED'               => 'Ditutup',
+    ];
+
+    private const REVIEW_LABELS = [
+        'APPROVED'       => 'Disetujui',
+        'ADJUSTED'       => 'Disesuaikan',
+        'PENDING_REVIEW' => 'Menunggu review',
+    ];
+
     /**
      * Export all findings to true Excel (.xls) table format.
      */
@@ -32,7 +47,7 @@ class ReportExportService
                 'sop',
                 'severityReviewer',
                 'actionPlan',
-            ])->orderByDesc('id');
+            ])->whereHas('audit')->orderByDesc('id');
 
             if ($categoryId && $categoryId !== 'all') {
                 $query->where(function ($sub) use ($categoryId) {
@@ -91,7 +106,13 @@ class ReportExportService
 
             $no = 1;
             foreach ($findings as $f) {
+                if (!$f->audit) {
+                    continue;
+                }
+
                 $statusSeverity = $f->is_severity_locked ? ($f->severity_status ?? 'APPROVED') : 'PENDING_REVIEW';
+                $statusSeverity = self::REVIEW_LABELS[$statusSeverity] ?? $statusSeverity;
+                $findingStatus = self::STATUS_LABELS[$f->status] ?? $f->status;
                 $reviewer = $f->severityReviewer->name ?? ($f->is_severity_locked ? 'Koordinator' : '-');
                 $auditDate = $f->audit->audit_date ? $f->audit->audit_date->format('d/m/Y') : '-';
                 $deadline = $f->actionPlan?->deadline ? $f->actionPlan->deadline->format('d/m/Y') : '-';
@@ -121,7 +142,7 @@ class ReportExportService
                 echo '<td>' . nl2br(htmlspecialchars($f->actionPlan->response ?? '-')) . '</td>';
                 echo '<td>' . htmlspecialchars($f->actionPlan->pic ?? '-') . '</td>';
                 echo '<td class="center">' . $deadline . '</td>';
-                echo '<td class="center font-bold">' . htmlspecialchars($f->status) . '</td>';
+                echo '<td class="center font-bold">' . htmlspecialchars($findingStatus) . '</td>';
                 echo '<td class="center">' . $createdAt . '</td>';
                 echo '</tr>';
             }
@@ -251,7 +272,7 @@ class ReportExportService
 
         return response()->stream(function () use ($categoryId) {
             $baseFindingQuery = function () use ($categoryId) {
-                $q = Finding::query();
+                $q = Finding::query()->whereHas('audit');
                 if ($categoryId && $categoryId !== 'all') {
                     $q->where(function ($sub) use ($categoryId) {
                         $sub->where('category_id', $categoryId)
@@ -307,11 +328,11 @@ class ReportExportService
             echo '<tr><td colspan="2" class="header-section">2. STATUS PENYELESAIAN TEMUAN</td></tr>';
             echo '<tr><th>Status Workflow</th><th>Jumlah Temuan</th></tr>';
             foreach ([
-                'OPEN'                 => 'Open',
-                'IN_PROGRESS'          => 'In Progress',
-                'WAITING_VERIFICATION' => 'Waiting Verification',
-                'VERIFIED'             => 'Verified',
-                'CLOSED'               => 'Closed',
+                'OPEN'                 => 'Terbuka',
+                'IN_PROGRESS'          => 'Dalam proses',
+                'WAITING_VERIFICATION' => 'Menunggu verifikasi',
+                'VERIFIED'             => 'Terverifikasi',
+                'CLOSED'               => 'Ditutup',
             ] as $key => $label) {
                 echo '<tr>';
                 echo '<td>' . $label . '</td>';
@@ -323,7 +344,7 @@ class ReportExportService
             // 3. Category Distribution
             echo '<tr><td colspan="2" class="header-section">3. TEMUAN PER KATEGORI AUDIT</td></tr>';
             echo '<tr><th>Kategori Audit</th><th>Jumlah Temuan</th></tr>';
-            $categories = AuditCategory::withCount('findings')->get();
+            $categories = AuditCategory::withCount(['findings' => fn ($q) => $q->whereHas('audit')])->get();
             foreach ($categories as $cat) {
                 echo '<tr>';
                 echo '<td>' . htmlspecialchars($cat->name) . '</td>';

@@ -23,9 +23,20 @@ class AuthenticatedSessionController extends Controller
             'canResetPassword' => Route::has('password.request'),
             'status'           => session('status'),
             'showDemoAccounts' => SystemSetting::isDemoAccountsEnabled(),
-            'otpSent'          => (bool) session('otp_sent'),
-            'verifiedPhone'    => session('verified_phone'),
-            'maskedPhone'      => session('masked_phone'),
+        ]);
+    }
+
+    /**
+     * Halaman masuk lewat WhatsApp OTP (dipisah dari halaman email & kata sandi).
+     * Request/verify OTP memakai back(), jadi otomatis kembali ke halaman ini.
+     */
+    public function createWhatsapp(): Response
+    {
+        return Inertia::render('Auth/LoginWhatsapp', [
+            'status'        => session('status'),
+            'otpSent'       => (bool) session('otp_sent'),
+            'verifiedPhone' => session('verified_phone'),
+            'maskedPhone'   => session('masked_phone'),
         ]);
     }
 
