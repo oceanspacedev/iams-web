@@ -86,7 +86,7 @@ const deleteQualityFinding = () => {
         </div>
 
         <!-- Main Corporate Audit Sheet -->
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden text-xs max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden text-xs w-full">
             <!-- Sheet Header -->
             <div class="p-6 border-b border-gray-200 bg-slate-50/70">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

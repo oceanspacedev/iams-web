@@ -4,6 +4,7 @@ import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
+import Pagination from '@/Components/Pagination.vue';
 
 const props = defineProps({
     by_severity: {
@@ -50,6 +51,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    years: {
+        type: Array,
+        default: () => [],
+    },
     selected_category: {
         type: [String, Number],
         default: 'all',
@@ -57,7 +62,38 @@ const props = defineProps({
 });
 
 const exportDropdownOpen = ref(false);
+const selectedYear = ref(props.years[0] ?? new Date().getFullYear());
 const selectedCategory = ref(String(props.selected_category || 'all'));
+const storeSearch = ref('');
+const currentPage = ref(1);
+const perPage = 10;
+
+const filteredStoreLosses = computed(() => {
+    const list = props.store_losses || [];
+    const q = storeSearch.value.toLowerCase().trim();
+    if (!q) return list;
+    return list.filter((s) =>
+        (s.store_name && s.store_name.toLowerCase().includes(q)) ||
+        (s.store_code && s.store_code.toLowerCase().includes(q)) ||
+        (s.area && s.area.toLowerCase().includes(q))
+    );
+});
+
+watch(() => filteredStoreLosses.value.length, (n) => {
+    const last = Math.max(1, Math.ceil(n / perPage));
+    if (currentPage.value > last) currentPage.value = last;
+});
+
+watch(storeSearch, () => {
+    currentPage.value = 1;
+});
+
+const paginatedStoreLosses = computed(() =>
+    filteredStoreLosses.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage)
+);
+const fillerRows = computed(() =>
+    filteredStoreLosses.value.length > perPage ? perPage - paginatedStoreLosses.value.length : 0
+);
 
 watch(() => props.selected_category, (newVal) => {
     selectedCategory.value = String(newVal || 'all');
@@ -211,17 +247,12 @@ const topLossStores = computed(() => {
             <!-- Action Controls: Category Filter Box & Download Button -->
             <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
                 <!-- Kotak Navigasi Filter Kategori -->
-                <div class="relative flex items-center bg-white border border-gray-300 rounded-md shadow-2xs hover:border-gray-400 transition-colors">
-                    <div class="flex items-center gap-1.5 pl-3 pr-1 py-2 text-xs text-gray-500 pointer-events-none select-none">
-                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        <span class="font-medium text-gray-600 hidden sm:inline">Kategori:</span>
-                    </div>
+                <div class="relative flex h-8 items-center bg-white border border-gray-300 rounded shadow-2xs hover:border-gray-400 transition-colors">
+                    <span class="pl-3 pr-1 text-xs font-medium text-gray-600 hidden sm:inline pointer-events-none select-none">Kategori:</span>
                     <select
                         v-model="selectedCategory"
                         @change="handleCategoryChange"
-                        class="text-xs font-semibold text-gray-800 bg-transparent py-2 pl-1 pr-8 border-0 focus:ring-0 focus:outline-hidden cursor-pointer"
+                        class="h-full text-xs font-semibold text-gray-800 bg-transparent py-0 pl-2 sm:pl-1 pr-8 border-0 focus:ring-0 focus:outline-hidden cursor-pointer"
                     >
                         <option value="all">Semua Kategori (All)</option>
                         <option
@@ -239,18 +270,9 @@ const topLossStores = computed(() => {
                     <button
                         type="button"
                         @click="exportDropdownOpen = !exportDropdownOpen"
-                        class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
+                        class="inline-flex h-8 items-center px-3.5 text-xs font-medium rounded bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer"
                     >
-                        <span>Download Laporan Excel</span>
-                        <svg
-                            class="w-3.5 h-3.5 text-emerald-200 transition-transform duration-200"
-                            :class="{ 'rotate-180': exportDropdownOpen }"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
+                        Download Laporan Excel
                     </button>
 
                     <!-- Invisible overlay to close dropdown when clicking outside -->
@@ -271,67 +293,83 @@ const topLossStores = computed(() => {
                     >
                         <div
                             v-if="exportDropdownOpen"
-                            class="absolute right-0 mt-1.5 w-56 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-xs origin-top-right divide-y divide-gray-100"
+                            class="absolute right-0 mt-1.5 w-72 rounded-lg border border-gray-200 bg-white shadow-lg z-30 text-xs origin-top-right divide-y divide-gray-100 overflow-hidden"
                         >
-                            <a
-                                :href="route('admin.reports.export-findings', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
-                                @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                            >
-                                Rekap Seluruh Temuan (.xls)
-                            </a>
+                            <div class="px-3.5 py-2 bg-gray-50 flex items-center justify-between gap-3">
+                                <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Tahun Rekap</span>
+                                <select
+                                    v-model="selectedYear"
+                                    aria-label="Tahun Rekap"
+                                    class="h-7 rounded border-gray-300 bg-white py-0 pl-2 pr-6 text-xs font-medium text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                    <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                                </select>
+                            </div>
 
-                            <a
-                                :href="route('admin.reports.export-stores', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
-                                @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                            >
-                                Rekapitulasi per Toko (.xls)
-                            </a>
+                            <div class="py-1 divide-y divide-gray-100">
+                                <a
+                                    :href="route('admin.reports.export-period', { year: selectedYear })"
+                                    @click="exportDropdownOpen = false"
+                                    class="block px-3.5 py-2.5 hover:bg-gray-50 transition-colors"
+                                >
+                                    <div class="font-medium text-gray-900">Rekap Temuan &amp; Status {{ selectedYear }} (.xlsx)</div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5">Resume bulanan &amp; detail temuan per toko</div>
+                                </a>
 
-                            <a
-                                :href="route('admin.reports.export-summary', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
-                                @click="exportDropdownOpen = false"
-                                class="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium"
-                            >
-                                Ringkasan Eksekutif (.xls)
-                            </a>
+                                <a
+                                    :href="route('admin.reports.export-stores', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
+                                    @click="exportDropdownOpen = false"
+                                    class="block px-3.5 py-2.5 hover:bg-gray-50 transition-colors"
+                                >
+                                    <div class="font-medium text-gray-900">Rekapitulasi NBH &amp; NBL Toko (.xls)</div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5">Total audit, temuan, NBH &amp; NBL per cabang</div>
+                                </a>
+
+                                <a
+                                    :href="route('admin.reports.export-summary', selectedCategory !== 'all' ? { category_id: selectedCategory } : {})"
+                                    @click="exportDropdownOpen = false"
+                                    class="block px-3.5 py-2.5 hover:bg-gray-50 transition-colors"
+                                >
+                                    <div class="font-medium text-gray-900">Ringkasan Eksekutif Audit (.xls)</div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5">Statistik severity, kategori &amp; penyelesaian</div>
+                                </a>
+                            </div>
                         </div>
                     </Transition>
                 </div>
             </div>
         </div>
 
-        <!-- Key Metrics: flat tinted cards -->
+        <!-- Key Metrics: clean uniform cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
-            <div class="rounded-lg border border-rose-100 bg-rose-50/70 p-4">
-                <div class="text-xs font-medium text-rose-700">Total NBH</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_loss) }}</div>
-                <div class="mt-1 text-[11px] text-rose-700/70">Nilai Barang Hilang</div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBH</div>
+                <div class="mt-1.5 text-xl sm:text-2xl font-bold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_loss) }}</div>
+                <div class="mt-1 text-[11px] text-gray-400">Nilai Barang Hilang</div>
             </div>
 
-            <div class="rounded-lg border border-indigo-100 bg-indigo-50/70 p-4">
-                <div class="text-xs font-medium text-indigo-700">Total NBL</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_surplus) }}</div>
-                <div class="mt-1 text-[11px] text-indigo-700/70">Nilai Barang Lebih</div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total NBL</div>
+                <div class="mt-1.5 text-xl sm:text-2xl font-bold text-gray-900 tabular-nums leading-tight">{{ formatRupiah(total_surplus) }}</div>
+                <div class="mt-1 text-[11px] text-gray-400">Nilai Barang Lebih</div>
             </div>
 
-            <div class="rounded-lg border border-sky-100 bg-sky-50/70 p-4">
-                <div class="text-xs font-medium text-sky-700">Total Temuan</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ totalFindingsCount }}</div>
-                <div class="mt-1 text-[11px] text-sky-700/70 tabular-nums">{{ by_status.OPEN || 0 }} masih open</div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Total Temuan</div>
+                <div class="mt-1.5 text-xl sm:text-2xl font-bold text-gray-900 tabular-nums leading-tight">{{ totalFindingsCount }}</div>
+                <div class="mt-1 text-[11px] text-gray-400 tabular-nums">{{ by_status.OPEN || 0 }} masih open</div>
             </div>
 
-            <div class="rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
-                <div class="text-xs font-medium text-emerald-700">Tingkat Closed</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ calculatedCompletionRate }}%</div>
-                <div class="mt-1 text-[11px] text-emerald-700/70 tabular-nums">{{ closed_on_time || 0 }} on time · {{ closed_overdue || 0 }} overdue</div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Tingkat Closed</div>
+                <div class="mt-1.5 text-xl sm:text-2xl font-bold text-gray-900 tabular-nums leading-tight">{{ calculatedCompletionRate }}%</div>
+                <div class="mt-1 text-[11px] text-gray-400 tabular-nums">{{ closed_on_time || 0 }} on time · {{ closed_overdue || 0 }} overdue</div>
             </div>
 
-            <div class="rounded-lg border border-amber-100 bg-amber-50/70 p-4">
-                <div class="text-xs font-medium text-amber-700">Risiko Tinggi</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums leading-tight">{{ highRiskCount }}</div>
-                <div class="mt-1 text-[11px] text-amber-700/70">Temuan major</div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Risiko Tinggi</div>
+                <div class="mt-1.5 text-xl sm:text-2xl font-bold text-gray-900 tabular-nums leading-tight">{{ highRiskCount }}</div>
+                <div class="mt-1 text-[11px] text-gray-400">Temuan major</div>
             </div>
         </div>
 
@@ -446,7 +484,7 @@ const topLossStores = computed(() => {
                         </div>
                         <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                             <div
-                                class="h-full rounded-full bg-rose-400 transition-all duration-500"
+                                class="h-full rounded-full bg-blue-600 transition-all duration-500"
                                 :style="{ width: `${Math.max(5, (store.total_loss / maxStoreLoss) * 100)}%` }"
                             ></div>
                         </div>
@@ -495,20 +533,30 @@ const topLossStores = computed(() => {
 
         <!-- Rekap per Cabang -->
         <section class="bg-white rounded-lg border border-gray-200 overflow-hidden text-xs">
-            <div class="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h2 class="text-sm font-semibold text-gray-900">Rekap per Cabang</h2>
-                <div class="flex flex-wrap items-center gap-x-4 text-[11px] text-gray-500 tabular-nums">
-                    <span>NBH <span class="font-semibold text-gray-900">{{ formatRupiah(total_loss) }}</span></span>
-                    <span>NBL <span class="font-semibold text-gray-900">{{ formatRupiah(total_surplus) }}</span></span>
+            <div class="px-5 py-3.5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <h2 class="text-sm font-semibold text-gray-900">Rekap per Cabang</h2>
+                    <div class="flex flex-wrap items-center gap-x-3 text-[11px] text-gray-500 tabular-nums">
+                        <span>NBH <span class="font-semibold text-gray-900">{{ formatRupiah(total_loss) }}</span></span>
+                        <span>NBL <span class="font-semibold text-gray-900">{{ formatRupiah(total_surplus) }}</span></span>
+                    </div>
+                </div>
+                <div class="w-full sm:w-64">
+                    <input
+                        v-model="storeSearch"
+                        type="text"
+                        placeholder="Cari toko, kode, atau area..."
+                        class="w-full px-3 py-1.5 text-xs rounded border-gray-300 bg-white focus:border-slate-500 focus:ring-slate-500"
+                    />
                 </div>
             </div>
 
             <!-- Mobile list -->
             <div class="block md:hidden divide-y divide-gray-100">
-                <div v-if="store_losses.length === 0" class="p-5 text-center text-gray-400">
-                    Belum ada data cabang.
+                <div v-if="filteredStoreLosses.length === 0" class="p-6 text-center text-gray-400">
+                    Belum ada data cabang yang sesuai.
                 </div>
-                <div v-for="s in store_losses" :key="'m-sl-' + s.store_code" class="px-4 py-3">
+                <div v-for="s in paginatedStoreLosses" :key="'m-sl-' + currentPage + '-' + s.store_code" class="px-4 py-3">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <div class="font-medium text-gray-900">{{ s.store_name }}</div>
@@ -525,31 +573,54 @@ const topLossStores = computed(() => {
 
             <!-- Desktop table -->
             <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="w-full table-fixed text-left">
+                    <colgroup>
+                        <col />
+                        <col class="w-36" />
+                        <col class="w-20" />
+                        <col class="w-24" />
+                        <col class="w-40" />
+                        <col class="w-36" />
+                    </colgroup>
                     <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3 font-medium">Toko</th>
-                            <th class="px-5 py-3 font-medium">Area</th>
-                            <th class="px-5 py-3 font-medium text-right">Audit</th>
-                            <th class="px-5 py-3 font-medium text-right">Temuan</th>
-                            <th class="px-5 py-3 font-medium text-right">NBH</th>
-                            <th class="px-5 py-3 font-medium text-right">NBL</th>
+                            <th class="px-5 py-2.5 font-medium">Toko</th>
+                            <th class="px-5 py-2.5 font-medium">Area</th>
+                            <th class="px-5 py-2.5 font-medium text-right">Audit</th>
+                            <th class="px-5 py-2.5 font-medium text-right">Temuan</th>
+                            <th class="px-5 py-2.5 font-medium text-right">NBH</th>
+                            <th class="px-5 py-2.5 font-medium text-right">NBL</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr v-for="s in store_losses" :key="s.store_code" class="hover:bg-gray-50/70">
-                            <td class="px-5 py-3 font-medium text-gray-900">
+                        <tr v-if="filteredStoreLosses.length === 0">
+                            <td colspan="6" class="px-5 py-8 text-center text-gray-400">
+                                Belum ada data cabang yang sesuai.
+                            </td>
+                        </tr>
+                        <tr v-for="s in paginatedStoreLosses" :key="s.store_code" class="hover:bg-gray-50/70 transition-colors">
+                            <td class="px-5 py-2.5 truncate font-medium text-gray-900" :title="s.store_name + ' · ' + s.store_code">
                                 {{ s.store_name }} <span class="font-normal text-gray-400 tabular-nums">{{ s.store_code }}</span>
                             </td>
-                            <td class="px-5 py-3 text-gray-600">{{ s.area || '-' }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums text-gray-600">{{ s.total_audits }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-medium text-gray-900">{{ s.total_findings }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_surplus) }}</td>
+                            <td class="px-5 py-2.5 truncate text-gray-600">{{ s.area || '-' }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums text-gray-600">{{ s.total_audits }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums font-medium text-gray-900">{{ s.total_findings }}</td>
+                            <td class="px-5 py-2.5 whitespace-nowrap text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_loss) }}</td>
+                            <td class="px-5 py-2.5 whitespace-nowrap text-right tabular-nums font-semibold text-gray-900">{{ formatRupiah(s.total_surplus) }}</td>
+                        </tr>
+                        <tr v-if="fillerRows" aria-hidden="true">
+                            <td colspan="6" :style="{ height: fillerRows * 37 + 'px' }"></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                :current-page="currentPage"
+                :per-page="perPage"
+                :total-items="filteredStoreLosses.length"
+                @update:current-page="currentPage = $event"
+            />
         </section>
     </AppLayout>
 </template>

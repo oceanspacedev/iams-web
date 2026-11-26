@@ -115,28 +115,22 @@ const deleteStore = (store) => {
                 <button
                     @click="importModalOpen = true"
                     type="button"
-                    class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
+                    class="inline-flex items-center px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
                 >
-                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
                     Import CSV
                 </button>
 
                 <a
                     :href="route('coordinator.stores.download-template')"
-                    class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 transition-colors shadow-2xs cursor-pointer"
+                    class="inline-flex items-center px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
                     title="Download Seluruh Master Data Toko ke format Excel"
                 >
-                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
                     Download Data
                 </a>
 
                 <Link
                     :href="route('coordinator.stores.create')"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 sm:py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
                 >
                     + Unit Manual
                 </Link>
@@ -378,7 +372,7 @@ const deleteStore = (store) => {
                         <button
                             type="submit"
                             :disabled="importForm.processing"
-                            class="px-4 py-1.5 rounded bg-slate-900 text-white hover:bg-slate-800 font-semibold disabled:opacity-50"
+                            class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50"
                         >
                             {{ importForm.processing ? 'Mengunggah...' : 'Upload & Import' }}
                         </button>

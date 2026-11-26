@@ -32,7 +32,7 @@ const submit = () => {
             <p class="text-xs text-gray-500 mt-1">Daftarkan data cabang ritel, gudang logistik, atau badan usaha pemeriksaan finance</p>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs w-full text-xs">
             <form @submit.prevent="submit" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

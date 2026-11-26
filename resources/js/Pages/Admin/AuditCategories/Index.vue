@@ -153,7 +153,7 @@ const paginatedCategories = computed(() => {
             <div class="flex items-center">
                 <button
                     @click="openCreateModal"
-                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+                    class="inline-flex items-center justify-center w-full sm:w-auto gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
                 >
                     + Tambah Kategori
                 </button>

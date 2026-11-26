@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditCategory;
 use App\Models\Finding;
 use App\Models\Sop;
+use App\Models\Store;
+use App\Services\FindingRecapExcelService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FindingController extends Controller
 {
@@ -24,6 +27,8 @@ class FindingController extends Controller
                 'audit_id'     => $f->audit_id,
                 'audit_number' => $f->audit?->audit_number ?? '—',
                 'store'        => $f->audit?->store?->name ?? '—',
+                'store_id'     => $f->audit?->store_id,
+                'period'       => $f->audit?->audit_date?->format('Y-m'),
                 'auditor'      => $f->audit?->auditor?->name ?? '—',
                 'category'     => $f->category?->name ?? '—',
                 'finding'      => $f->finding,
@@ -40,7 +45,25 @@ class FindingController extends Controller
         return Inertia::render('Admin/Findings/Index', [
             'findings'   => $findings,
             'categories' => AuditCategory::active()->get(['id', 'name']),
+            'stores'     => Store::orderBy('name')->get(['id', 'code', 'name']),
+            'periods'    => FindingRecapExcelService::availablePeriods(),
         ]);
+    }
+
+    /**
+     * Excel rekap temuan (format rekap operasional), filter toko dan bulan opsional.
+     */
+    public function export(Request $request, FindingRecapExcelService $excel): BinaryFileResponse
+    {
+        $validated = $request->validate([
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'period'   => ['nullable', 'date_format:Y-m'],
+        ]);
+
+        return $excel->findings(
+            isset($validated['store_id']) ? (int) $validated['store_id'] : null,
+            $validated['period'] ?? null,
+        );
     }
 
     public function show(Request $request, Finding $finding): Response

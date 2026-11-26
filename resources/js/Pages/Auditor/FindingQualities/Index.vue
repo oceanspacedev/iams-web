@@ -83,7 +83,7 @@ const categoryColor = qualityCategoryColor;
 
             <Link
                 :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.create`)"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
             >
                 + Buat Laporan Baru
             </Link>

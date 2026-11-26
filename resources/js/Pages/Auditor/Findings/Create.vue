@@ -49,7 +49,7 @@ const submit = () => {
             <p class="text-xs text-gray-500 mt-1">Audit No: {{ audit.audit_number }} • Toko: {{ audit.store.name }}</p>
         </div>
 
-        <div class="bg-white rounded border border-gray-200 p-6 shadow-xs max-w-4xl">
+        <div class="bg-white rounded border border-gray-200 p-6 shadow-xs w-full">
             <form @submit.prevent="submit" class="space-y-6 text-xs">
                 <!-- Row 1: Category, SOP, Severity -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -172,7 +172,7 @@ const submit = () => {
                 </div>
 
                 <!-- Row 2: NBH (Nilai Barang Hilang) & NBL (Nilai Barang Lebih) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium text-gray-700 mb-1.5">
                             NBH - Nilai Barang Hilang (Rp)

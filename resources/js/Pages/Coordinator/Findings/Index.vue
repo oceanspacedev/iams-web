@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -15,12 +16,29 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    stores: {
+        type: Array,
+        default: () => [],
+    },
+    periods: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const searchQuery = ref('');
 const lockFilter = ref('');
 const severityFilter = ref('');
+const storeFilter = ref('');
+const periodFilter = ref('');
 const currentPage = ref(1);
+
+const exportUrl = computed(() => {
+    const params = {};
+    if (storeFilter.value) params.store_id = storeFilter.value;
+    if (periodFilter.value) params.period = periodFilter.value;
+    return route('coordinator.findings.export', params);
+});
 
 const formatRupiah = (number) => {
     if (!number) return 'Rp 0';
@@ -49,12 +67,14 @@ const filteredFindings = computed(() => {
                 : !f.is_severity_locked;
 
         const matchesSeverity = !severityFilter.value || f.severity === severityFilter.value;
+        const matchesStore = !storeFilter.value || String(f.store_id) === storeFilter.value;
+        const matchesPeriod = !periodFilter.value || f.period === periodFilter.value;
 
-        return matchesSearch && matchesLock && matchesSeverity;
+        return matchesSearch && matchesLock && matchesSeverity && matchesStore && matchesPeriod;
     });
 });
 
-watch([searchQuery, lockFilter, severityFilter], () => {
+watch([searchQuery, lockFilter, severityFilter, storeFilter, periodFilter], () => {
     currentPage.value = 1;
 });
 
@@ -62,6 +82,12 @@ const paginatedFindings = computed(() => {
     const start = (currentPage.value - 1) * 10;
     return filteredFindings.value.slice(start, start + 10);
 });
+
+const storeOptions = computed(() => [
+    { value: '', label: 'Semua Toko' },
+    ...props.stores.map((s) => ({ value: String(s.id), label: s.name, hint: s.code })),
+]);
+const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...props.periods]);
 </script>
 
 <template>
@@ -69,15 +95,33 @@ const paginatedFindings = computed(() => {
         <Head title="Review Severity — Koordinator" />
 
         <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
             <div>
                 <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Review & Standardisasi Severity Temuan</h1>
-                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity</p>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity ({{ filteredFindings.length }} Temuan terdaftar)</p>
             </div>
-            <div>
-                <span class="text-xs text-gray-500 tabular-nums">
-                    {{ filteredFindings.length }} Temuan terdaftar
-                </span>
+            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <SearchableSelect
+                    v-model="storeFilter"
+                    :options="storeOptions"
+                    size="sm"
+                    aria-label="Toko"
+                    class="min-w-0 flex-1 sm:w-52 sm:flex-none"
+                />
+                <SearchableSelect
+                    v-model="periodFilter"
+                    :options="periodOptions"
+                    size="sm"
+                    aria-label="Bulan"
+                    class="min-w-0 flex-1 sm:w-44 sm:flex-none"
+                />
+                <a
+                    :href="exportUrl"
+                    class="inline-flex h-8 items-center justify-center rounded bg-blue-600 px-3.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 whitespace-nowrap"
+                    title="Unduh file Excel rekap temuan sesuai pilihan toko dan bulan"
+                >
+                    Download Rekap Temuan (.xlsx)
+                </a>
             </div>
         </div>
 

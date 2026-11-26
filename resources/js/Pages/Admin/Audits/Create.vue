@@ -144,7 +144,7 @@ const submit = () => {
     <AppLayout title="Jadwalkan Audit Baru">
         <Head title="Jadwalkan Audit Baru — Admin" />
 
-        <div class="max-w-5xl">
+        <div class="w-full">
             <!-- Page Header -->
             <div class="mb-5">
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">

@@ -89,7 +89,7 @@ const confirmFactoryReset = () => {
             </div>
         </div>
 
-        <div class="space-y-6 max-w-4xl">
+        <div class="space-y-6 w-full">
             <!-- 1. Akun Demo Toggle -->
             <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-2xs">
                 <div class="flex items-center justify-between">

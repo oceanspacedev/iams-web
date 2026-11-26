@@ -41,7 +41,7 @@ const submit = () => {
             <p class="text-xs text-gray-500 mt-1">Perbarui informasi profil, role jabatan, dan status akun</p>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-2xl text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs w-full text-xs">
             <form @submit.prevent="submit" class="space-y-4">
                 <div>
                     <label class="block font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>

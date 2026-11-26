@@ -108,7 +108,7 @@ const submit = () => {
             </p>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs max-w-4xl text-xs">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-xs w-full text-xs">
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- STEP 1: Pilih Finding Referensi -->
                 <div>
@@ -153,7 +153,7 @@ const submit = () => {
                             {{ form.quality_categories.length === Object.keys(categories).length ? 'Batal Pilih Semua' : 'Pilih Semua (4 Kategori)' }}
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                         <div
                             v-for="(cat, key) in categories"
                             :key="key"
@@ -279,14 +279,14 @@ const submit = () => {
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
                         :href="route(`${currentPrefix.value || currentPrefix}finding-qualities.index`)"
-                        class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        class="px-3.5 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-xs font-medium"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 shadow-xs"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium disabled:opacity-50 shadow-xs"
                     >
                         <svg v-if="form.processing" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
