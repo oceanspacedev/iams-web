@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
@@ -9,6 +9,10 @@ import Pagination from '@/Components/Pagination.vue';
 
 const props = defineProps({
     findings: {
+        type: Array,
+        default: () => [],
+    },
+    audits: {
         type: Array,
         default: () => [],
     },
@@ -25,6 +29,23 @@ const props = defineProps({
         default: () => [],
     },
 });
+
+const showCreateFindingModal = ref(false);
+const selectedAuditId = ref(props.audits[0]?.id ? String(props.audits[0].id) : '');
+
+const auditOptions = computed(() =>
+    props.audits.map((a) => ({
+        value: String(a.id),
+        label: `${a.audit_number} — ${a.store}`,
+        hint: a.category,
+    }))
+);
+
+const goToCreateFinding = () => {
+    if (!selectedAuditId.value) return;
+    showCreateFindingModal.value = false;
+    router.visit(route('coordinator.findings.create', selectedAuditId.value));
+};
 
 const searchQuery = ref('');
 const lockFilter = ref('');
@@ -95,40 +116,33 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
         <Head title="Review Severity — Koordinator" />
 
         <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
                 <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Review & Standardisasi Severity Temuan</h1>
                 <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Koordinator meninjau usulan severity dari auditor, menyesuaikan level risiko, dan mengunci severity ({{ filteredFindings.length }} Temuan terdaftar)</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                <SearchableSelect
-                    v-model="storeFilter"
-                    :options="storeOptions"
-                    size="sm"
-                    aria-label="Toko"
-                    class="min-w-0 flex-1 sm:w-52 sm:flex-none"
-                />
-                <SearchableSelect
-                    v-model="periodFilter"
-                    :options="periodOptions"
-                    size="sm"
-                    aria-label="Bulan"
-                    class="min-w-0 flex-1 sm:w-44 sm:flex-none"
-                />
+            <div class="flex items-center gap-2 shrink-0">
                 <a
                     :href="exportUrl"
-                    class="inline-flex h-8 items-center justify-center rounded bg-blue-600 px-3.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 whitespace-nowrap"
+                    class="inline-flex h-8 items-center justify-center rounded border border-gray-300 bg-white px-3.5 text-xs font-medium text-gray-700 shadow-xs transition-colors hover:bg-gray-50 whitespace-nowrap"
                     title="Unduh file Excel rekap temuan sesuai pilihan toko dan bulan"
                 >
                     Download Rekap Temuan (.xlsx)
                 </a>
+                <button
+                    type="button"
+                    @click="showCreateFindingModal = true"
+                    class="inline-flex h-8 items-center justify-center rounded bg-blue-600 px-3.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 whitespace-nowrap cursor-pointer"
+                >
+                    + Tambah Finding Baru
+                </button>
             </div>
         </div>
 
         <!-- Filter Bar -->
         <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
-            <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-                <div class="relative flex-1 w-full">
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
+                <div class="relative flex-1 min-w-0">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -138,25 +152,36 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
                         v-model="searchQuery"
                         type="text"
                         placeholder="Cari temuan, toko, auditor, atau no. audit..."
-                        class="w-full pl-9 pr-4 py-2 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full h-8 pl-9 pr-4 py-1.5 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
                     />
                 </div>
 
-                <div class="w-full sm:w-56 shrink-0">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+                    <SearchableSelect
+                        v-model="storeFilter"
+                        :options="storeOptions"
+                        size="sm"
+                        aria-label="Toko"
+                        class="w-full sm:w-44"
+                    />
+                    <SearchableSelect
+                        v-model="periodFilter"
+                        :options="periodOptions"
+                        size="sm"
+                        aria-label="Bulan"
+                        class="w-full sm:w-36"
+                    />
                     <select
                         v-model="lockFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white font-medium"
+                        class="w-full sm:w-44 h-8 py-1.5 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white font-medium"
                     >
                         <option value="">Semua Status Review</option>
-                        <option value="PENDING">Menunggu Review (Pending)</option>
+                        <option value="PENDING">Menunggu Review</option>
                         <option value="LOCKED">Terkunci (Reviewed)</option>
                     </select>
-                </div>
-
-                <div class="w-full sm:w-44 shrink-0">
                     <select
                         v-model="severityFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full sm:w-36 h-8 py-1.5 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
                     >
                         <option value="">Semua Severity</option>
                         <option value="MINOR">Minor</option>
@@ -321,6 +346,59 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
                 :total-items="filteredFindings.length"
                 @update:current-page="currentPage = $event"
             />
+        </div>
+
+        <!-- Modal Pilih Surat Tugas Audit untuk Input Finding Baru -->
+        <div
+            v-if="showCreateFindingModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            @click.self="showCreateFindingModal = false"
+        >
+            <div class="w-full max-w-md rounded-lg bg-white border border-gray-200 shadow-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-slate-50">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Tambah Finding Baru</h3>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Pilih Nomor Surat Tugas Audit yang akan ditambahkan temuannya</p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="showCreateFindingModal = false"
+                        class="text-gray-400 hover:text-gray-600 text-sm font-bold px-1.5"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                            Surat Tugas Audit / Toko <span class="text-red-500">*</span>
+                        </label>
+                        <SearchableSelect
+                            v-model="selectedAuditId"
+                            :options="auditOptions"
+                            placeholder="Cari Nomor Audit atau Nama Toko..."
+                            class="w-full"
+                        />
+                    </div>
+                </div>
+                <div class="px-5 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
+                    <button
+                        type="button"
+                        @click="showCreateFindingModal = false"
+                        class="px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="!selectedAuditId"
+                        @click="goToCreateFinding"
+                        class="px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                        Lanjut Input Finding
+                    </button>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -12,6 +12,43 @@ const props = defineProps({
         required: true,
     },
 });
+
+const uploadDocModalOpen = ref(false);
+const docForm = useForm({
+    document_type: 'LHP',
+    title: '',
+    file: null,
+    notes: '',
+});
+
+const submitDoc = () => {
+    docForm.post(route('coordinator.audits.documents.store', props.audit.id), {
+        onSuccess: () => {
+            uploadDocModalOpen.value = false;
+            docForm.reset();
+        },
+    });
+};
+
+const deleteDoc = (doc) => {
+    openConfirm({
+        title: 'Hapus Dokumen Audit',
+        message: `Apakah Anda yakin ingin menghapus dokumen "${doc.title}"?`,
+        confirmText: 'Ya, Hapus Dokumen',
+        type: 'danger',
+        action: () => router.delete(route('coordinator.documents.destroy', doc.id)),
+    });
+};
+
+const deleteFinding = (finding) => {
+    openConfirm({
+        title: 'Hapus Temuan Audit (Finding)',
+        message: 'Apakah Anda yakin ingin menghapus temuan audit ini?',
+        confirmText: 'Ya, Hapus Finding',
+        type: 'danger',
+        action: () => router.delete(route('coordinator.findings.destroy', finding.id)),
+    });
+};
 
 const formatRupiah = (number) => {
     if (!number) return 'Rp 0';
@@ -99,22 +136,35 @@ const sendNotificationNow = (notif) => {
                 </h1>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center flex-wrap gap-2">
+                <Link
+                    :href="route('coordinator.findings.create', audit.id)"
+                    class="inline-flex items-center px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                >
+                    + Tambah Finding Baru
+                </Link>
+                <button
+                    @click="uploadDocModalOpen = true"
+                    type="button"
+                    class="px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
+                >
+                    Upload LHP / BAP
+                </button>
                 <Link
                     :href="route('coordinator.finding-qualities.create', { audit_id: audit.id })"
-                    class="px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
+                    class="px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
                 >
                     + Lapor Finding Quality
                 </Link>
                 <Link
                     :href="route('coordinator.audits.edit', audit.id)"
-                    class="px-3 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
+                    class="px-3.5 py-2 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
                 >
                     Edit Audit
                 </Link>
                 <button
                     @click="deleteAudit"
-                    class="px-3 py-2 text-xs font-medium rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors shadow-xs"
+                    class="px-3.5 py-2 text-xs font-medium rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors shadow-xs cursor-pointer"
                 >
                     Hapus
                 </button>
@@ -242,15 +292,80 @@ const sendNotificationNow = (notif) => {
             </div>
         </div>
 
+        <!-- Dokumen LHP & BAP Section -->
+        <div class="bg-white rounded border border-gray-200 p-5 mb-8 text-xs">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Dokumen Bukti Lapangan (LHP &amp; BAP Bertanda Tangan)
+                    </h2>
+                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-100 text-gray-700 border border-gray-200">
+                        {{ audit.documents?.length || 0 }} File
+                    </span>
+                </div>
+
+                <button
+                    @click="uploadDocModalOpen = true"
+                    type="button"
+                    class="px-3 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
+                >
+                    + Unggah LHP / BAP
+                </button>
+            </div>
+
+            <div v-if="!audit.documents || audit.documents.length === 0" class="text-center py-6 text-gray-400 bg-gray-50/50 rounded border border-dashed border-gray-200">
+                Belum ada dokumen LHP / BAP bertanda tangan yang diunggah untuk audit ini.
+            </div>
+
+            <div v-else class="overflow-x-auto border border-gray-200 rounded">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                        <tr>
+                            <th class="px-4 py-2.5">Tipe</th>
+                            <th class="px-4 py-2.5">Judul Dokumen</th>
+                            <th class="px-4 py-2.5">File</th>
+                            <th class="px-4 py-2.5">Diunggah Oleh</th>
+                            <th class="px-4 py-2.5 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr v-for="doc in audit.documents" :key="doc.id" class="hover:bg-gray-50/70">
+                            <td class="px-4 py-2.5">
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-100 text-gray-700 border border-gray-200">
+                                    {{ doc.document_type }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2.5 font-medium text-gray-900">
+                                {{ doc.title }}
+                                <div v-if="doc.notes" class="text-[11px] font-normal text-gray-500 mt-0.5">{{ doc.notes }}</div>
+                            </td>
+                            <td class="px-4 py-2.5 text-gray-600 tabular-nums">{{ doc.file_name }} ({{ doc.file_size }})</td>
+                            <td class="px-4 py-2.5 text-gray-600">{{ doc.uploaded_by }} · <span class="text-gray-400 tabular-nums">{{ doc.created_at }}</span></td>
+                            <td class="px-4 py-2.5 text-right space-x-2 whitespace-nowrap">
+                                <a :href="doc.file_url" target="_blank" class="text-blue-600 hover:underline font-medium">Lihat</a>
+                                <button type="button" @click="deleteDoc(doc)" class="text-red-600 hover:underline font-medium cursor-pointer">Hapus</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Findings Monitoring -->
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Monitoring Temuan & Review Severity ({{ audit.findings.length }})
+                Monitoring Temuan &amp; Review Severity ({{ audit.findings.length }})
             </h2>
+            <Link
+                :href="route('coordinator.findings.create', audit.id)"
+                class="px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+            >
+                + Tambah Finding Baru
+            </Link>
         </div>
 
         <div v-if="audit.findings.length === 0" class="bg-white rounded border border-gray-200 p-8 text-center text-xs text-gray-500">
-            Belum ada temuan yang dilaporkan oleh Auditor.
+            Belum ada temuan untuk audit ini. Klik tombol "+ Tambah Finding Baru" untuk mencatat temuan audit.
         </div>
 
         <div v-else class="space-y-4">
@@ -267,12 +382,21 @@ const sendNotificationNow = (notif) => {
                         <StatusBadge :status="finding.status" />
                     </div>
 
-                    <Link
-                        :href="route('coordinator.findings.show', finding.id)"
-                        class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium self-start sm:self-auto"
-                    >
-                        Review Severity & Detail
-                    </Link>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <Link
+                            :href="route('coordinator.findings.show', finding.id)"
+                            class="px-2.5 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        >
+                            Review Severity &amp; Detail
+                        </Link>
+                        <button
+                            type="button"
+                            @click="deleteFinding(finding)"
+                            class="px-2.5 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 font-medium cursor-pointer"
+                        >
+                            Hapus
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -296,6 +420,80 @@ const sendNotificationNow = (notif) => {
                     <span v-if="finding.loss_amount > 0" class="text-red-600">NBH: {{ formatRupiah(finding.loss_amount) }}</span>
                     <span v-if="finding.surplus_amount > 0" class="text-blue-700">NBL: {{ formatRupiah(finding.surplus_amount) }}</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Modal Upload Dokumen LHP / BAP -->
+        <div
+            v-if="uploadDocModalOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        >
+            <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl border border-gray-200 text-xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900">Unggah Dokumen LHP / BAP</h3>
+                    <button @click="uploadDocModalOpen = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+                </div>
+
+                <form @submit.prevent="submitDoc" class="space-y-4">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Jenis Dokumen <span class="text-red-500">*</span></label>
+                        <select v-model="docForm.document_type" required class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                            <option value="LHP">LHP (Lembar Hasil Pemeriksaan)</option>
+                            <option value="BAP">BAP (Berita Acara Pemeriksaan)</option>
+                            <option value="OTHER">Dokumen Pendukung Lainnya</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Judul Dokumen <span class="text-red-500">*</span></label>
+                        <input
+                            v-model="docForm.title"
+                            type="text"
+                            required
+                            placeholder="Contoh: LHP Bertanda Tangan Kepala Toko"
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Pilih File (PDF / Gambar / Excel, Maks. 10MB) <span class="text-red-500">*</span></label>
+                        <input
+                            type="file"
+                            required
+                            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+                            @change="e => docForm.file = e.target.files[0]"
+                            class="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                        />
+                        <div v-if="docForm.errors.file" class="text-red-600 text-[11px] mt-1">{{ docForm.errors.file }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
+                        <textarea
+                            v-model="docForm.notes"
+                            rows="2"
+                            placeholder="Keterangan tambahan dokumen..."
+                            class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        ></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                        <button
+                            type="button"
+                            @click="uploadDocModalOpen = false"
+                            class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="docForm.processing"
+                            class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50"
+                        >
+                            {{ docForm.processing ? 'Mengunggah...' : 'Simpan Dokumen' }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 

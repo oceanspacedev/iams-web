@@ -129,26 +129,12 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
         <Head title="Daftar Temuan — Admin" />
 
         <!-- Header -->
-        <div class="mb-4 sm:mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
                 <h1 class="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Daftar Seluruh Temuan Audit (Findings)</h1>
                 <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Monitoring dan pengawasan temuan audit dari seluruh unit cabang toko retail ({{ filteredFindings.length }} Temuan terdaftar)</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                <SearchableSelect
-                    v-model="storeFilter"
-                    :options="storeOptions"
-                    size="sm"
-                    aria-label="Toko"
-                    class="min-w-0 flex-1 sm:w-52 sm:flex-none"
-                />
-                <SearchableSelect
-                    v-model="periodFilter"
-                    :options="periodOptions"
-                    size="sm"
-                    aria-label="Bulan"
-                    class="min-w-0 flex-1 sm:w-44 sm:flex-none"
-                />
+            <div class="flex items-center gap-2 shrink-0">
                 <a
                     :href="exportUrl"
                     class="inline-flex h-8 items-center justify-center rounded bg-blue-600 px-3.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 whitespace-nowrap"
@@ -161,8 +147,8 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
 
         <!-- Filter Bar -->
         <div class="bg-white p-3 sm:p-3.5 rounded-lg border border-gray-200 shadow-2xs mb-4 sm:mb-5 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
-                <div class="relative sm:col-span-2 md:col-span-1">
+            <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5">
+                <div class="relative flex-1 min-w-0">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -172,14 +158,35 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
                         v-model="searchQuery"
                         type="text"
                         placeholder="Cari temuan, toko, no. audit..."
-                        class="w-full pl-9 pr-4 py-2 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full h-8 pl-9 pr-4 py-1.5 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
                     />
                 </div>
 
-                <div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 shrink-0">
+                    <SearchableSelect
+                        v-model="storeFilter"
+                        :options="storeOptions"
+                        size="sm"
+                        aria-label="Toko"
+                        class="w-full xl:w-44"
+                    />
+                    <SearchableSelect
+                        v-model="periodFilter"
+                        :options="periodOptions"
+                        size="sm"
+                        aria-label="Bulan"
+                        class="w-full xl:w-36"
+                    />
+                    <select
+                        v-model="categoryFilter"
+                        class="w-full xl:w-44 h-8 py-1.5 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                    >
+                        <option value="">Semua Kategori</option>
+                        <option v-for="cat in categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
+                    </select>
                     <select
                         v-model="severityFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full xl:w-36 h-8 py-1.5 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
                     >
                         <option value="">Semua Severity</option>
                         <option value="MINOR">Minor</option>
@@ -187,27 +194,14 @@ const periodOptions = computed(() => [{ value: '', label: 'Semua Bulan' }, ...pr
                         <option value="MAJOR">Major</option>
                         <option value="CONTINUOUS">Continuous</option>
                     </select>
-                </div>
-
-                <div>
                     <select
                         v-model="statusFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
+                        class="w-full xl:w-36 h-8 py-1.5 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
                     >
                         <option value="">Semua Status</option>
                         <option value="OPEN">Open</option>
                         <option value="IN_PROGRESS">In Progress</option>
                         <option value="CLOSED">Closed</option>
-                    </select>
-                </div>
-
-                <div>
-                    <select
-                        v-model="categoryFilter"
-                        class="w-full py-2 px-3 text-xs rounded border-gray-300 focus:border-slate-500 focus:ring-slate-500 bg-white"
-                    >
-                        <option value="">Semua Kategori</option>
-                        <option v-for="cat in categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
                     </select>
                 </div>
             </div>

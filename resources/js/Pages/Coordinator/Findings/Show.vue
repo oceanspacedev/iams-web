@@ -119,6 +119,33 @@ const submitSeverityReview = () => {
     });
 };
 
+const editingActionPlan = ref(!props.finding.action_plan?.action_plan);
+const actionPlanForm = useForm({
+    action_plan: props.finding.action_plan?.action_plan || '',
+    pic: props.finding.action_plan?.pic || '',
+    deadline: props.finding.action_plan?.deadline ? String(props.finding.action_plan.deadline).substring(0, 10) : '',
+    notes: props.finding.action_plan?.response || '',
+});
+
+const submitActionPlan = () => {
+    actionPlanForm.patch(route('coordinator.findings.action-plan.update', props.finding.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingActionPlan.value = false;
+        },
+    });
+};
+
+const deleteFinding = () => {
+    openConfirm({
+        title: 'Hapus Temuan Audit (Finding)',
+        message: 'Apakah Anda yakin ingin menghapus temuan audit ini beserta data terkait?',
+        confirmText: 'Ya, Hapus Finding',
+        type: 'danger',
+        action: () => router.delete(route('coordinator.findings.destroy', props.finding.id)),
+    });
+};
+
 const closeFinding = () => {
     openConfirm({
         title: 'Tutup Temuan Audit (Close Finding)',
@@ -165,12 +192,17 @@ const closeFinding = () => {
                 <button
                     v-if="finding.can_close"
                     @click="closeFinding"
-                    class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-2xs cursor-pointer"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
                     <span>Tutup Temuan (Close Finding)</span>
+                </button>
+
+                <button
+                    @click="deleteFinding"
+                    type="button"
+                    class="inline-flex items-center px-3.5 py-2 text-xs font-medium rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors shadow-xs cursor-pointer"
+                >
+                    Hapus Finding
                 </button>
             </div>
         </div>
@@ -257,12 +289,89 @@ const closeFinding = () => {
 
                 <!-- 2. Komitmen Tindak Lanjut Toko -->
                 <div class="bg-white rounded-lg border border-gray-200 p-5 shadow-xs space-y-4">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 pb-2 border-b border-gray-100 flex items-center justify-between">
-                        <span>2. Komitmen Tindak Lanjut Toko (Hasil Klarifikasi Lapangan)</span>
-                        <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
-                    </h2>
+                    <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            2. Komitmen Tindak Lanjut Toko (Hasil Klarifikasi Lapangan)
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <StatusBadge v-if="finding.action_plan" :status="finding.action_plan.status" />
+                            <button
+                                v-if="!editingActionPlan && finding.action_plan?.action_plan"
+                                type="button"
+                                @click="editingActionPlan = true"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                            >
+                                Edit Tindak Lanjut
+                            </button>
+                        </div>
+                    </div>
 
-                    <div v-if="finding.action_plan?.action_plan" class="space-y-3">
+                    <form v-if="editingActionPlan" @submit.prevent="submitActionPlan" class="space-y-4">
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1">
+                                Rencana Tindakan / Komitmen Perbaikan Toko <span class="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                v-model="actionPlanForm.action_plan"
+                                rows="3"
+                                required
+                                placeholder="Tuliskan komitmen tindakan perbaikan yang disepakati dengan kepala toko / auditee..."
+                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            ></textarea>
+                            <div v-if="actionPlanForm.errors.action_plan" class="text-red-600 text-[11px] mt-1">{{ actionPlanForm.errors.action_plan }}</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-1">PIC / Penanggung Jawab Toko</label>
+                                <input
+                                    v-model="actionPlanForm.pic"
+                                    type="text"
+                                    placeholder="Contoh: Kepala Toko / Supervisor"
+                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-1">Target Tanggal Selesai (Deadline)</label>
+                                <input
+                                    v-model="actionPlanForm.deadline"
+                                    type="date"
+                                    class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500 tabular-nums"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1">Catatan Tambahan / Kesepakatan LHP</label>
+                            <input
+                                v-model="actionPlanForm.notes"
+                                type="text"
+                                placeholder="Catatan klarifikasi lapangan atau komitmen tambahan..."
+                                class="w-full text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-2">
+                            <button
+                                v-if="finding.action_plan?.action_plan"
+                                type="button"
+                                @click="editingActionPlan = false"
+                                class="px-3.5 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="actionPlanForm.processing"
+                                class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-50 shadow-xs"
+                            >
+                                {{ actionPlanForm.processing ? 'Menyimpan...' : 'Simpan Tindak Lanjut' }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div v-else-if="finding.action_plan?.action_plan" class="space-y-3">
                         <div class="bg-gray-50 p-3.5 rounded border border-gray-200">
                             <div class="text-gray-500 font-medium mb-1">Komitmen Tindakan Perbaikan:</div>
                             <p class="text-gray-900 leading-relaxed font-medium whitespace-pre-line">{{ finding.action_plan.action_plan }}</p>
@@ -282,10 +391,6 @@ const closeFinding = () => {
                         <div v-if="finding.action_plan.response" class="text-gray-600 bg-gray-50 p-2.5 rounded border border-gray-200">
                             <span class="font-medium text-gray-700">Catatan: </span> {{ finding.action_plan.response }}
                         </div>
-                    </div>
-
-                    <div v-else class="text-center py-6 text-gray-400 bg-gray-50 rounded border border-dashed border-gray-200">
-                        Belum ada komitmen tindak lanjut yang dicatat untuk temuan ini.
                     </div>
                 </div>
             </div>

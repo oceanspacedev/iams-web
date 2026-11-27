@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
+use App\Models\Audit;
 use App\Models\AuditCategory;
 use App\Models\Finding;
+use App\Models\Sop;
 use App\Models\Store;
 use App\Services\FindingRecapExcelService;
 use App\Services\WhatsAppService;
@@ -41,8 +43,22 @@ class FindingController extends Controller
                 'created_at'           => $f->created_at->format('d M Y'),
             ]);
 
+        $audits = Audit::with(['store:id,code,name', 'category:id,name'])
+            ->orderBy('audit_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get(['id', 'audit_number', 'store_id', 'category_id', 'audit_date', 'status'])
+            ->map(fn ($a) => [
+                'id'           => $a->id,
+                'audit_number' => $a->audit_number,
+                'store'        => $a->store?->name ?? '—',
+                'store_code'   => $a->store?->code ?? '',
+                'category'     => $a->category?->name ?? '—',
+                'audit_date'   => $a->audit_date?->format('d M Y') ?? '—',
+            ]);
+
         return Inertia::render('Coordinator/Findings/Index', [
             'findings'   => $findings,
+            'audits'     => $audits,
             'categories' => AuditCategory::active()->get(['id', 'name']),
             'stores'     => Store::orderBy('name')->get(['id', 'code', 'name']),
             'periods'    => FindingRecapExcelService::availablePeriods(),
@@ -63,6 +79,92 @@ class FindingController extends Controller
             isset($validated['store_id']) ? (int) $validated['store_id'] : null,
             $validated['period'] ?? null,
         );
+    }
+
+    public function create(Request $request, Audit $audit): Response
+    {
+        $this->authorize('view', $audit);
+
+        return Inertia::render('Auditor/Findings/Create', [
+            'audit'       => $audit->load(['store', 'category'])->only(['id', 'audit_number', 'store', 'category', 'category_id']),
+            'categories'  => AuditCategory::active()->orderBy('name')->get(['id', 'name']),
+            'sops'        => Sop::active()->orderBy('code')->get(['id', 'code', 'title']),
+            'routePrefix' => 'coordinator.',
+        ]);
+    }
+
+    public function store(Request $request, Audit $audit): RedirectResponse
+    {
+        $this->authorize('view', $audit);
+
+        $validated = $request->validate([
+            'category_id'     => 'required|exists:audit_categories,id',
+            'sop_id'          => 'nullable|exists:sops,id',
+            'finding'         => 'required|string',
+            'loss_amount'     => 'nullable|numeric|min:0',
+            'surplus_amount'  => 'nullable|numeric|min:0',
+            'auditor_opinion' => 'nullable|string',
+            'recommendation'  => 'required|string',
+            'severity'        => 'required|in:MINOR,MEDIUM,MAJOR,CRITICAL,OBSERVATION,CONTINUOUS',
+        ]);
+
+        $finding = $audit->findings()->create([
+            ...$validated,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $finding->actionPlan()->create([
+            'status' => 'OPEN',
+        ]);
+
+        $finding->followUp()->create([]);
+
+        WhatsAppService::notifyFindingCreated($finding);
+
+        return redirect()->route('coordinator.audits.show', $audit)
+            ->with('success', 'Data saved! Temuan (Finding) baru berhasil disimpan.');
+    }
+
+    public function updateActionPlan(Request $request, Finding $finding): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action_plan' => 'required|string',
+            'pic'         => 'nullable|string|max:100',
+            'deadline'    => 'nullable|date',
+            'notes'       => 'nullable|string',
+        ]);
+
+        $finding->actionPlan()->updateOrCreate(
+            ['finding_id' => $finding->id],
+            [
+                'action_plan' => $validated['action_plan'],
+                'pic'         => $validated['pic'] ?? null,
+                'deadline'    => $validated['deadline'] ?? null,
+                'response'    => $validated['notes'] ?? null,
+                'status'      => 'IN_PROGRESS',
+            ]
+        );
+
+        if ($finding->status === Finding::STATUS_OPEN) {
+            $finding->update(['status' => Finding::STATUS_IN_PROGRESS]);
+        }
+
+        return redirect()->route('coordinator.findings.show', $finding)
+            ->with('success', 'Data saved! Komitmen tindak lanjut toko berhasil disimpan.');
+    }
+
+    public function destroy(Request $request, Finding $finding): RedirectResponse
+    {
+        $audit = $finding->audit;
+        $finding->delete();
+
+        if ($audit) {
+            return redirect()->route('coordinator.audits.show', $audit)
+                ->with('success', 'Temuan (Finding) berhasil dihapus.');
+        }
+
+        return redirect()->route('coordinator.findings.index')
+            ->with('success', 'Temuan (Finding) berhasil dihapus.');
     }
 
     public function show(Request $request, Finding $finding): Response

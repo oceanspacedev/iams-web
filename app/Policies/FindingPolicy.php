@@ -65,6 +65,10 @@ class FindingPolicy
             return false;
         }
 
+        if ($user->hasPermissionTo('finding.view-all')) {
+            return true;
+        }
+
         return $finding->audit->auditor_id === $user->id || $finding->audit->auditors()->where('users.id', $user->id)->exists();
     }
 

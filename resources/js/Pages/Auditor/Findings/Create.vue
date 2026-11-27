@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -15,6 +16,16 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    routePrefix: {
+        type: String,
+        default: '',
+    },
+});
+
+const currentPrefix = computed(() => {
+    if (props.routePrefix) return props.routePrefix;
+    if (typeof route === 'function' && route().current('coordinator.*')) return 'coordinator.';
+    return 'auditor.';
 });
 
 const form = useForm({
@@ -29,7 +40,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('auditor.findings.store', props.audit.id));
+    form.post(route(`${currentPrefix.value}findings.store`, props.audit.id));
 };
 </script>
 
@@ -39,9 +50,9 @@ const submit = () => {
 
         <div class="mb-6">
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <Link :href="route('auditor.audits.index')" class="hover:text-blue-600">My Audits</Link>
+                <Link :href="route(`${currentPrefix}audits.index`)" class="hover:text-blue-600">Audits</Link>
                 <span>/</span>
-                <Link :href="route('auditor.audits.show', audit.id)" class="hover:text-blue-600">{{ audit.audit_number }}</Link>
+                <Link :href="route(`${currentPrefix}audits.show`, audit.id)" class="hover:text-blue-600">{{ audit.audit_number }}</Link>
                 <span>/</span>
                 <span class="text-gray-900 font-medium">Buat Finding</span>
             </div>
@@ -255,7 +266,7 @@ const submit = () => {
                 <!-- Actions -->
                 <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                     <Link
-                        :href="route('auditor.audits.show', audit.id)"
+                        :href="route(`${currentPrefix}audits.show`, audit.id)"
                         class="px-4 py-2 text-xs font-medium rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                     >
                         Batal

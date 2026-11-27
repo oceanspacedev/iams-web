@@ -304,6 +304,13 @@ const deleteAudit = (audit) => {
                             <td class="px-4 py-3 align-middle whitespace-nowrap text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <Link
+                                        :href="route('coordinator.findings.create', audit.id)"
+                                        class="text-blue-600 hover:text-blue-800 font-medium hover:underline text-xs"
+                                    >
+                                        + Finding
+                                    </Link>
+                                    <span class="text-slate-300">|</span>
+                                    <Link
                                         :href="route('coordinator.audits.show', audit.id)"
                                         class="text-slate-600 hover:text-slate-900 font-medium hover:underline text-xs"
                                     >

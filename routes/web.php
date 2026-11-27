@@ -156,7 +156,11 @@ Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coord
     // Severity Reviews / Findings
     Route::get('/findings', [CoordinatorFindingController::class, 'index'])->name('findings.index');
     Route::get('/findings/export', [CoordinatorFindingController::class, 'export'])->name('findings.export');
+    Route::get('/audits/{audit}/findings/create', [CoordinatorFindingController::class, 'create'])->name('findings.create');
+    Route::post('/audits/{audit}/findings', [CoordinatorFindingController::class, 'store'])->name('findings.store');
     Route::get('/findings/{finding}', [CoordinatorFindingController::class, 'show'])->name('findings.show');
+    Route::delete('/findings/{finding}', [CoordinatorFindingController::class, 'destroy'])->name('findings.destroy');
+    Route::patch('/findings/{finding}/action-plan', [CoordinatorFindingController::class, 'updateActionPlan'])->name('findings.action-plan.update');
     Route::patch('/findings/{finding}/review-severity', [CoordinatorFindingController::class, 'reviewSeverity'])->name('findings.review-severity');
     Route::patch('/findings/{finding}/recommendation', [CoordinatorFindingController::class, 'updateRecommendation'])->name('findings.recommendation.update');
     Route::patch('/findings/{finding}/close', [CoordinatorFindingController::class, 'close'])->name('findings.close');
@@ -176,6 +180,8 @@ Route::middleware(['auth', 'role:coordinator|asmen|chief|admin'])->prefix('coord
     Route::get('/audits/{audit}/edit', [CoordinatorAuditController::class, 'edit'])->name('audits.edit');
     Route::put('/audits/{audit}', [CoordinatorAuditController::class, 'update'])->name('audits.update');
     Route::delete('/audits/{audit}', [CoordinatorAuditController::class, 'destroy'])->name('audits.destroy');
+    Route::post('/audits/{audit}/documents', [AuditorAuditDocumentController::class, 'store'])->name('audits.documents.store');
+    Route::delete('/documents/{document}', [AuditorAuditDocumentController::class, 'destroy'])->name('documents.destroy');
     Route::post('/audits/notifications/{notification}/send-now', [CoordinatorAuditController::class, 'sendNotificationNow'])->name('audits.notifications.send-now');
 
     // Action Plans
